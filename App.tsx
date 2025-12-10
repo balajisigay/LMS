@@ -1,45 +1,30 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
+ * LMS App - Learning Management System
+ * Main entry point
  *
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import { LandingScreen } from './src/screens/LandingScreen';
+import { CourseDetailScreen } from './src/screens/CourseDetailScreen';
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [currentScreen, setCurrentScreen] = useState<'landing' | 'courseDetail'>('landing');
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
+  const handleViewCourse = () => {
+    setCurrentScreen('courseDetail');
+  };
+
+  const handleBackToHome = () => {
+    setCurrentScreen('landing');
+  };
+
+  return currentScreen === 'landing' ? (
+    <LandingScreen onViewCourse={handleViewCourse} />
+  ) : (
+    <CourseDetailScreen onBack={handleBackToHome} />
   );
 }
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;

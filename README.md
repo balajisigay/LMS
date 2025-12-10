@@ -1,22 +1,176 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Lumina LMS - Learning Management System
 
-# Getting Started
+A full-stack learning management system built with React Native (mobile) and React (web), featuring a modern landing page with TypeScript support.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 📱 Project Structure
 
-## Step 1: Start Metro
+```
+LMS/
+├── src/                    # Shared TypeScript source (for React Native)
+│   ├── screens/           # React Native screens
+│   ├── components/        # React Native components
+│   └── styles/            # Shared design tokens
+├── web/                   # Web application (React + Vite)
+│   ├── src/
+│   │   ├── components/    # Web components
+│   │   ├── pages/         # Web pages
+│   │   └── styles/        # Web styling
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── README.md
+├── android/               # Android native code
+├── ios/                   # iOS native code
+├── App.tsx                # React Native entry point
+├── package.json           # Mobile dependencies
+└── tsconfig.json          # TypeScript config
+```
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 🚀 Quick Start
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### Mobile (React Native)
 
-```sh
-# Using npm
+#### Prerequisites
+
+- Node.js 20+
+- React Native environment set up ([instructions](https://reactnative.dev/docs/environment-setup))
+- Android Studio (for Android) or Xcode (for iOS)
+
+#### Installation & Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start Metro dev server
 npm start
 
-# OR using Yarn
-yarn start
+# In another terminal, run on Android
+npm run android
+
+# OR run on iOS
+npm run ios
 ```
+
+### Web (React)
+
+#### Prerequisites
+
+- Node.js 20+
+- npm or yarn
+
+#### Installation & Development
+
+```bash
+# Install dependencies
+cd web
+npm install
+
+# Start dev server (automatically opens at http://localhost:3000)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## 📚 Available Scripts
+
+### Mobile
+
+```bash
+npm start          # Start Metro dev server
+npm run android    # Build and run on Android
+npm run ios        # Build and run on iOS
+npm run lint       # Run ESLint
+npm test           # Run Jest tests
+```
+
+### Web
+
+```bash
+cd web
+npm run dev        # Start development server
+npm run build      # Build for production
+npm run preview    # Preview production build
+npm run type-check # Check TypeScript types
+```
+
+## 🎨 Features
+
+### Landing Page Components
+
+- **Header** - Navigation with logo and authentication buttons
+- **Hero Section** - Main promotional area with CTAs
+- **Trusted Partners** - Partner company showcase
+- **Categories** - Filterable course categories with cards
+- **Learning Paths** - Curated learning paths with progress tracking
+- **Instructor Section** - Call-to-action for instructors
+- **Footer** - Site navigation and company info
+
+### Design System
+
+Centralized design tokens:
+
+- **Colors**: Primary purple (#7C3AED), secondary pink (#EC4899)
+- **Spacing**: 8px-based scale
+- **Typography**: Clear hierarchy (12px - 32px)
+- **Border Radius**: Consistent rounding (4px - 999px)
+
+## 🛠️ Tech Stack
+
+### Mobile
+
+- **React Native** 0.82.1
+- **TypeScript** 5.8.3
+- **React Native Safe Area** 5.5.2
+- **Jest** for testing
+
+### Web
+
+- **React** 19.0.0
+- **React Router** 6.20.0
+- **Vite** 5.0.0
+- **TypeScript** 5.3.0
+
+## 📁 Component Sharing
+
+The design system (`colors.ts`, `spacing`, etc.) is duplicated in both:
+
+- `src/styles/colors.ts` (React Native)
+- `web/src/styles/colors.ts` (Web)
+
+To maintain consistency, update both files when changing design tokens.
+
+## 🔧 Development Tips
+
+### React Native
+
+- Use `npx react-native doctor` to verify your environment setup
+- Check [React Native docs](https://reactnative.dev/docs/getting-started) for troubleshooting
+- Components use React Native primitives (View, Text, ScrollView, etc.)
+
+### Web
+
+- Components use standard HTML elements (div, button, section, etc.)
+- Responsive design with CSS Grid and Flexbox
+- Hot Module Replacement (HMR) enabled during development
+- CSS-in-JS styling with TypeScript support
+
+## 📱 Browser & Platform Support
+
+### Mobile
+
+- Android 5.0+ (API 21+)
+- iOS 11.0+
+
+### Web
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
 
 ## Step 2: Build and run your app
 

@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "khYPzHbgZk8+kDc+FbAyawRx2M/tZC1Q+catL1FxRl0=",
+  "Source": "LmsApi",
+  "BasePath": "_content/LmsApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
