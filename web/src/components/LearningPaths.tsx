@@ -1,203 +1,245 @@
-import React from 'react';
-import { colors, spacing, fontSize, borderRadius } from '../styles/colors';
+import React from "react";
+import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
 
 interface LearningPathsProps {
   onPathPress?: (pathId: string) => void;
 }
 
+/* ------------------ LEARNING PATH CARD ------------------ */
 const LearningPath: React.FC<{
+  index: number;
   title: string;
   courses: string;
   duration: string;
   onPress?: () => void;
-}> = ({ title, courses, duration, onPress }) => {
+}> = ({ index, title, courses, duration, onPress }) => {
   return (
     <div style={styles.pathCard} onClick={onPress}>
-      <div style={styles.pathIcon}>
-        <span style={styles.pathNumber}>1</span>
+      <div style={{ ...styles.pathIcon, backgroundColor: index === 0 ? "#4F46E5" : "#EC4899" }}>
+        <span style={styles.pathNumber}>{index + 1}</span>
       </div>
+
       <div style={styles.pathContent}>
         <h4 style={styles.pathTitle}>{title}</h4>
-        <p style={styles.pathMeta}>{courses} • {duration}</p>
+        <p style={styles.pathMeta}>
+          {courses} • {duration}
+        </p>
       </div>
+
       <span style={styles.pathArrow}>→</span>
     </div>
   );
 };
 
+/* ------------------ WEEKLY PROGRESS WIDGET ------------------ */
+const WeeklyProgress = () => {
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const values = [30, 60, 40, 80, 50, 90, 70]; // replace with real data later
+
+  return (
+    <div style={styles.progressWidget}>
+      <div style={styles.progressHeader}>
+        <h4 style={styles.progressTitle}>Weekly Progress</h4>
+        <span style={styles.menuDots}>⋯</span>
+      </div>
+
+      <div style={styles.progressBars}>
+        {values.map((val, i) => (
+          <div key={i} style={styles.progressColumn}>
+            <div style={{ ...styles.progressBar, height: `${val}%` }}></div>
+            <span style={styles.label}>{days[i]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ------------------ MAIN COMPONENT ------------------ */
 export const LearningPaths: React.FC<LearningPathsProps> = ({ onPathPress }) => {
   const paths = [
-    {
-      title: 'Full Stack Developer Path',
-      courses: '5 courses',
-      duration: '240 hours',
-      id: 'fullstack',
-    },
-    {
-      title: 'Data Science Professional',
-      courses: '6 courses',
-      duration: '262 hours',
-      id: 'datascience',
-    },
+    { title: "Full Stack Developer Path", courses: "8 Courses", duration: "240 Hours", id: "fullstack" },
+    { title: "Data Science Professional", courses: "12 Courses", duration: "340 Hours", id: "datascience" },
   ];
 
   return (
     <section style={styles.container}>
       <div style={styles.wrapper}>
-        <div style={styles.textContent}>
+        {/* LEFT SIDE */}
+        <div style={styles.leftSection}>
           <h2 style={styles.title}>Don't know where to start?</h2>
           <p style={styles.subtitle}>
             Our curated Learning Paths provide a step-by-step roadmap to master
-            a new skill. From beginner to expert.
+            a new skill, from beginner to expert.
           </p>
-        </div>
 
-        <div style={styles.pathsContainer}>
-          {paths.map((path, index) => (
-            <LearningPath
-              key={index}
-              title={path.title}
-              courses={path.courses}
-              duration={path.duration}
-              onPress={() => onPathPress?.(path.id)}
-            />
-          ))}
-        </div>
-
-        {/* Progress Widget */}
-        <div style={styles.progressWidget}>
-          <h4 style={styles.progressTitle}>Weekly Progress</h4>
-          <div style={styles.progressBars}>
-            {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-              <div
-                key={day}
-                style={{
-                  ...styles.progressBar,
-                  height: `${30 + Math.random() * 70}%`,
-                }}
+          <div style={styles.pathsContainer}>
+            {paths.map((p, i) => (
+              <LearningPath
+                key={p.id}
+                index={i}
+                title={p.title}
+                courses={p.courses}
+                duration={p.duration}
+                onPress={() => onPathPress?.(p.id)}
               />
             ))}
           </div>
         </div>
+
+        {/* RIGHT SIDE */}
+        <WeeklyProgress />
       </div>
     </section>
   );
 };
 
+/* ------------------ STYLES ------------------ */
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: colors.text,
+    backgroundColor: "#0F172A",
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl,
   },
+
   wrapper: {
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.lg,
     maxWidth: 1400,
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    display: 'flex',
-    flexDirection: 'column',
+    margin: "0 auto",
+    padding: `0 ${spacing.lg}px`,
+    display: "grid",
+    gridTemplateColumns: "1fr 450px",
     gap: spacing.xxl,
   },
-  textContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: spacing.md,
+
+  /* LEFT */
+  leftSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: spacing.xl,
   },
+
   title: {
-    fontSize: fontSize.xl,
-    fontWeight: '700',
-    color: colors.background,
+    fontSize: 42,
+    fontWeight: 700,
+    color: "#fff",
     margin: 0,
   },
+
   subtitle: {
-    fontSize: fontSize.md,
-    color: colors.background,
-    opacity: 0.8,
+    fontSize: 18,
+    color: "rgba(255,255,255,0.8)",
     lineHeight: 1.6,
     margin: 0,
   },
+
   pathsContainer: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: spacing.lg,
   },
+
   pathCard: {
-    display: 'flex',
-    alignItems: 'center',
+    display: "flex",
+    alignItems: "center",
     gap: spacing.lg,
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.lg,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 14,
+    cursor: "pointer",
+    transition: "0.2s",
   },
+
   pathIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceLight,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     flexShrink: 0,
   },
+
   pathNumber: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.primary,
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: 700,
   },
+
   pathContent: {
     flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: spacing.xs,
   },
+
   pathTitle: {
-    fontSize: fontSize.md,
-    fontWeight: '600',
-    color: colors.text,
     margin: 0,
+    fontSize: 20,
+    color: "#0F172A",
+    fontWeight: 600,
   },
+
   pathMeta: {
-    fontSize: fontSize.sm,
-    color: colors.textLight,
     margin: 0,
+    color: "#475569",
+    fontSize: 14,
   },
+
   pathArrow: {
-    fontSize: fontSize.lg,
-    color: colors.primary,
-    flexShrink: 0,
+    fontSize: 22,
+    color: "#4F46E5",
   },
+
+  /* RIGHT — PROGRESS WIDGET */
   progressWidget: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.lg,
+    backgroundColor: "#fff",
+    borderRadius: 18,
     padding: spacing.lg,
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: spacing.md,
   },
+
+  progressHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
   progressTitle: {
-    fontSize: fontSize.md,
-    fontWeight: '600',
-    color: colors.text,
     margin: 0,
+    fontSize: 20,
+    fontWeight: 600,
+    color: "#0F172A",
   },
+
+  menuDots: {
+    fontSize: 24,
+    cursor: "pointer",
+    opacity: 0.7,
+  },
+
   progressBars: {
-    display: 'flex',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
-    height: 80,
+    display: "flex",
+    alignItems: "flex-end",
+    gap: spacing.md,
+    height: 160,
   },
-  progressBar: {
+
+  progressColumn: {
     flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.sm,
-    minHeight: 4,
-    transition: 'all 0.3s',
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  progressBar: {
+    width: "100%",
+    backgroundColor: "#E0E7FF",
+    borderRadius: 8,
+    transition: "0.3s",
+  },
+
+  label: {
+    fontSize: 12,
+    color: "#64748B",
   },
 };

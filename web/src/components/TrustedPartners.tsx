@@ -1,17 +1,32 @@
-import React from 'react';
-import { colors, spacing, fontSize } from '../styles/colors';
+import React from "react";
+import { colors, spacing, fontSize } from "../styles/colors";
+import {
+  FaGoogle,
+  FaSpotify,
+  FaAirbnb,
+  FaAmazon,
+  FaMeta,
+} from "react-icons/fa6"; // Make sure you install react-icons
 
 export const TrustedPartners: React.FC = () => {
-  const partners = ['Google', 'Spotify', 'Airbnb', 'Amazon', 'Meta'];
+  const partners = [
+    { name: "Google", icon: <FaGoogle size={28} /> },
+    { name: "Spotify", icon: <FaSpotify size={28} /> },
+    { name: "Airbnb", icon: <FaAirbnb size={28} /> },
+    { name: "Amazon", icon: <FaAmazon size={28} /> },
+    { name: "Meta", icon: <FaMeta size={28} /> },
+  ];
 
   return (
     <section style={styles.container}>
       <div style={styles.wrapper}>
         <h3 style={styles.title}>TRUSTED BY INNOVATORS AT</h3>
+
         <div style={styles.partnersContent}>
-          {partners.map((partner, index) => (
+          {partners.map((item, index) => (
             <div key={index} style={styles.partnerItem}>
-              <span style={styles.partnerName}>{partner}</span>
+              <div style={styles.icon}>{item.icon}</div>
+              <span style={styles.partnerName}>{item.name}</span>
             </div>
           ))}
         </div>
@@ -25,38 +40,42 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: colors.background,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl,
-    borderBottom: `1px solid ${colors.border}`,
   },
   wrapper: {
     paddingLeft: spacing.lg,
     paddingRight: spacing.lg,
     maxWidth: 1400,
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    marginLeft: "auto",
+    marginRight: "auto",
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontWeight: 600,
     color: colors.textLight,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     marginBottom: spacing.xl,
-    margin: 0,
   },
   partnersContent: {
-    display: 'flex',
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     gap: spacing.xxl,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   partnerItem: {
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.lg,
+    display: "flex",
+    alignItems: "center",
+    gap: spacing.sm,
+    opacity: 0.65,
+  },
+  icon: {
+    display: "flex",
+    alignItems: "center",
   },
   partnerName: {
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontWeight: 600,
     color: colors.textLighter,
   },
 };

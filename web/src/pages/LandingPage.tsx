@@ -3,12 +3,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllCourses } from "../services/courseService";
 import { Course } from "../types/course";
-import { Header } from '../components/Header';
-import { HeroSection } from '../components/HeroSection';
-import { TrustedPartners } from '../components/TrustedPartners';
-import { LearningPaths } from '../components/LearningPaths';
-import { InstructorSection } from '../components/InstructorSection';
-import { Footer } from '../components/Footer';
+import { Header } from "../components/Header";
+import { HeroSection } from "../components/HeroSection";
+import { TrustedPartners } from "../components/TrustedPartners";
+import { LearningPaths } from "../components/LearningPaths";
+import { InstructorSection } from "../components/InstructorSection";
+import { Footer } from "../components/Footer";
 import { Categories } from "../components/Categories";
 
 export const LandingPage: React.FC = () => {
@@ -24,6 +24,7 @@ export const LandingPage: React.FC = () => {
   const loadCourses = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const data = await getAllCourses();
       setCourses(data);
@@ -42,21 +43,28 @@ export const LandingPage: React.FC = () => {
   return (
     <>
       <Header />
+
+      {/* ⭐ Redesigned Hero Section */}
       <HeroSection
-        onExplorePress={() => console.log("Explore pressed")}
-        onWatchDemoPress={() => console.log("Watch demo")}
+        onExplorePress={() => navigate("/courses")}
+        onWatchDemoPress={() => navigate("/demo")}
       />
+
       <TrustedPartners />
+
       <Categories
-        courses={courses}
-        loading={loading}
-        error={error}
-        onCategoryPress={(cat) => console.log("category", cat)}
-        onCoursePress={handleCoursePress}
-        onRetry={loadCourses}
+      courses={courses}
+      loading={loading}
+      error={error}
+      onCategoryPress={(cat) => console.log("category", cat)}
+      onCoursePress={handleCoursePress}
+      onRetry={loadCourses}
       />
-      <LearningPaths onPathPress={(id) => console.log("path", id)} />
-      <InstructorSection onPress={() => console.log("start teaching")} />
+
+      <LearningPaths onPathPress={(id) => console.log("path:", id)} />
+
+      <InstructorSection onPress={() => navigate("/teach")} />
+
       <Footer />
     </>
   );

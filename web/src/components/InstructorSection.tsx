@@ -10,21 +10,27 @@ export const InstructorSection: React.FC<InstructorSectionProps> = ({ onPress })
     <section style={styles.container}>
       <div style={styles.wrapper}>
         <div style={styles.content}>
+
+          {/* IMAGE */}
+          <div style={styles.imageContainer}>
+            <img
+              src="/images/instructor-team.png" // <-- Drop your image in public/images
+              alt="Instructor Team"
+              style={styles.image}
+            />
+          </div>
+
+          {/* TEXT CONTENT */}
           <div style={styles.textContent}>
             <h2 style={styles.title}>Become an Instructor</h2>
             <p style={styles.subtitle}>
-              Inspire millions of learners on Lumina. We provide the tools and
-              skills to teach what you know.
+              Instructors from around the world teach millions of learners on Lumina.
+              We provide the tools and skills to teach what you love.
             </p>
+
             <button style={styles.button} onClick={onPress}>
               Start Teaching Today
             </button>
-          </div>
-
-          <div style={styles.imageContainer}>
-            <div style={styles.imagePlaceholder}>
-              <span style={styles.placeholderText}>Team Image</span>
-            </div>
           </div>
         </div>
       </div>
@@ -34,7 +40,7 @@ export const InstructorSection: React.FC<InstructorSectionProps> = ({ onPress })
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: colors.background,
+    backgroundColor: "#eef2ff",
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl,
   },
@@ -42,64 +48,55 @@ const styles: Record<string, React.CSSProperties> = {
     paddingLeft: spacing.lg,
     paddingRight: spacing.lg,
     maxWidth: 1400,
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    margin: "0 auto",
   },
   content: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
     gap: spacing.xxl,
-    alignItems: 'center',
+    alignItems: "center",
   },
+
+  // IMAGE
   imageContainer: {
-    flex: 1,
+    width: "100%",
   },
-  imagePlaceholder: {
-    width: '100%',
-    aspectRatio: 1.2,
-    backgroundColor: colors.surfaceLight,
+  image: {
+    width: "100%",
     borderRadius: borderRadius.lg,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
+    objectFit: "cover",
+    boxShadow: "0px 8px 24px rgba(0,0,0,0.08)",
   },
-  placeholderText: {
-    fontSize: fontSize.md,
-    color: colors.textLight,
-    fontWeight: '600',
-  },
+
+  // TEXT CONTENT
   textContent: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: spacing.lg,
   },
   title: {
-    fontSize: fontSize.xl,
-    fontWeight: '700',
-    color: colors.text,
+    fontSize: "36px",
+    fontWeight: "700",
     margin: 0,
+    color: colors.text,
   },
   subtitle: {
     fontSize: fontSize.md,
     color: colors.textLight,
-    lineHeight: 1.6,
     margin: 0,
+    lineHeight: 1.6,
   },
+
+  // BUTTON
   button: {
-    backgroundColor: colors.text,
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    borderRadius: borderRadius.md,
-    color: colors.background,
+    backgroundColor: "#0c0c0c",
+    color: "#fff",
+    padding: "14px 28px",
+    borderRadius: 50,
+    border: "none",
+    cursor: "pointer",
     fontSize: fontSize.md,
-    fontWeight: '600',
-    border: 'none',
-    cursor: 'pointer',
-    alignSelf: 'flex-start',
-    transition: 'all 0.2s',
+    fontWeight: "600",
+    transition: "0.2s ease",
   },
 };

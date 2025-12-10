@@ -1,15 +1,10 @@
-﻿import React, { useState, useMemo } from "react";
+﻿import React, { useState, useMemo, useEffect } from "react";
 import { Course } from "../types/course";
 import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
 
-interface CategoriesProps {
-  courses: Course[];
-  loading?: boolean;
-  error?: string | null;
-  onCategoryPress?: (category: string) => void;
-  onCoursePress?: (courseId: number) => void;
-  onRetry?: () => void;
-}
+/* -------------------------------------------------- */
+/*                 CATEGORY CARD COMPONENT            */
+/* -------------------------------------------------- */
 
 interface CategoryCardProps {
   course: Course;
@@ -19,7 +14,7 @@ interface CategoryCardProps {
 const CategoryCard: React.FC<CategoryCardProps> = ({ course, onPress }) => {
   return (
     <div style={styles.card} onClick={() => onPress?.(course.id)}>
-      {/* Course Thumbnail */}
+      {/* Image */}
       <div style={styles.cardImage}>
         {course.imageUrl ? (
           <img src={course.imageUrl} alt={course.title} style={styles.cardImageReal} />
@@ -30,18 +25,15 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ course, onPress }) => {
 
       {/* Content */}
       <div style={styles.cardContent}>
-        {/* Badge */}
         {course.badge && <span style={styles.badge}>{course.badge}</span>}
 
-        {/* Title */}
         <h4 style={styles.cardTitle}>{course.title}</h4>
 
-        {/* Instructor */}
         <p style={styles.cardInstructor}>
-          {course.instructor?.name ?? "Unknown"} &bull; {course.instructor?.courses ?? 0} courses
+          {course.instructor?.name ?? "Unknown"} • {course.instructor?.courses ?? 0} courses
         </p>
 
-        {/* Rating + Reviews */}
+        {/* Rating */}
         <div style={styles.ratingContainer}>
           <span style={styles.ratingStar}>★ {course.rating.toFixed(1)}</span>
           <span style={styles.reviewCount}>({course.reviewCount.toLocaleString()})</span>
@@ -49,9 +41,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ course, onPress }) => {
 
         {/* Footer */}
         <div style={styles.cardFooter}>
-          <span style={styles.students}>
-            {course.studentCount?.toLocaleString()} Students
-          </span>
+          <span style={styles.students}>{course.studentCount.toLocaleString()} Students</span>
           <div style={styles.priceContainer}>
             <span style={styles.price}>${course.price.toFixed(2)}</span>
             {course.originalPrice > course.price && (
@@ -64,6 +54,19 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ course, onPress }) => {
   );
 };
 
+/* -------------------------------------------------- */
+/*                 MAIN CATEGORIES COMPONENT          */
+/* -------------------------------------------------- */
+
+interface CategoriesProps {
+  courses: Course[];
+  loading?: boolean;
+  error?: string | null;
+  onCategoryPress?: (category: string) => void;
+  onCoursePress?: (courseId: number) => void;
+  onRetry?: () => void;
+}
+
 export const Categories: React.FC<CategoriesProps> = ({
   courses,
   loading = false,
@@ -73,6 +76,11 @@ export const Categories: React.FC<CategoriesProps> = ({
   onRetry,
 }) => {
   const [activeCategory, setActiveCategory] = useState("All Courses");
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>(courses);
+
+  useEffect(() => {
+    setFilteredCourses(courses);
+  }, [courses]);
 
   const categories = useMemo(
     () => [
@@ -86,9 +94,25 @@ export const Categories: React.FC<CategoriesProps> = ({
     []
   );
 
+  const handleCategorySelect = (category: string) => {
+    setActiveCategory(category);
+    onCategoryPress?.(category);
+
+    if (category === "All Courses") {
+      setFilteredCourses(courses);
+    } else {
+      setFilteredCourses(
+        courses.filter(
+          (course) => course.category?.toLowerCase() === category.toLowerCase()
+        )
+      );
+    }
+  };
+
   return (
     <section style={styles.container}>
       <div style={styles.wrapper}>
+
         {/* Header */}
         <div style={styles.header}>
           <h2 style={styles.headerTitle}>Explore Top Categories</h2>
@@ -96,58 +120,61 @@ export const Categories: React.FC<CategoriesProps> = ({
           <a style={styles.viewAllLink}>View all categories →</a>
         </div>
 
-        {/* Category Chips */}
-        <div style={styles.categoriesContent}>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              style={{
-                ...styles.categoryChip,
-                ...(activeCategory === cat ? styles.categoryChipActive : {}),
-              }}
-              onClick={() => {
-                setActiveCategory(cat);
-                onCategoryPress?.(cat);
-              }}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {/* LAYOUT (Sidebar + Courses) */}
+        <div style={styles.mainLayout}>
 
-        {/* Error UI */}
-        {error && (
-          <div style={styles.errorBox}>
-            <span style={styles.errorText}>⚠️ {error}</span>
-            <button style={styles.retryButton} onClick={onRetry}>
-              Retry
-            </button>
-          </div>
-        )}
+          {/* SIDEBAR */}
+          <aside style={styles.sidebar}>
+            <h3 style={styles.sidebarTitle}>Categories</h3>
 
-        {/* Loading UI */}
-        {loading && (
-          <div style={styles.loadingContainer}>
-            <p style={styles.loadingText}>Loading courses...</p>
-          </div>
-        )}
-
-        {/* Course Grid */}
-        {!loading && (
-          <div style={styles.courseGrid}>
-            {courses.map((course) => (
-              <CategoryCard key={course.id} course={course} onPress={onCoursePress} />
+            {categories.map((cat) => (
+              <div
+                key={cat}
+                onClick={() => handleCategorySelect(cat)}
+                style={{
+                  ...styles.sidebarItem,
+                  ...(activeCategory === cat ? styles.sidebarItemActive : {}),
+                }}
+              >
+                {cat}
+              </div>
             ))}
+          </aside>
+
+          {/* CONTENT AREA */}
+          <div style={styles.contentArea}>
+            {error && (
+              <div style={styles.errorBox}>
+                <span style={styles.errorText}>⚠️ {error}</span>
+                <button style={styles.retryButton} onClick={onRetry}>
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {loading && (
+              <div style={styles.loadingContainer}>
+                <p style={styles.loadingText}>Loading courses...</p>
+              </div>
+            )}
+
+            {!loading && (
+              <div style={styles.courseGrid}>
+                {filteredCourses.map((course) => (
+                  <CategoryCard key={course.id} course={course} onPress={onCoursePress} />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </section>
   );
 };
 
-/* -------------------------------------- */
-/*               STYLES                  */
-/* -------------------------------------- */
+/* -------------------------------------------------- */
+/*                         STYLES                     */
+/* -------------------------------------------------- */
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
@@ -168,8 +195,8 @@ const styles: Record<string, React.CSSProperties> = {
   headerTitle: {
     fontSize: fontSize.xl,
     fontWeight: 700,
-    marginBottom: spacing.xs,
     color: colors.text,
+    marginBottom: spacing.xs,
   },
   headerSubtitle: {
     fontSize: fontSize.sm,
@@ -183,49 +210,69 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
 
-  /* Category Chips */
-  categoriesContent: {
-    display: "flex",
-    gap: spacing.md,
-    flexWrap: "wrap",
-    marginBottom: spacing.lg,
+  /* Layout */
+  mainLayout: {
+    display: "grid",
+    gridTemplateColumns: "260px 1fr",
+    gap: spacing.xl,
   },
-  categoryChip: {
-    padding: `${spacing.sm}px ${spacing.lg}px`,
-    borderRadius: borderRadius.full,
-    background: colors.surfaceLight,
+
+  /* Sidebar */
+  sidebar: {
+    background: colors.white,
     border: `1px solid ${colors.border}`,
-    fontSize: fontSize.sm,
-    fontWeight: 600,
-    cursor: "pointer",
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    height: "fit-content",
+    position: "sticky",
+    top: 90,
   },
-  categoryChipActive: {
-    background: colors.text,
-    borderColor: colors.text,
+  sidebarTitle: {
+    fontSize: fontSize.md,
+    fontWeight: 700,
+    marginBottom: spacing.md,
+  },
+  sidebarItem: {
+    background: colors.surfaceLight,
+    padding: `${spacing.sm}px ${spacing.md}px`,
+    borderRadius: borderRadius.sm,
+    cursor: "pointer",
+    marginBottom: spacing.sm,
+    transition: "0.2s",
+    fontSize: fontSize.sm,
+  },
+  sidebarItemActive: {
+    background: colors.primary,
     color: colors.white,
   },
 
-  /* Cards */
+  contentArea: {
+    width: "100%",
+  },
+
+  /* Course Grid */
   courseGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
     gap: spacing.lg,
   },
+
+  /* Cards */
   card: {
     borderRadius: borderRadius.md,
     border: `1px solid ${colors.border}`,
     overflow: "hidden",
     background: colors.white,
     cursor: "pointer",
-    transition: "0.2s ease",
+    transition: "0.25s ease",
   },
   cardImage: {
     width: "100%",
     aspectRatio: "16/9",
     background: colors.surfaceLight,
     display: "flex",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
   },
   cardImageReal: {
     width: "100%",
@@ -236,31 +283,24 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: fontSize.md,
     color: colors.textLight,
   },
-
   cardContent: {
     padding: spacing.md,
   },
-
   badge: {
     fontSize: fontSize.xs,
-    fontWeight: 700,
     color: colors.primary,
+    fontWeight: 700,
   },
-
   cardTitle: {
     fontSize: fontSize.sm,
     fontWeight: 600,
     margin: `${spacing.xs}px 0`,
-    lineHeight: 1.4,
-    color: colors.text,
   },
-
   cardInstructor: {
     fontSize: fontSize.xs,
     color: colors.textLight,
     marginBottom: spacing.xs,
   },
-
   ratingContainer: {
     display: "flex",
     alignItems: "center",
@@ -269,14 +309,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   ratingStar: {
     fontSize: fontSize.sm,
-    fontWeight: 600,
+    fontWeight: 700,
     color: colors.warning,
   },
   reviewCount: {
     fontSize: fontSize.xs,
     color: colors.textLight,
   },
-
   cardFooter: {
     display: "flex",
     justifyContent: "space-between",
@@ -287,7 +326,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: fontSize.xs,
     color: colors.textLight,
   },
-
   priceContainer: {
     display: "flex",
     gap: spacing.xs,
@@ -299,19 +337,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   originalPrice: {
     fontSize: fontSize.xs,
-    color: colors.textLight,
     textDecoration: "line-through",
+    color: colors.textLight,
   },
 
   /* Error */
   errorBox: {
-    padding: spacing.md,
     background: "#fee2e2",
     border: "1px solid #dc2626",
+    padding: spacing.md,
     borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
     display: "flex",
     justifyContent: "space-between",
+    marginBottom: spacing.lg,
   },
   errorText: {
     color: "#dc2626",
@@ -320,16 +358,15 @@ const styles: Record<string, React.CSSProperties> = {
   retryButton: {
     background: "#dc2626",
     color: "white",
-    border: "none",
     padding: "6px 12px",
-    borderRadius: 4,
+    borderRadius: 6,
     cursor: "pointer",
   },
 
   /* Loading */
   loadingContainer: {
-    padding: spacing.xl,
     textAlign: "center",
+    padding: spacing.xl,
   },
   loadingText: {
     fontSize: fontSize.md,
