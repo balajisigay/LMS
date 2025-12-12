@@ -42,7 +42,11 @@ export const LandingPage: React.FC = () => {
 
   return (
     <>
-      <Header />
+      <Header 
+  onLoginPress={() => navigate("/login")}
+  onJoinPress={() => navigate("/register")}
+/>
+
 
       {/* ⭐ Redesigned Hero Section */}
       <HeroSection

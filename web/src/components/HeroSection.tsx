@@ -1,5 +1,6 @@
 import React from "react";
 import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
+import HeroImage from "../assets/Hreoimage.png";
 
 interface HeroSectionProps {
   onExplorePress?: () => void;
@@ -57,11 +58,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           {/* --------------------- RIGHT CONTENT --------------------- */}
           <div style={styles.right}>
-            <img
-              src="/assets/hero-image.jpg"
-              alt="Students learning"
-              style={styles.heroImage}
-            />
+          <img
+  src={HeroImage}
+  alt="Students learning"
+  style={styles.heroImage}
+/>
+
 
             {/* Floating Course Card */}
             <div style={styles.courseCard}>

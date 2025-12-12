@@ -4,6 +4,8 @@ import { LandingPage } from './pages/LandingPage';
 import { CourseDetailPage } from './pages/CourseDetailPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { globalStyles } from './styles/global';
+import LoginPage from "./pages/LoginPage";
+
 
 function App() {
   useEffect(() => {
@@ -35,6 +37,8 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/course/:courseId" element={<CourseDetailPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/login" element={<LoginPage />} />
+
         </Routes>
       </Router>
     </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { colors, spacing, fontSize, borderRadius } from '../styles/colors';
+import InstructorImage from "../assets/instructorimage.png";
 
 interface InstructorSectionProps {
   onPress?: () => void;
@@ -14,7 +15,7 @@ export const InstructorSection: React.FC<InstructorSectionProps> = ({ onPress })
           {/* IMAGE */}
           <div style={styles.imageContainer}>
             <img
-              src="/images/instructor-team.png" // <-- Drop your image in public/images
+              src={InstructorImage}        // <-- Use imported image here
               alt="Instructor Team"
               style={styles.image}
             />
