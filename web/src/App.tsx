@@ -5,6 +5,7 @@ import { CourseDetailPage } from './pages/CourseDetailPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { globalStyles } from './styles/global';
 import LoginPage from "./pages/LoginPage";
+import CartPage from './pages/CartPage';
 
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/course/:courseId" element={<CourseDetailPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/cart" element={<CartPage />} />
 
         </Routes>
       </Router>

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// src/components/Header.tsx
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
 import { HiHeart, HiShoppingCart, HiSearch } from "react-icons/hi";
 
@@ -6,14 +8,17 @@ interface HeaderProps {
   onSearch?: (value: string) => void;
   onLoginPress?: () => void;
   onJoinPress?: () => void;
+  cartCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onLoginPress,
   onJoinPress,
   onSearch,
+  cartCount = 0,
 }) => {
-  const [searchValue, setSearchValue] = useState("");
+  const navigate = useNavigate();
+  const [searchValue, setSearchValue] = React.useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,8 +28,6 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header style={styles.container}>
       <div style={styles.content}>
-        
-        {/* Logo */}
         <div style={styles.logoContainer}>
           <div style={styles.logoIcon}>
             <span style={styles.logoText}>⚡</span>
@@ -32,7 +35,6 @@ export const Header: React.FC<HeaderProps> = ({
           <span style={styles.logoName}>Lumina.</span>
         </div>
 
-        {/* ⭐ SEARCH ONLY (Categories removed) */}
         <form style={styles.searchWrapper} onSubmit={handleSubmit}>
           <HiSearch size={18} style={styles.searchIcon} />
           <input
@@ -44,13 +46,16 @@ export const Header: React.FC<HeaderProps> = ({
           />
         </form>
 
-        {/* Right Actions */}
         <div style={styles.rightActions}>
           <HiHeart size={22} style={styles.icon} />
 
-          <div style={styles.cartContainer}>
+          <div
+            style={styles.cartContainer}
+            onClick={() => navigate("/cart")}
+            role="button"
+          >
             <HiShoppingCart size={22} style={styles.icon} />
-            <div style={styles.cartBadge}>2</div>
+            <div style={styles.cartBadge}>{cartCount}</div>
           </div>
 
           <button style={styles.loginButton} onClick={onLoginPress}>
@@ -103,7 +108,6 @@ const styles: Record<string, React.CSSProperties> = {
   logoText: { color: "white", fontSize: fontSize.lg, fontWeight: "700" },
   logoName: { fontSize: fontSize.xl, fontWeight: "600", color: colors.text },
 
-  /* Search */
   searchWrapper: {
     flex: 1,
     position: "relative",

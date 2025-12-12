@@ -224,38 +224,44 @@ const styles = {
     margin: "0 auto",
     padding: "60px 20px",
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.08)",
-    overflow: "hidden",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    minHeight: 600,
-  },
-  left: {
-    padding: 32,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f3f4f6",
-  },
+card: {
+  backgroundColor: "#fff",
+  borderRadius: 24,
+  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.08)",
+  overflow: "hidden",
+  display: "flex",
+  flexDirection: "row",
+  height: 600,
+},
+
+left: {
+  flex: 1,
+  height: "100%",
+  padding: 0,                 // ❗ Removed padding (no gap)
+  margin: 0,
+},
+
   image: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    borderRadius: 16,
-  },
-  right: {
-    padding: 48,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",            // ❗ Removes unwanted tiny gaps
+},
+
+ right: {
+  flex: 1,
+  height: "100%",
+  padding: "40px 48px",        // keep padding inside form only
+  backgroundColor: "#fafafa",  // ⭐ NEW background color
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+},
   formContent: {
     width: "100%",
     maxWidth: 400,
   },
+
   title: {
     fontSize: 24,
     fontWeight: 700,
@@ -263,11 +269,13 @@ const styles = {
     textAlign: "center",
     color: "#1f2937",
   },
+
   tabContainer: {
     display: "flex",
     gap: 8,
     marginBottom: 24,
   },
+
   tabButton: {
     flex: 1,
     padding: "12px 24px",
@@ -275,18 +283,21 @@ const styles = {
     fontWeight: 600,
     fontSize: 15,
     cursor: "pointer",
-    transition: "all 0.3s ease",
     border: "none",
+    transition: "all 0.3s ease",
   },
+
   tabButtonActive: {
     backgroundColor: "#1f2937",
     color: "#fff",
   },
+
   tabButtonInactive: {
     backgroundColor: "#fff",
     color: "#6b7280",
     border: "1px solid #e5e7eb",
   },
+
   errorBox: {
     backgroundColor: "#fee2e2",
     padding: 12,
@@ -295,28 +306,31 @@ const styles = {
     marginBottom: 16,
     fontSize: 14,
   },
+
   formFields: {
     display: "flex",
     flexDirection: "column",
     gap: 16,
   },
+
   input: {
     width: "100%",
     padding: "14px 16px",
     border: "1px solid #e5e7eb",
     borderRadius: 10,
     fontSize: 15,
-    outline: "none",
-    transition: "border-color 0.2s",
   },
+
   forgotPassword: {
     textAlign: "right",
   },
+
   forgotLink: {
     fontSize: 14,
     color: "#6b7280",
     textDecoration: "none",
   },
+
   submitButton: {
     width: "100%",
     padding: "14px 24px",
@@ -327,11 +341,6 @@ const styles = {
     fontWeight: 600,
     fontSize: 15,
     cursor: "pointer",
-    transition: "background-color 0.2s",
-  },
-  submitButtonDisabled: {
-    backgroundColor: "#9ca3af",
-    cursor: "not-allowed",
   },
 };
 

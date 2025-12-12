@@ -14,6 +14,8 @@ public class LmsDbContext : DbContext
     public DbSet<CourseSection> CourseSections => Set<CourseSection>();
     public DbSet<CourseLecture> CourseLectures => Set<CourseLecture>();
     public DbSet<CourseReview> CourseReviews => Set<CourseReview>();
+    public DbSet<Cart> Carts { get; set; }
+
 
     // ⭐ NEW — Add User Table
     public DbSet<User> Users => Set<User>();
@@ -30,6 +32,12 @@ public class LmsDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         // (your JSON-list conversions unchanged)
+        modelBuilder.Entity<Cart>()
+    .HasOne(c => c.Course)
+    .WithMany()
+    .HasForeignKey(c => c.CourseId)
+    .OnDelete(DeleteBehavior.Cascade);
+
 
         modelBuilder.Entity<Course>()
             .Property(c => c.WhatYouLearn)
