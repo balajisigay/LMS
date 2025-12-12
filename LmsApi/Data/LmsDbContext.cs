@@ -15,6 +15,9 @@ public class LmsDbContext : DbContext
     public DbSet<CourseLecture> CourseLectures => Set<CourseLecture>();
     public DbSet<CourseReview> CourseReviews => Set<CourseReview>();
     public DbSet<Cart> Carts { get; set; }
+    public DbSet<Payment> Payments { get; set; }
+    public DbSet<Enrollment> Enrollments { get; set; }
+
 
 
     // ⭐ NEW — Add User Table

@@ -1,7 +1,9 @@
 // src/pages/CartPage.tsx
 import React, { useEffect, useState } from "react";
 import { getCart, removeCartItem } from "../../../src/api/cartService";
-const demoUserId = "demoUser"; // replace with actual auth user id
+import { createOrder, verifyPayment } from "../../../src/api/paymentService";
+
+const demoUserId = "demoUser"; // replace with real logged-in user ID
 
 export const CartPage: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
@@ -34,12 +36,71 @@ export const CartPage: React.FC = () => {
 
   const total = items.reduce((sum, it) => sum + (it.course?.price ?? 0), 0);
 
+  // -------------------------------
+  // RAZORPAY CHECKOUT
+  // -------------------------------
+const handleCheckout = async () => {
+  try {
+    if (total <= 0) return alert("Cart is empty");
+
+    const amountInt = Math.round(total); // FIX FLOAT ISSUE
+
+    // Step 1 — create order
+    const res = await createOrder(amountInt);
+    const { orderId, key } = res.data;
+
+    const options = {
+      key,
+      amount: amountInt * 100,
+      currency: "INR",
+      name: "Lumina LMS",
+      description: "Course Purchase",
+      order_id: orderId,
+
+      handler: async function (response) {
+        // Step 2 — verify on backend
+        const verifyRes = await verifyPayment({
+          userId: demoUserId,
+          amount: amountInt,
+          courseId: items[0]?.courseId,
+
+          RazorpayPaymentId: response.razorpay_payment_id,
+          RazorpayOrderId: response.razorpay_order_id,
+          RazorpaySignature: response.razorpay_signature
+        });
+
+        if (verifyRes.data.success) {
+          alert("Payment Successful! 🎉 You are enrolled!");
+          loadCart();
+        } else {
+          alert("Payment verification failed!");
+        }
+      },
+
+      prefill: {
+        name: "Demo User",
+        email: "demo@example.com",
+        contact: "9999999999"
+      },
+
+      theme: { color: "#0f172a" }
+    };
+
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+
+  } catch (err) {
+    console.error("Checkout error", err);
+    alert("Payment could not start");
+  }
+};
+
+
   return (
     <div style={styles.wrapper}>
       <h1>My Cart</h1>
 
       {loading && <p>Loading...</p>}
-
       {!loading && items.length === 0 && <p>Your cart is empty.</p>}
 
       <div style={styles.grid}>
@@ -54,24 +115,22 @@ export const CartPage: React.FC = () => {
                 <p style={{ fontWeight: 700 }}>₹ {item.course?.price?.toFixed(2)}</p>
               </div>
 
-              <div>
-                <button style={styles.removeBtn} onClick={() => handleRemove(item.id)}>
-                  Remove
-                </button>
-              </div>
+              <button style={styles.removeBtn} onClick={() => handleRemove(item.id)}>
+                Remove
+              </button>
             </div>
           ))}
         </div>
 
         <aside style={styles.right}>
           <div style={styles.summary}>
-            <h3>Order summary</h3>
+            <h3>Order Summary</h3>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>Subtotal</span>
               <strong>₹ {total.toFixed(2)}</strong>
             </div>
 
-            <button style={styles.checkoutBtn} onClick={() => alert("Checkout not implemented")}>
+            <button style={styles.checkoutBtn} onClick={handleCheckout}>
               Checkout
             </button>
           </div>
@@ -80,6 +139,7 @@ export const CartPage: React.FC = () => {
     </div>
   );
 };
+
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: { padding: 40, maxWidth: 1200, margin: "0 auto" },

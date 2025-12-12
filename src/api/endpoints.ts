@@ -16,3 +16,9 @@ export const CART_API = {
   ADD: `${BASE_URL}/Cart/add`,
   REMOVE: `${BASE_URL}/Cart/remove`, // DELETE /Cart/remove/{id}
 };
+export const PAYMENT_API = {
+  CREATE_ORDER: `${BASE_URL}/payment/create-order`,
+  VERIFY: `${BASE_URL}/payment/verify-payment`
+};
+
+
