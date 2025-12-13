@@ -3,11 +3,36 @@ import React, { useEffect, useState } from "react";
 import { getCart, removeCartItem } from "../../../src/api/cartService";
 import { createOrder, verifyPayment } from "../../../src/api/paymentService";
 
-const demoUserId = "demoUser"; // replace with real logged-in user ID
+const demoUserId = "demoUser";
+
+// TypeScript declaration for Razorpay
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export const CartPage: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [razorpayLoaded, setRazorpayLoaded] = useState<boolean>(false);
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    script.onerror = () => {
+      console.error("Failed to load Razorpay SDK");
+      alert("Payment system could not be loaded. Please refresh the page.");
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const loadCart = async () => {
     setLoading(true);
@@ -36,65 +61,94 @@ export const CartPage: React.FC = () => {
 
   const total = items.reduce((sum, it) => sum + (it.course?.price ?? 0), 0);
 
-  // -------------------------------
-  // RAZORPAY CHECKOUT
-  // -------------------------------
-const handleCheckout = async () => {
-  try {
-    if (total <= 0) return alert("Cart is empty");
+  const handleCheckout = async () => {
+    try {
+      if (total <= 0) {
+        alert("Cart is empty");
+        return;
+      }
 
-    const amountInt = Math.round(total); // FIX FLOAT ISSUE
+      if (!razorpayLoaded) {
+        alert("Payment system is still loading. Please wait...");
+        return;
+      }
 
-    // Step 1 — create order
-    const res = await createOrder(amountInt);
-    const { orderId, key } = res.data;
+      if (items.length === 0) {
+        alert("No items in cart");
+        return;
+      }
 
-    const options = {
-      key,
-      amount: amountInt * 100,
-      currency: "INR",
-      name: "Lumina LMS",
-      description: "Course Purchase",
-      order_id: orderId,
+      const amountInt = Math.round(total);
 
-      handler: async function (response) {
-        // Step 2 — verify on backend
-        const verifyRes = await verifyPayment({
-          userId: demoUserId,
-          amount: amountInt,
-          courseId: items[0]?.courseId,
+      // Step 1 — create order
+      const res = await createOrder(amountInt);
+      const { orderId, key } = res.data;
 
-          RazorpayPaymentId: response.razorpay_payment_id,
-          RazorpayOrderId: response.razorpay_order_id,
-          RazorpaySignature: response.razorpay_signature
-        });
+      const options = {
+        key,
+        amount: amountInt * 100,
+        currency: "INR",
+        name: "Lumina LMS",
+        description: "Course Purchase",
+        order_id: orderId,
 
-        if (verifyRes.data.success) {
-          alert("Payment Successful! 🎉 You are enrolled!");
-          loadCart();
-        } else {
-          alert("Payment verification failed!");
+        handler: async function (response: any) {
+          try {
+            // Process each course in cart
+            for (const item of items) {
+              await verifyPayment({
+                userId: demoUserId,
+                amount: item.course?.price ?? 0,
+                courseId: item.courseId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature
+              });
+            }
+
+            alert("Payment Successful! 🎉 You are enrolled in all courses!");
+            
+            // Clear cart after successful payment
+            for (const item of items) {
+              await removeCartItem(item.id);
+            }
+            
+            await loadCart();
+          } catch (err) {
+            console.error("Verification error:", err);
+            alert("Payment verification failed!");
+          }
+        },
+
+        prefill: {
+          name: "Demo User",
+          email: "demo@example.com",
+          contact: "9999999999"
+        },
+
+        theme: { color: "#0f172a" },
+
+        modal: {
+          ondismiss: function() {
+            console.log("Payment cancelled by user");
+          }
         }
-      },
+      };
 
-      prefill: {
-        name: "Demo User",
-        email: "demo@example.com",
-        contact: "9999999999"
-      },
+      const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', function (response: any) {
+        console.error("Payment failed:", response.error);
+        alert(`Payment failed: ${response.error.description}`);
+      });
+      
+      razorpay.open();
 
-      theme: { color: "#0f172a" }
-    };
-
-    const razorpay = new window.Razorpay(options);
-    razorpay.open();
-
-  } catch (err) {
-    console.error("Checkout error", err);
-    alert("Payment could not start");
-  }
-};
-
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      const errorMessage = err?.response?.data?.error || err?.message || "Unknown error";
+      alert(`Payment could not start: ${errorMessage}`);
+    }
+  };
 
   return (
     <div style={styles.wrapper}>
@@ -130,8 +184,16 @@ const handleCheckout = async () => {
               <strong>₹ {total.toFixed(2)}</strong>
             </div>
 
-            <button style={styles.checkoutBtn} onClick={handleCheckout}>
-              Checkout
+            <button 
+              style={{
+                ...styles.checkoutBtn,
+                opacity: !razorpayLoaded ? 0.6 : 1,
+                cursor: !razorpayLoaded ? "not-allowed" : "pointer"
+              }} 
+              onClick={handleCheckout}
+              disabled={!razorpayLoaded}
+            >
+              {razorpayLoaded ? "Checkout" : "Loading Payment..."}
             </button>
           </div>
         </aside>
@@ -139,7 +201,6 @@ const handleCheckout = async () => {
     </div>
   );
 };
-
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: { padding: 40, maxWidth: 1200, margin: "0 auto" },

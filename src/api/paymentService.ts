@@ -1,10 +1,21 @@
+// src/api/paymentService.ts
 import axios from "axios";
-import { PAYMENT_API } from "./endpoints";
+
+const API = "http://localhost:5000/api/payment";
 
 export const createOrder = (amount: number) => {
-  return axios.post(PAYMENT_API.CREATE_ORDER, { amount });
+  return axios.post(`${API}/create-order`, { amount });
 };
 
-export const verifyPayment = (payload: any) => {
-  return axios.post(PAYMENT_API.VERIFY, payload);
+export interface VerifyPaymentRequest {
+  userId: string;
+  courseId: number;
+  amount: number;
+  razorpayPaymentId: string;
+  razorpayOrderId: string;
+  razorpaySignature: string;
+}
+
+export const verifyPayment = (payload: VerifyPaymentRequest) => {
+  return axios.post(`${API}/verify-payment`, payload);
 };
