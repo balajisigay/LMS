@@ -1,5 +1,6 @@
 // src/pages/CartPage.tsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getCart, removeCartItem } from "../../../src/api/cartService";
 import { createOrder, verifyPayment } from "../../../src/api/paymentService";
 
@@ -13,6 +14,7 @@ declare global {
 }
 
 export const CartPage: React.FC = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [razorpayLoaded, setRazorpayLoaded] = useState<boolean>(false);
@@ -95,6 +97,7 @@ export const CartPage: React.FC = () => {
         handler: async function (response: any) {
           try {
             // Process each course in cart
+            const enrolledCourses = [];
             for (const item of items) {
               await verifyPayment({
                 userId: demoUserId,
@@ -104,16 +107,22 @@ export const CartPage: React.FC = () => {
                 razorpayOrderId: response.razorpay_order_id,
                 razorpaySignature: response.razorpay_signature
               });
+              enrolledCourses.push(item.courseId);
             }
 
-            alert("Payment Successful! 🎉 You are enrolled in all courses!");
-            
             // Clear cart after successful payment
             for (const item of items) {
               await removeCartItem(item.id);
             }
             
-            await loadCart();
+            // Redirect to the first course detail page
+            if (enrolledCourses.length > 0) {
+              alert(`Payment Successful! 🎉 You are enrolled in ${enrolledCourses.length} course(s)!`);
+              navigate(`/course/${enrolledCourses[0]}`);
+            } else {
+              alert("Payment Successful! 🎉");
+              await loadCart();
+            }
           } catch (err) {
             console.error("Verification error:", err);
             alert("Payment verification failed!");

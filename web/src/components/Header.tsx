@@ -1,81 +1,99 @@
-// src/components/Header.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
 import { HiHeart, HiShoppingCart, HiSearch } from "react-icons/hi";
+import { getAllCourses } from "../services/courseService";
+
+interface Course {
+  id: number;
+  title: string;
+}
 
 interface HeaderProps {
-  onSearch?: (value: string) => void;
-  onLoginPress?: () => void;
-  onJoinPress?: () => void;
   cartCount?: number;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  onLoginPress,
-  onJoinPress,
-  onSearch,
-  cartCount = 0,
-}) => {
+export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = React.useState("");
+  const [searchValue, setSearchValue] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [open, setOpen] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch?.(searchValue);
-  };
+  useEffect(() => {
+    getAllCourses()
+      .then(setCourses)
+      .catch(console.error);
+  }, []);
 
   return (
     <header style={styles.container}>
       <div style={styles.content}>
-        <div style={styles.logoContainer}>
-          <div style={styles.logoIcon}>
-            <span style={styles.logoText}>⚡</span>
-          </div>
+        {/* LOGO */}
+        <div style={styles.logoContainer} onClick={() => navigate("/")}>
+          <div style={styles.logoIcon}>⚡</div>
           <span style={styles.logoName}>Lumina.</span>
         </div>
 
-        <form style={styles.searchWrapper} onSubmit={handleSubmit}>
+        {/* COURSES */}
+        <div
+          style={styles.courseMenu}
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+        >
+          <span style={styles.courseText}>Courses</span>
+
+          {open && (
+            <div style={styles.dropdown}>
+              {courses.map((course) => (
+                <div
+                  key={course.id}
+                  style={styles.dropdownItem}
+                  onClick={() => navigate(`/course/${course.id}`)}
+                >
+                  {course.title}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* SEARCH */}
+        <form style={styles.searchWrapper}>
           <HiSearch size={18} style={styles.searchIcon} />
           <input
-            type="text"
-            placeholder="Search for courses..."
             style={styles.searchInput}
+            placeholder="Search for courses..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
           />
         </form>
 
+        {/* RIGHT */}
         <div style={styles.rightActions}>
-          <HiHeart size={22} style={styles.icon} />
+          <HiHeart size={22} />
 
-          <div
-            style={styles.cartContainer}
-            onClick={() => navigate("/cart")}
-            role="button"
-          >
-            <HiShoppingCart size={22} style={styles.icon} />
+          <div style={styles.cartContainer} onClick={() => navigate("/cart")}>
+            <HiShoppingCart size={22} />
             <div style={styles.cartBadge}>{cartCount}</div>
           </div>
 
-          <button style={styles.loginButton} onClick={onLoginPress}>
+          <button style={styles.loginButton} onClick={() => navigate("/login")}>
             Log in
           </button>
 
-          <button style={styles.joinButton} onClick={onJoinPress}>
-            Join for Free
-          </button>
+          <button style={styles.joinButton}>Join for Free</button>
         </div>
       </div>
     </header>
   );
 };
 
+/* ================= STYLES ================= */
+
 const styles: Record<string, React.CSSProperties> = {
   container: {
     backgroundColor: colors.background,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
+    padding: spacing.md,
     borderBottom: `1px solid ${colors.border}`,
     position: "sticky",
     top: 0,
@@ -83,52 +101,72 @@ const styles: Record<string, React.CSSProperties> = {
   },
   content: {
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: spacing.lg,
     maxWidth: 1500,
     margin: "0 auto",
-    padding: `0 ${spacing.lg}px`,
-    gap: spacing.lg,
   },
-
   logoContainer: {
     display: "flex",
     alignItems: "center",
     gap: spacing.sm,
+    cursor: "pointer",
   },
   logoIcon: {
     width: 34,
     height: 34,
     borderRadius: borderRadius.md,
-    background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+    background: "linear-gradient(135deg,#8b5cf6,#ec4899)",
+    color: "white",
     display: "flex",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
-  logoText: { color: "white", fontSize: fontSize.lg, fontWeight: "700" },
-  logoName: { fontSize: fontSize.xl, fontWeight: "600", color: colors.text },
+  logoName: {
+    fontSize: fontSize.xl,
+    fontWeight: 600,
+  },
+
+  courseMenu: {
+    position: "relative",
+    cursor: "pointer",
+  },
+  courseText: {
+    fontWeight: 500,
+  },
+  dropdown: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    background: "white",
+    minWidth: 240,
+    borderRadius: borderRadius.md,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+    overflow: "hidden",
+    zIndex: 2000,
+  },
+  dropdownItem: {
+    padding: "12px 16px",
+    borderBottom: "1px solid #eee",
+    cursor: "pointer",
+  },
 
   searchWrapper: {
     flex: 1,
     position: "relative",
-    display: "flex",
-    maxWidth: 600,
+    maxWidth: 500,
   },
   searchIcon: {
     position: "absolute",
-    left: 14,
     top: "50%",
+    left: 14,
     transform: "translateY(-50%)",
-    opacity: 0.6,
   },
   searchInput: {
     width: "100%",
-    padding: "10px 18px 10px 40px",
+    padding: "10px 16px 10px 40px",
     borderRadius: borderRadius.full,
     border: `1px solid ${colors.border}`,
-    fontSize: fontSize.md,
-    backgroundColor: "#f9fafb",
-    outline: "none",
   },
 
   rightActions: {
@@ -136,17 +174,17 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: spacing.lg,
   },
-  icon: { cursor: "pointer" },
-
-  cartContainer: { position: "relative", cursor: "pointer" },
+  cartContainer: {
+    position: "relative",
+    cursor: "pointer",
+  },
   cartBadge: {
     position: "absolute",
-    top: "-6px",
-    right: "-10px",
+    top: -6,
+    right: -10,
     backgroundColor: "#ec4899",
     color: "white",
-    fontSize: "10px",
-    fontWeight: "700",
+    fontSize: 10,
     padding: "2px 6px",
     borderRadius: "50%",
   },
@@ -158,14 +196,12 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: borderRadius.full,
     cursor: "pointer",
   },
-
   joinButton: {
-    backgroundColor: "#0f172a",
+    background: "#0f172a",
     color: "white",
     padding: "10px 22px",
     borderRadius: borderRadius.full,
     border: "none",
-    fontWeight: 600,
     cursor: "pointer",
   },
 };
