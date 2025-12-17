@@ -6,6 +6,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { globalStyles } from './styles/global';
 import LoginPage from "./pages/LoginPage";
 import CartPage from './pages/CartPage';
+import ProfilePage from './pages/ProfilePage';
 
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
 
         </Routes>
       </Router>

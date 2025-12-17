@@ -5,6 +5,7 @@ import LandingPage from "./pages/LandingPage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import LoginPage from "./pages/LoginPage";
 import CartPage from "./pages/CartPage";
+import ProfilePage from "./pages/ProfilePage";
 
 
 export const AppRoutes: React.FC = () => {
@@ -15,6 +16,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/course/:id" element={<CourseDetailPage />} />
         <Route path="/login" element={<LoginPage />} />   {/* REQUIRED */}
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
 
 
       </Routes>
