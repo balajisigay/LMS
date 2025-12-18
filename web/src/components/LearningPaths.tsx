@@ -1,8 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
+import { getLearningProgress } from "../../../src/api/learningProgressService";
+
+/* ================= TYPES ================= */
 
 interface LearningPathsProps {
-  onPathPress?: (pathId: string) => void;
+  onPathPress?: (courseId: string) => void;
+}
+
+interface CourseProgress {
+  courseId: number;
+  title: string;
+  progress: number;
 }
 
 /* ------------------ LEARNING PATH CARD ------------------ */
@@ -11,20 +20,14 @@ const LearningPath: React.FC<{
   title: string;
   courses: string;
   duration: string;
+  progress: number;
   onPress?: () => void;
-}> = ({ index, title, courses, duration, onPress }) => {
+}> = ({ index, title, courses, duration, progress, onPress }) => {
   const [hovered, setHovered] = useState(false);
   const accent =
     index === 0
       ? "linear-gradient(135deg, #4F46E5, #6366F1)"
       : "linear-gradient(135deg, #EC4899, #F97316)";
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onPress?.();
-    }
-  };
 
   return (
     <div
@@ -34,55 +37,44 @@ const LearningPath: React.FC<{
           ? "0 18px 40px rgba(15,23,42,0.28)"
           : "0 10px 25px rgba(15,23,42,0.16)",
         transform: hovered ? "translateY(-2px)" : "translateY(0)",
-        border: hovered ? "1px solid rgba(79,70,229,0.25)" : "1px solid #e5e7eb",
+        border: hovered
+          ? "1px solid rgba(79,70,229,0.25)"
+          : "1px solid #e5e7eb",
       }}
       onClick={onPress}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      aria-label={`${title}, ${courses}, ${duration}`}
     >
-      <div
-        style={{
-          ...styles.pathIcon,
-          backgroundImage: accent,
-        }}
-      >
+      <div style={{ ...styles.pathIcon, backgroundImage: accent }}>
         <span style={styles.pathNumber}>{index + 1}</span>
       </div>
 
       <div style={styles.pathContent}>
         <h4 style={styles.pathTitle}>{title}</h4>
         <p style={styles.pathMeta}>
-          {courses} • {duration}
+          {courses} • {duration} • {progress}%
         </p>
       </div>
 
-      <span
-        style={{
-          ...styles.pathArrow,
-          transform: hovered ? "translateX(4px)" : "translateX(0)",
-        }}
-      >
-        →
-      </span>
+      <span style={styles.pathArrow}>→</span>
     </div>
   );
 };
 
-/* ------------------ WEEKLY PROGRESS WIDGET ------------------ */
-const WeeklyProgress: React.FC = () => {
+/* ------------------ WEEKLY PROGRESS ------------------ */
+const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const values = [30, 60, 40, 80, 50, 90, 70]; // mock data
+  const safeValues = values.length
+    ? values.slice(0, 7)
+    : [0, 0, 0, 0, 0, 0, 0];
 
-  const { avg, max, bestDay } = useMemo(() => {
-    const sum = values.reduce((a, b) => a + b, 0);
-    const avg = Math.round(sum / values.length);
-    const max = Math.max(...values);
-    const bestIdx = values.indexOf(max);
-    return { avg, max, bestDay: days[bestIdx] };
-  }, [values]);
+  const { avg, bestDay } = useMemo(() => {
+    const sum = safeValues.reduce((a, b) => a + b, 0);
+    const avg = Math.round(sum / safeValues.length);
+    const max = Math.max(...safeValues);
+    const idx = safeValues.indexOf(max);
+    return { avg, bestDay: days[idx] };
+  }, [safeValues]);
 
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
@@ -95,24 +87,18 @@ const WeeklyProgress: React.FC = () => {
             Avg {avg}% completion • Best day: {bestDay}
           </p>
         </div>
-        <span style={styles.menuDots} title="More options">
-          ⋯
-        </span>
+        <span style={styles.menuDots}>⋯</span>
       </div>
 
       <div style={styles.progressBars}>
-        {values.map((val, i) => (
+        {safeValues.map((val, i) => (
           <div
             key={i}
             style={styles.progressColumn}
             onMouseEnter={() => setHoverIndex(i)}
             onMouseLeave={() => setHoverIndex(null)}
           >
-            <div
-              style={{
-                ...styles.progressTrack,
-              }}
-            >
+            <div style={styles.progressTrack}>
               <div
                 style={{
                   ...styles.progressBar,
@@ -121,22 +107,10 @@ const WeeklyProgress: React.FC = () => {
                     hoverIndex === i
                       ? "linear-gradient(180deg, #4F46E5, #22C55E)"
                       : "linear-gradient(180deg, #6366F1, #4F46E5)",
-                  boxShadow:
-                    hoverIndex === i
-                      ? "0 12px 30px rgba(79,70,229,0.45)"
-                      : "0 4px 14px rgba(79,70,229,0.25)",
                 }}
               />
             </div>
-            <span
-              style={{
-                ...styles.label,
-                fontWeight: hoverIndex === i ? 600 : 500,
-                color: hoverIndex === i ? "#0F172A" : "#64748B",
-              }}
-            >
-              {days[i]}
-            </span>
+            <span style={styles.label}>{days[i]}</span>
           </div>
         ))}
       </div>
@@ -145,21 +119,29 @@ const WeeklyProgress: React.FC = () => {
 };
 
 /* ------------------ MAIN COMPONENT ------------------ */
-export const LearningPaths: React.FC<LearningPathsProps> = ({ onPathPress }) => {
-  const paths = [
-    {
-      title: "Full Stack Developer Path",
-      courses: "8 Courses",
-      duration: "240 Hours",
-      id: "fullstack",
-    },
-    {
-      title: "Data Science Professional",
-      courses: "12 Courses",
-      duration: "340 Hours",
-      id: "datascience",
-    },
-  ];
+export const LearningPaths: React.FC<LearningPathsProps> = ({
+  onPathPress,
+}) => {
+  const [courses, setCourses] = useState<CourseProgress[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user.userId) {
+      setLoading(false);
+      return;
+    }
+
+    getLearningProgress(user.userId)
+      .then(setCourses)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const weeklyValues = useMemo(
+    () => courses.map((c) => c.progress),
+    [courses]
+  );
 
   return (
     <section style={styles.container}>
@@ -170,30 +152,39 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({ onPathPress }) => 
           <p style={styles.kicker}>Guided roadmaps</p>
           <h2 style={styles.title}>Don't know where to start?</h2>
           <p style={styles.subtitle}>
-            Follow a curated Learning Path and move from beginner to job‑ready
-            with a clear, focused sequence of courses and milestones.
+            Continue learning from where you stopped.
           </p>
 
           <div style={styles.pathsContainer}>
-            {paths.map((p, i) => (
+            {!loading && courses.length === 0 && (
+              <p style={{ color: "#CBD5F5" }}>
+                You have not enrolled in any courses yet.
+              </p>
+            )}
+
+            {courses.map((c, i) => (
               <LearningPath
-                key={p.id}
+                key={c.courseId}
                 index={i}
-                title={p.title}
-                courses={p.courses}
-                duration={p.duration}
-                onPress={() => onPathPress?.(p.id)}
+                title={c.title}
+                courses="Enrolled"
+                duration="In progress"
+                progress={c.progress}
+                onPress={() => onPathPress?.(String(c.courseId))}
               />
             ))}
           </div>
         </div>
 
         {/* RIGHT SIDE */}
-        <WeeklyProgress />
+        <WeeklyProgress values={weeklyValues} />
       </div>
     </section>
   );
 };
+
+
+
 
 /* ------------------ STYLES ------------------ */
 const styles: Record<string, React.CSSProperties> = {

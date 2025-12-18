@@ -17,6 +17,10 @@ public class LmsDbContext : DbContext
     public DbSet<Cart> Carts { get; set; }
     public DbSet<Payment> Payments { get; set; }
     public DbSet<Enrollment> Enrollments { get; set; }
+    public DbSet<CourseProgress> CourseProgresses { get; set; }
+    public DbSet<ContactMessage> ContactMessages { get; set; }
+
+
 
 
 

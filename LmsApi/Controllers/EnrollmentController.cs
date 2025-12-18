@@ -33,7 +33,7 @@ namespace LmsApi.Controllers
                         e.UserId,
                         e.CourseId,
                         e.EnrolledAt,
-                        Course = new
+                        course = new
                         {
                             e.Course.Id,
                             e.Course.Title,

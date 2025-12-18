@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiHeart, HiShoppingCart, HiSearch, HiUser, HiMenu, HiX, HiBookOpen } from "react-icons/hi";
-import { getAllCourses } from "../services/courseService";
-import { getEnrollments } from "../../../src/api/enrollmentService";
-import { getUserProfile } from "../../../src/api/userService";
+import { HiHeart, HiShoppingCart, HiSearch, HiUser, HiMenu, HiX, HiBookOpen, HiLogout, HiCog } from "react-icons/hi";
 
 interface Course {
   id: number;
@@ -20,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesOpen, setCoursesOpen] = useState(false);
   const [myLearningOpen, setMyLearningOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
@@ -28,46 +26,33 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
-    getAllCourses()
-      .then(setCourses)
-      .catch(console.error);
+    // Mock courses data
+    setCourses([
+      { id: 1, title: "Web Development Bootcamp" },
+      { id: 2, title: "Python for Data Science" },
+      { id: 3, title: "React Advanced Patterns" },
+    ]);
 
     // Check if user is logged in
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (user.userId) {
       setIsLoggedIn(true);
       setUserName(user.name || "User");
-      loadUserProfile(user.userId);
-      loadEnrollments(user.userId);
+      // Mock profile image
+      setProfileImage(null);
+      // Mock enrollments
+      setEnrolledCourses([
+        { id: 1, course: { id: 1, title: "Web Development" }, enrolledAt: new Date() }
+      ]);
     }
 
-    // Add scroll listener for header shadow
+    // Add scroll listener
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const loadUserProfile = async (userId: number) => {
-    try {
-      const profile = await getUserProfile(userId);
-      if (profile.profileImageUrl) {
-        setProfileImage(`http://localhost:5000${profile.profileImageUrl}`);
-      }
-    } catch (err) {
-      console.error("Failed to load profile:", err);
-    }
-  };
-
-  const loadEnrollments = async (userId: string) => {
-    try {
-      const enrollments = await getEnrollments(userId);
-      setEnrolledCourses(enrollments);
-    } catch (err) {
-      console.error("Failed to load enrollments:", err);
-    }
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +66,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     setIsLoggedIn(false);
     setProfileImage(null);
     setUserName("");
+    setProfileMenuOpen(false);
     navigate("/");
   };
 
@@ -90,12 +76,35 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
       ...(isScrolled ? styles.containerScrolled : {}),
     }}>
       <div style={styles.content}>
-        {/* LOGO */}
+        {/* MODERN LOGO */}
         <div style={styles.logoContainer} onClick={() => navigate("/")}>
-          <div style={styles.logoIcon}>
-            <span style={styles.logoEmoji}>⚡</span>
+          <div style={styles.logoWrapper}>
+            <div style={styles.logoIconContainer}>
+              <svg style={styles.logoSvg} viewBox="0 0 40 40" fill="none">
+                <path
+                  d="M20 4L35 12V28L20 36L5 28V12L20 4Z"
+                  fill="url(#gradient1)"
+                  stroke="white"
+                  strokeWidth="1.5"
+                />
+                <circle cx="20" cy="20" r="6" fill="white" opacity="0.9" />
+                <defs>
+                  <linearGradient id="gradient1" x1="5" y1="4" x2="35" y2="36">
+                    <stop offset="0%" stopColor="#667eea" />
+                    <stop offset="100%" stopColor="#764ba2" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div style={styles.logoTextContainer}>
+              <span style={styles.logoText}>
+                <span style={styles.logoSri}>Srinu</span>
+                <span style={styles.logoTech}>tech</span>
+                <span style={styles.logoGuru}>Guru</span>
+              </span>
+              <span style={styles.logoTagline}>Learn • Grow • Excel</span>
+            </div>
           </div>
-          <span style={styles.logoName}>Lumina</span>
         </div>
 
         {/* DESKTOP NAVIGATION */}
@@ -147,7 +156,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             )}
           </div>
 
-          {/* MY LEARNING DROPDOWN - Only show if logged in */}
+          {/* MY LEARNING DROPDOWN */}
           {isLoggedIn && (
             <div
               style={styles.courseMenu}
@@ -276,10 +285,13 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
 
           {/* Profile / Login */}
           {isLoggedIn ? (
-            <div style={styles.profileDropdown}>
+            <div 
+              style={styles.profileDropdown}
+              onMouseEnter={() => setProfileMenuOpen(true)}
+              onMouseLeave={() => setProfileMenuOpen(false)}
+            >
               <button 
                 style={styles.profileButton}
-                onClick={() => navigate("/profile")}
                 title="Profile"
               >
                 {profileImage ? (
@@ -290,6 +302,63 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                   </div>
                 )}
               </button>
+
+              {/* Profile Dropdown Menu */}
+              {profileMenuOpen && (
+                <div style={styles.profileDropdownMenu}>
+                  <div style={styles.profileDropdownHeader}>
+                    <div style={styles.profileDropdownAvatar}>
+                      {profileImage ? (
+                        <img src={profileImage} alt={userName} style={styles.profileDropdownImage} />
+                      ) : (
+                        <div style={styles.profileDropdownPlaceholder}>
+                          {userName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div style={styles.profileDropdownInfo}>
+                      <div style={styles.profileDropdownName}>{userName}</div>
+                      <div style={styles.profileDropdownEmail}>View Profile</div>
+                    </div>
+                  </div>
+
+                  <div style={styles.profileDropdownDivider}></div>
+
+                  <div style={styles.profileDropdownItems}>
+                    <button
+                      style={styles.profileDropdownItem}
+                      onClick={() => {
+                        navigate("/profile");
+                        setProfileMenuOpen(false);
+                      }}
+                    >
+                      <HiUser size={18} />
+                      <span>My Profile</span>
+                    </button>
+
+                    <button
+                      style={styles.profileDropdownItem}
+                      onClick={() => {
+                        navigate("/settings");
+                        setProfileMenuOpen(false);
+                      }}
+                    >
+                      <HiCog size={18} />
+                      <span>Settings</span>
+                    </button>
+                  </div>
+
+                  <div style={styles.profileDropdownDivider}></div>
+
+                  <button
+                    style={styles.profileDropdownItemLogout}
+                    onClick={handleLogout}
+                  >
+                    <HiLogout size={18} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -302,6 +371,14 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                 onClick={() => navigate("/login")}
               >
                 Log in
+              </button>
+
+              {/* Sign Up Button */}
+              <button 
+                style={styles.signupButton} 
+                onClick={() => navigate("/signup")}
+              >
+                Sign Up
               </button>
             </>
           )}
@@ -432,35 +509,64 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 auto",
   },
 
-  // Logo
+  // Modern Logo
   logoContainer: {
+    cursor: "pointer",
+    transition: "transform 0.3s ease",
+  },
+  logoWrapper: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    cursor: "pointer",
-    transition: "transform 0.2s",
   },
-  logoIcon: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "12px",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  logoIconContainer: {
+    width: "48px",
+    height: "48px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-    transition: "transform 0.2s",
+    borderRadius: "14px",
+    background: "white",
+    boxShadow: "0 4px 16px rgba(102, 126, 234, 0.25)",
+    transition: "all 0.3s ease",
   },
-  logoEmoji: {
-    fontSize: "24px",
+  logoSvg: {
+    width: "32px",
+    height: "32px",
   },
-  logoName: {
-    fontSize: "24px",
-    fontWeight: 700,
+  logoTextContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+  },
+  logoText: {
+    fontSize: "22px",
+    fontWeight: 800,
+    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+  },
+  logoSri: {
     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     WebkitBackgroundClip: "text",
     WebkitTextFillColor: "transparent",
     backgroundClip: "text",
+  },
+  logoTech: {
+    color: "#1f2937",
+  },
+  logoGuru: {
+    background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+  },
+  logoTagline: {
+    fontSize: "9px",
+    fontWeight: 600,
+    color: "#9ca3af",
+    letterSpacing: "1px",
+    textTransform: "uppercase",
   },
 
   // Desktop Navigation
@@ -668,6 +774,20 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     transition: "all 0.2s",
   },
+  signupButton: {
+    padding: "10px 20px",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    border: "none",
+    borderRadius: "12px",
+    fontSize: "15px",
+    fontWeight: 600,
+    color: "white",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+  },
+
+  // Profile Dropdown
   profileDropdown: {
     position: "relative",
   },
@@ -696,6 +816,104 @@ const styles: Record<string, React.CSSProperties> = {
     color: "white",
     fontSize: "18px",
     fontWeight: "bold",
+  },
+
+  // Profile Dropdown Menu
+  profileDropdownMenu: {
+    position: "absolute",
+    top: "calc(100% + 12px)",
+    right: 0,
+    background: "white",
+    minWidth: "280px",
+    borderRadius: "16px",
+    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+    overflow: "hidden",
+    zIndex: 2000,
+    animation: "slideDown 0.2s ease-out",
+  },
+  profileDropdownHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    padding: "20px 24px",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    cursor: "pointer",
+  },
+  profileDropdownAvatar: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "50%",
+    overflow: "hidden",
+    border: "3px solid rgba(255, 255, 255, 0.3)",
+    flexShrink: 0,
+  },
+  profileDropdownImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  profileDropdownPlaceholder: {
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(255, 255, 255, 0.3)",
+    color: "white",
+    fontSize: "20px",
+    fontWeight: "bold",
+  },
+  profileDropdownInfo: {
+    flex: 1,
+  },
+  profileDropdownName: {
+    fontSize: "16px",
+    fontWeight: 700,
+    color: "white",
+    marginBottom: "2px",
+  },
+  profileDropdownEmail: {
+    fontSize: "13px",
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: 500,
+  },
+  profileDropdownDivider: {
+    height: "1px",
+    background: "#e5e7eb",
+  },
+  profileDropdownItems: {
+    padding: "8px",
+  },
+  profileDropdownItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    width: "100%",
+    padding: "12px 16px",
+    background: "transparent",
+    border: "none",
+    borderRadius: "10px",
+    fontSize: "15px",
+    fontWeight: 600,
+    color: "#374151",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    textAlign: "left",
+  },
+  profileDropdownItemLogout: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    width: "100%",
+    padding: "16px 24px",
+    background: "transparent",
+    border: "none",
+    fontSize: "15px",
+    fontWeight: 600,
+    color: "#ef4444",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    textAlign: "left",
   },
 
   // Mobile Menu
@@ -783,15 +1001,59 @@ styleSheet.textContent = `
   button:active {
     transform: translateY(0);
   }
+  
+  [style*="logoContainer"]:hover [style*="logoIconContainer"] {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+  }
+  
+  [style*="navButton"]:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+  }
+  
+  [style*="dropdownItem"]:hover {
+    background: #f9fafb;
+  }
+  
+  [style*="iconButton"]:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+    color: #667eea;
+  }
+  
+  [style*="profileDropdownItem"]:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+  }
+  
+  [style*="profileDropdownItemLogout"]:hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+  
+  input:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+  }
 
   @media (max-width: 1024px) {
     [style*="desktopNav"] {
       display: none !important;
     }
     
+    [style*="searchWrapper"] {
+      display: none !important;
+    }
+    
     [style*="mobileMenuButton"] {
       display: flex !important;
+    }
+    
+    [style*="logoTagline"] {
+      display: none !important;
     }
   }
 `;
 document.head.appendChild(styleSheet);
+
+export default Header;

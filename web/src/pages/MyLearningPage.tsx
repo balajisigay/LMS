@@ -1,7 +1,26 @@
+// src/pages/MyLearningPage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
-import { HiBookOpen, HiClock, HiAcademicCap } from "react-icons/hi";
+import { HiBookOpen, HiClock, HiAcademicCap, HiArrowRight } from "react-icons/hi";
+import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
+
+interface Enrollment {
+  id: number;
+  userId: string;
+  courseId: number;
+  enrolledAt: string;
+  course: {
+    id: number;
+    title: string;
+    description: string;
+    imageUrl: string;
+    price: number;
+    instructor: {
+      name: string;
+    };
+  };
+}
 
 export const MyLearningPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,9 +42,17 @@ export const MyLearningPage: React.FC = () => {
         return;
       }
 
-      const data = await getEnrollments(user.userId);
+      const response = await fetch(`http://localhost:5000/api/Enrollment/${user.userId}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to load enrollments");
+      }
+
+      const data = await response.json();
+      console.log("Enrollments loaded:", data);
       setEnrollments(data);
     } catch (err: any) {
+      console.error("Error loading enrollments:", err);
       setError(err.message || "Failed to load enrollments");
     } finally {
       setLoading(false);
@@ -34,111 +61,118 @@ export const MyLearningPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p style={styles.loadingText}>Loading your courses...</p>
-      </div>
+      <>
+        <Header />
+        <div style={styles.loadingContainer}>
+          <div style={styles.spinner}></div>
+          <p style={styles.loadingText}>Loading your courses...</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.contentWrapper}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div style={styles.headerContent}>
-            <div style={styles.headerIcon}>
-              <HiAcademicCap size={32} color="white" />
-            </div>
-            <div>
-              <h1 style={styles.title}>My Learning</h1>
-              <p style={styles.subtitle}>
-                Continue your journey with {enrollments.length} enrolled {enrollments.length === 1 ? 'course' : 'courses'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div style={styles.errorAlert}>
-            <span style={styles.errorIcon}>⚠️</span>
-            {error}
-          </div>
-        )}
-
-        {/* Courses Grid */}
-        {enrollments.length === 0 ? (
-          <div style={styles.emptyState}>
-            <HiBookOpen size={64} color="#9ca3af" />
-            <h2 style={styles.emptyTitle}>No courses enrolled yet</h2>
-            <p style={styles.emptyText}>
-              Start your learning journey by exploring our course catalog
-            </p>
-            <button
-              style={styles.exploreButton}
-              onClick={() => navigate("/")}
-            >
-              Explore Courses
-            </button>
-          </div>
-        ) : (
-          <div style={styles.coursesGrid}>
-            {enrollments.map((enrollment) => (
-              <div
-                key={enrollment.id}
-                style={styles.courseCard}
-                onClick={() => navigate(`/course/${enrollment.course.id}`)}
-              >
-                <div style={styles.courseImage}>
-                  <img
-                    src={enrollment.course.imageUrl}
-                    alt={enrollment.course.title}
-                    style={styles.image}
-                  />
-                  <div style={styles.enrolledBadge}>
-                    <HiAcademicCap size={16} />
-                    <span>Enrolled</span>
-                  </div>
-                </div>
-
-                <div style={styles.courseContent}>
-                  <h3 style={styles.courseTitle}>{enrollment.course.title}</h3>
-                  <p style={styles.courseInstructor}>
-                    {enrollment.course.instructor.name}
-                  </p>
-                  <p style={styles.courseDescription}>
-                    {enrollment.course.description}
-                  </p>
-
-                  <div style={styles.courseFooter}>
-                    <div style={styles.enrolledDate}>
-                      <HiClock size={14} />
-                      <span>
-                        Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </span>
-                    </div>
-                    <button
-                      style={styles.continueButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/course/${enrollment.course.id}`);
-                      }}
-                    >
-                      Continue Learning →
-                    </button>
-                  </div>
-                </div>
+    <>
+      <Header />
+      <div style={styles.pageContainer}>
+        <div style={styles.contentWrapper}>
+          {/* Header */}
+          <div style={styles.header}>
+            <div style={styles.headerContent}>
+              <div style={styles.headerIcon}>
+                <HiAcademicCap size={32} color="white" />
               </div>
-            ))}
+              <div>
+                <h1 style={styles.title}>My Learning</h1>
+                <p style={styles.subtitle}>
+                  Continue your journey with {enrollments.length} enrolled {enrollments.length === 1 ? 'course' : 'courses'}
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Error Message */}
+          {error && (
+            <div style={styles.errorAlert}>
+              <span style={styles.errorIcon}>⚠️</span>
+              {error}
+            </div>
+          )}
+
+          {/* Courses Grid */}
+          {enrollments.length === 0 ? (
+            <div style={styles.emptyState}>
+              <HiBookOpen size={64} color="#9ca3af" />
+              <h2 style={styles.emptyTitle}>No courses enrolled yet</h2>
+              <p style={styles.emptyText}>
+                Start your learning journey by exploring our course catalog
+              </p>
+              <button
+                style={styles.exploreButton}
+                onClick={() => navigate("/")}
+              >
+                Explore Courses
+              </button>
+            </div>
+          ) : (
+            <div style={styles.coursesGrid}>
+              {enrollments.map((enrollment) => (
+                <div
+                  key={enrollment.id}
+                  style={styles.courseCard}
+                  onClick={() => navigate(`/course/${enrollment.course.id}`)}
+                >
+                  <div style={styles.courseImage}>
+                    <img
+                      src={enrollment.course.imageUrl}
+                      alt={enrollment.course.title}
+                      style={styles.image}
+                    />
+                    <div style={styles.enrolledBadge}>
+                      <HiAcademicCap size={16} />
+                      <span>Enrolled</span>
+                    </div>
+                  </div>
+
+                  <div style={styles.courseContent}>
+                    <h3 style={styles.courseTitle}>{enrollment.course.title}</h3>
+                    <p style={styles.courseInstructor}>
+                      {enrollment.course.instructor.name}
+                    </p>
+                    <p style={styles.courseDescription}>
+                      {enrollment.course.description}
+                    </p>
+
+                    <div style={styles.courseFooter}>
+                      <div style={styles.enrolledDate}>
+                        <HiClock size={14} />
+                        <span>
+                          Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                      <button
+                        style={styles.continueButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/course/${enrollment.course.id}`);
+                        }}
+                      >
+                        Continue <HiArrowRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 };
 
@@ -352,6 +386,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     cursor: "pointer",
     transition: "all 0.2s",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
   },
 };
 

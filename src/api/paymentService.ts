@@ -2,9 +2,18 @@
 import axios from "axios";
 import { PAYMENT_API } from "./endpoints";
 
-export const createOrder = (amount: number) => {
-  return axios.post(PAYMENT_API.CREATE_ORDER, { amount });
+// ✅ Create order payload must match backend DTO
+export interface CreateOrderRequest {
+  userId: string;
+  courseId: number;
+  amount: number;
+}
+
+export const createOrder = (payload: CreateOrderRequest) => {
+  return axios.post(PAYMENT_API.CREATE_ORDER, payload);
 };
+
+// ---------------- VERIFY PAYMENT ----------------
 
 export interface VerifyPaymentRequest {
   userId: string;

@@ -33,3 +33,11 @@ export const ENROLLMENT_API = {
   CHECK: (userId: string, courseId: number) => `${BASE_URL}/Enrollment/check/${userId}/${courseId}`,
   CREATE: `${BASE_URL}/Enrollment`,
 };
+export const ABOUT_API = {
+  GET: `${BASE_URL}/About`,               // 👈 new About endpoint
+};
+// CONTACT API
+export const CONTACT_API = {
+  CREATE: `${BASE_URL}/Contact`,   // POST
+};
+

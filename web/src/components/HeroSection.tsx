@@ -1,6 +1,4 @@
 import React from "react";
-import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
-import HeroImage from "../assets/Hreoimage.png";
 
 interface HeroSectionProps {
   onExplorePress?: () => void;
@@ -15,258 +13,560 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     <section style={styles.container}>
       <div style={styles.wrapper}>
         <div style={styles.grid}>
-          {/* --------------------- LEFT CONTENT --------------------- */}
+          {/* LEFT CONTENT */}
           <div style={styles.left}>
-            {/* Badge */}
+            {/* Animated Badge */}
             <div style={styles.badge}>
               <span style={styles.badgeDot}></span>
-              NEW COURSES ADDED
+              <span style={styles.badgeText}>NEW COURSES ADDED</span>
             </div>
 
-            {/* Title */}
+            {/* Title with Gradient */}
             <h1 style={styles.title}>
-              Unlock your potential with world-class learning.
+              Unlock your potential with{" "}
+              <span style={styles.gradientText}>world-class learning</span>
             </h1>
 
             {/* Description */}
             <p style={styles.description}>
               Choose from 200,000+ online video courses with new additions
-              published every month. Skills for your present (and your future).
+              published every month. Skills for your present and your future.
             </p>
 
             {/* Buttons */}
             <div style={styles.buttonRow}>
               <button style={styles.primaryBtn} onClick={onExplorePress}>
-                Explore Courses
+                <span>Explore Courses</span>
+                <svg style={styles.arrowIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </button>
 
               <button style={styles.secondaryBtn} onClick={onWatchDemoPress}>
-                <span style={styles.playIcon}>▶</span> Watch Demo
+                <div style={styles.playButton}>
+                  <svg style={styles.playIcon} viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+                <span>Watch Demo</span>
               </button>
             </div>
 
-            {/* Floating Student Badge */}
-            <div style={styles.studentCard}>
-              <div style={styles.avatars}>
-                {[0, 1, 2].map((i) => (
-                  <div key={i} style={styles.avatarCircle} />
-                ))}
+            {/* Stats Row */}
+            <div style={styles.statsRow}>
+              <div style={styles.statCard}>
+                <div style={styles.statNumber}>200K+</div>
+                <div style={styles.statLabel}>Online Courses</div>
               </div>
-              <span style={styles.studentText}>10k+ Students enrolled today</span>
+              <div style={styles.statDivider}></div>
+              <div style={styles.statCard}>
+                <div style={styles.statNumber}>50K+</div>
+                <div style={styles.statLabel}>Expert Instructors</div>
+              </div>
+              <div style={styles.statDivider}></div>
+              <div style={styles.statCard}>
+                <div style={styles.statNumber}>1M+</div>
+                <div style={styles.statLabel}>Active Students</div>
+              </div>
             </div>
           </div>
 
-          {/* --------------------- RIGHT CONTENT --------------------- */}
+          {/* RIGHT CONTENT */}
           <div style={styles.right}>
-          <img
-  src={HeroImage}
-  alt="Students learning"
-  style={styles.heroImage}
-/>
-
-
-            {/* Floating Course Card */}
-            <div style={styles.courseCard}>
-              <div style={styles.courseHeader}>
+            {/* Main Image Container */}
+            <div style={styles.imageContainer}>
+              <div style={styles.imageWrapper}>
                 <img
-                  src="https://cdn-icons-png.flaticon.com/512/1822/1822899.png"
-                  style={styles.courseIcon}
+                  src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop"
+                  alt="Students learning"
+                  style={styles.heroImage}
                 />
-                <span style={styles.courseTitle}>Python Master</span>
+                
+                {/* Gradient Overlay */}
+                <div style={styles.imageOverlay}></div>
               </div>
 
-              <div style={styles.progressBar}>
-                <div style={styles.progressFill}></div>
+              {/* Floating Elements */}
+              
+              {/* Student Enrollment Card */}
+              <div style={styles.floatingCard1}>
+                <div style={styles.avatarGroup}>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} style={{
+                      ...styles.avatar,
+                      background: `linear-gradient(135deg, ${['#667eea', '#f093fb', '#4facfe', '#43e97b'][i-1]}, ${['#764ba2', '#f5576c', '#00f2fe', '#38f9d7'][i-1]})`,
+                      marginLeft: i > 1 ? '-12px' : '0',
+                      zIndex: 5 - i,
+                    }}>
+                      <span style={styles.avatarText}>{String.fromCharCode(64 + i)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={styles.cardContent}>
+                  <div style={styles.cardTitle}>10k+ Students</div>
+                  <div style={styles.cardSubtitle}>enrolled today</div>
+                </div>
               </div>
 
-              <span style={styles.progressText}>75% Complete</span>
+              {/* Course Progress Card */}
+              <div style={styles.floatingCard2}>
+                <div style={styles.courseCardHeader}>
+                  <div style={styles.courseIconWrapper}>
+                    <svg style={styles.courseIconSvg} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={styles.courseName}>Python Master</div>
+                    <div style={styles.courseLevel}>Advanced Level</div>
+                  </div>
+                </div>
+                
+                <div style={styles.progressContainer}>
+                  <div style={styles.progressBar}>
+                    <div style={styles.progressFill}></div>
+                  </div>
+                  <span style={styles.progressText}>75% Complete</span>
+                </div>
+              </div>
+
+              {/* Rating Badge */}
+              <div style={styles.ratingBadge}>
+                <svg style={styles.starIcon} viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                <div>
+                  <div style={styles.ratingNumber}>4.9</div>
+                  <div style={styles.ratingLabel}>Rating</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Animated Background Elements */}
+      <div style={styles.bgCircle1}></div>
+      <div style={styles.bgCircle2}></div>
+      <div style={styles.bgCircle3}></div>
     </section>
   );
 };
 
-/* --------------------- STYLES --------------------- */
-
 const styles: Record<string, React.CSSProperties> = {
   container: {
     width: "100%",
-    paddingTop: 80,
-    paddingBottom: 80,
-    background: "linear-gradient(120deg,#f8e7ff,#e7f0ff,#f6e9ff)",
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     overflow: "hidden",
+    position: "relative",
+    padding: "80px 20px",
   },
   wrapper: {
-    maxWidth: 1400,
+    maxWidth: "1400px",
     margin: "0 auto",
-    padding: "0 40px",
+    width: "100%",
+    zIndex: 1,
   },
   grid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     alignItems: "center",
-    gap: 50,
+    gap: "80px",
   },
 
-  /* ---------------- LEFT ---------------- */
+  // LEFT SECTION
   left: {
     position: "relative",
+    zIndex: 2,
   },
-
   badge: {
     display: "inline-flex",
     alignItems: "center",
-    background: "#ffffffaa",
-    padding: "6px 14px",
-    borderRadius: 20,
-    fontSize: 13,
-    fontWeight: 600,
-    backdropFilter: "blur(6px)",
+    gap: "10px",
+    background: "rgba(255, 255, 255, 0.2)",
+    backdropFilter: "blur(10px)",
+    padding: "10px 20px",
+    borderRadius: "30px",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    marginBottom: "24px",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
   },
   badgeDot: {
-    width: 8,
-    height: 8,
-    background: "#4CAF50",
+    width: "10px",
+    height: "10px",
+    background: "#4ade80",
     borderRadius: "50%",
-    marginRight: 8,
+    boxShadow: "0 0 12px #4ade80",
+    animation: "pulse 2s ease-in-out infinite",
   },
-
-  title: {
-    fontSize: 52,
-    lineHeight: 1.2,
+  badgeText: {
+    fontSize: "13px",
     fontWeight: 700,
-    color: "#0e0f20",
-    marginTop: 20,
-    marginBottom: 10,
+    color: "white",
+    letterSpacing: "0.5px",
   },
-
+  title: {
+    fontSize: "56px",
+    lineHeight: "1.2",
+    fontWeight: 800,
+    color: "white",
+    marginBottom: "24px",
+    textShadow: "0 2px 20px rgba(0, 0, 0, 0.1)",
+  },
+  gradientText: {
+    background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+  },
   description: {
-    fontSize: 18,
-    color: "#555",
-    marginBottom: 30,
-    lineHeight: 1.6,
+    fontSize: "18px",
+    lineHeight: "1.8",
+    color: "rgba(255, 255, 255, 0.9)",
+    marginBottom: "40px",
+    maxWidth: "540px",
   },
-
   buttonRow: {
     display: "flex",
-    gap: 20,
-    marginBottom: 40,
+    gap: "16px",
+    marginBottom: "48px",
+    flexWrap: "wrap",
   },
-
   primaryBtn: {
-    background: "#4b47ff",
-    color: "#fff",
-    padding: "14px 28px",
-    borderRadius: 40,
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    background: "white",
+    color: "#667eea",
+    padding: "16px 32px",
+    borderRadius: "16px",
     border: "none",
-    fontSize: 16,
-    fontWeight: 600,
+    fontSize: "16px",
+    fontWeight: 700,
     cursor: "pointer",
+    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
+    transition: "all 0.3s ease",
   },
-
+  arrowIcon: {
+    width: "20px",
+    height: "20px",
+  },
   secondaryBtn: {
-    background: "#fff",
-    padding: "14px 28px",
-    borderRadius: 40,
-    border: "1px solid #ccc",
-    fontSize: 16,
-    fontWeight: 600,
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    background: "rgba(255, 255, 255, 0.15)",
+    backdropFilter: "blur(10px)",
+    color: "white",
+    padding: "16px 32px",
+    borderRadius: "16px",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    fontSize: "16px",
+    fontWeight: 700,
     cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
+    transition: "all 0.3s ease",
   },
-
-  playIcon: {
-    fontSize: 16,
-  },
-
-  studentCard: {
-    display: "flex",
-    alignItems: "center",
-    background: "#fff",
-    padding: "10px 18px",
-    borderRadius: 18,
-    width: "fit-content",
-    boxShadow: "0 6px 14px rgba(0,0,0,0.08)",
-  },
-  avatars: {
-    display: "flex",
-    marginRight: 10,
-  },
-  avatarCircle: {
-    width: 28,
-    height: 28,
-    background: "#bbb",
+  playButton: {
+    width: "32px",
+    height: "32px",
     borderRadius: "50%",
-    marginLeft: -6,
-    border: "2px solid #fff",
+    background: "white",
+    color: "#667eea",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  studentText: {
-    color: "#444",
-    fontSize: 14,
+  playIcon: {
+    width: "14px",
+    height: "14px",
+    marginLeft: "2px",
+  },
+  statsRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "24px",
+    background: "rgba(255, 255, 255, 0.15)",
+    backdropFilter: "blur(10px)",
+    padding: "24px 32px",
+    borderRadius: "20px",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+  },
+  statCard: {
+    textAlign: "center",
+  },
+  statNumber: {
+    fontSize: "28px",
+    fontWeight: 800,
+    color: "white",
+    marginBottom: "4px",
+  },
+  statLabel: {
+    fontSize: "12px",
     fontWeight: 600,
+    color: "rgba(255, 255, 255, 0.8)",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  statDivider: {
+    width: "1px",
+    height: "40px",
+    background: "rgba(255, 255, 255, 0.3)",
   },
 
-  /* ---------------- RIGHT ---------------- */
+  // RIGHT SECTION
   right: {
     position: "relative",
     display: "flex",
     justifyContent: "center",
+    alignItems: "center",
   },
-
+  imageContainer: {
+    position: "relative",
+    width: "100%",
+    maxWidth: "600px",
+  },
+  imageWrapper: {
+    position: "relative",
+    borderRadius: "32px",
+    overflow: "hidden",
+    boxShadow: "0 25px 50px rgba(0, 0, 0, 0.3)",
+  },
   heroImage: {
     width: "100%",
-    borderRadius: 24,
-    objectFit: "cover",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
+    height: "auto",
+    display: "block",
   },
-
-  /* Floating Course Card */
-  courseCard: {
+  imageOverlay: {
     position: "absolute",
-    top: -25,
-    right: -20,
-    background: "#fff",
-    padding: 16,
-    borderRadius: 16,
-    width: 220,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+    inset: 0,
+    background: "linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3))",
   },
 
-  courseHeader: {
+  // FLOATING CARDS
+  floatingCard1: {
+    position: "absolute",
+    top: "20px",
+    left: "-40px",
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 10,
+    gap: "16px",
+    background: "white",
+    padding: "16px 20px",
+    borderRadius: "20px",
+    boxShadow: "0 15px 40px rgba(0, 0, 0, 0.2)",
+    animation: "float 3s ease-in-out infinite",
   },
-  courseIcon: {
-    width: 26,
-    height: 26,
+  avatarGroup: {
+    display: "flex",
+    alignItems: "center",
   },
-  courseTitle: {
-    fontSize: 15,
+  avatar: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    border: "3px solid white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+  },
+  avatarText: {
+    fontSize: "14px",
     fontWeight: 700,
+    color: "white",
+  },
+  cardContent: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  cardTitle: {
+    fontSize: "18px",
+    fontWeight: 800,
+    color: "#1f2937",
+    lineHeight: 1.2,
+  },
+  cardSubtitle: {
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#6b7280",
   },
 
+  floatingCard2: {
+    position: "absolute",
+    bottom: "30px",
+    right: "-30px",
+    background: "white",
+    padding: "20px",
+    borderRadius: "20px",
+    width: "260px",
+    boxShadow: "0 15px 40px rgba(0, 0, 0, 0.2)",
+    animation: "float 3s ease-in-out infinite 1s",
+  },
+  courseCardHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "16px",
+  },
+  courseIconWrapper: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "12px",
+    background: "linear-gradient(135deg, #667eea, #764ba2)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  courseIconSvg: {
+    width: "24px",
+    height: "24px",
+    color: "white",
+  },
+  courseName: {
+    fontSize: "16px",
+    fontWeight: 700,
+    color: "#1f2937",
+  },
+  courseLevel: {
+    fontSize: "12px",
+    fontWeight: 600,
+    color: "#6b7280",
+  },
+  progressContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
   progressBar: {
     width: "100%",
-    height: 6,
-    background: "#eee",
-    borderRadius: 4,
+    height: "8px",
+    background: "#e5e7eb",
+    borderRadius: "10px",
     overflow: "hidden",
   },
   progressFill: {
     width: "75%",
     height: "100%",
-    background: "#4b47ff",
+    background: "linear-gradient(90deg, #667eea, #764ba2)",
+    borderRadius: "10px",
+    boxShadow: "0 0 10px rgba(102, 126, 234, 0.5)",
   },
   progressText: {
-    fontSize: 13,
-    marginTop: 6,
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#667eea",
+  },
+
+  ratingBadge: {
+    position: "absolute",
+    top: "50%",
+    right: "-50px",
+    transform: "translateY(-50%)",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    background: "white",
+    padding: "16px 20px",
+    borderRadius: "20px",
+    boxShadow: "0 15px 40px rgba(0, 0, 0, 0.2)",
+    animation: "float 3s ease-in-out infinite 0.5s",
+  },
+  starIcon: {
+    width: "32px",
+    height: "32px",
+    color: "#fbbf24",
+  },
+  ratingNumber: {
+    fontSize: "20px",
+    fontWeight: 800,
+    color: "#1f2937",
+    lineHeight: 1,
+  },
+  ratingLabel: {
+    fontSize: "11px",
     fontWeight: 600,
-    color: "#666",
+    color: "#6b7280",
+    textTransform: "uppercase",
+  },
+
+  // BACKGROUND ELEMENTS
+  bgCircle1: {
+    position: "absolute",
+    width: "600px",
+    height: "600px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(240, 147, 251, 0.2), transparent 70%)",
+    top: "-200px",
+    left: "-200px",
+    animation: "rotate 20s linear infinite",
+  },
+  bgCircle2: {
+    position: "absolute",
+    width: "400px",
+    height: "400px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent 70%)",
+    bottom: "-100px",
+    right: "10%",
+    animation: "rotate 15s linear infinite reverse",
+  },
+  bgCircle3: {
+    position: "absolute",
+    width: "300px",
+    height: "300px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(245, 87, 108, 0.15), transparent 70%)",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    animation: "pulse 4s ease-in-out infinite",
   },
 };
+
+// Add CSS animations
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { 
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% { 
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+  }
+  
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  button:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3) !important;
+  }
+  
+  button:active {
+    transform: translateY(-1px) !important;
+  }
+
+  @media (max-width: 1024px) {
+    [style*="gridTemplateColumns"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+`;
+document.head.appendChild(styleSheet);
+
+export default HeroSection;

@@ -5,6 +5,8 @@ import { getCart, removeCartItem } from "../../../src/api/cartService";
 import { createOrder, verifyPayment } from "../../../src/api/paymentService";
 import { HiTrash, HiShoppingCart, HiCheck, HiX } from "react-icons/hi";
 
+const demoUserId = "demoUser";
+
 // TypeScript declaration for Razorpay
 declare global {
   interface Window {
@@ -19,12 +21,6 @@ export const CartPage: React.FC = () => {
   const [razorpayLoaded, setRazorpayLoaded] = useState<boolean>(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  // Get user ID from localStorage
-  const getUserId = () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    return user.userId?.toString() || "demoUser";
-  };
 
   // Load Razorpay script
   useEffect(() => {
@@ -47,13 +43,10 @@ export const CartPage: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      const userId = getUserId();
-      console.log("Loading cart for userId:", userId);
-      const res = await getCart(userId);
-      console.log("Cart items:", res.data);
+      const res = await getCart(demoUserId);
       setItems(res.data);
     } catch (err: any) {
-      console.error("Cart load error:", err);
+      console.error(err);
       setError(err?.message || "Failed to load cart");
     } finally {
       setLoading(false);
@@ -95,16 +88,17 @@ export const CartPage: React.FC = () => {
       }
 
       const amountInt = Math.round(total);
-      const userId = getUserId();
-
-      console.log("Starting checkout for userId:", userId);
-      console.log("Total amount:", amountInt);
-      console.log("Items to purchase:", items);
 
       // Step 1 — create order
-      const res = await createOrder(amountInt);
+const firstItem = items[0];
+
+const res = await createOrder({
+  userId: demoUserId,
+  courseId: firstItem.course.id, // ✅ FIXED
+  amount: firstItem.course.price,
+});
+
       const { orderId, key } = res.data;
-      console.log("Order created:", orderId);
 
       const options = {
         key,
@@ -115,51 +109,44 @@ export const CartPage: React.FC = () => {
         order_id: orderId,
 
         handler: async function (response: any) {
-          console.log("Payment successful, response:", response);
           try {
             const enrolledCourses: number[] = [];
 
-            // Verify payment and enroll for each course
-            for (const item of items) {
-              console.log("Verifying payment for course:", item.courseId);
-              
-              await verifyPayment({
-                userId: userId,
-                amount: item.course?.price ?? 0,
-                courseId: item.courseId,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpaySignature: response.razorpay_signature,
-              });
-              
-              enrolledCourses.push(item.courseId);
-              console.log("Course enrolled:", item.courseId);
-            }
+    const courseId = firstItem.course.id;
 
-            // Clear cart after successful payment and enrollment
-            console.log("Clearing cart...");
+await verifyPayment({
+  userId: demoUserId,
+  courseId,
+  amount: firstItem.course.price,
+  razorpayPaymentId: response.razorpay_payment_id,
+  razorpayOrderId: response.razorpay_order_id,
+  razorpaySignature: response.razorpay_signature,
+});
+
+// Clear ONLY this item for now
+await removeCartItem(firstItem.id);
+
+setSuccess("Payment Successful! You are enrolled in this course.");
+setTimeout(() => navigate(`/course/${courseId}`), 1500);
+
+
+            // Clear cart after successful payment
             for (const item of items) {
               await removeCartItem(item.id);
             }
-            console.log("Cart cleared successfully");
 
             if (enrolledCourses.length > 0) {
               setSuccess(
-                `🎉 Payment Successful! You are now enrolled in ${enrolledCourses.length} course(s).`
+                `Payment Successful! You are enrolled in ${enrolledCourses.length} course(s).`
               );
-              
-              // Redirect to My Learning page after 2 seconds
-              setTimeout(() => {
-                console.log("Redirecting to My Learning...");
-                navigate("/my-learning");
-              }, 2000);
+              setTimeout(() => navigate(`/course/${enrolledCourses[0]}`), 1500);
             } else {
               setSuccess("Payment Successful!");
               await loadCart();
             }
-          } catch (err: any) {
+          } catch (err) {
             console.error("Verification error:", err);
-            setError("Payment verification failed! Please contact support.");
+            setError("Payment verification failed!");
           }
         },
 
@@ -169,7 +156,7 @@ export const CartPage: React.FC = () => {
           contact: "9999999999",
         },
 
-        theme: { color: "#667eea" },
+        theme: { color: "#0f172a" },
 
         modal: {
           ondismiss: function () {
@@ -249,7 +236,7 @@ export const CartPage: React.FC = () => {
                     </p>
                     <button
                       style={styles.browseButton}
-                      onClick={() => navigate("/")}
+                      onClick={() => navigate("/courses")}
                     >
                       Explore Courses
                     </button>
@@ -273,7 +260,7 @@ export const CartPage: React.FC = () => {
                           {item.course?.title}
                         </h3>
                         <p style={styles.instructor}>
-                          {item.course?.instructorName ?? ""}
+                          {item.course?.instructor?.name ?? ""}
                         </p>
                         <p style={styles.price}>
                           ₹ {item.course?.price?.toFixed(2)}
@@ -615,7 +602,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-// keyframes + button hover
+// keyframes + button hover like ProfilePage
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes spin {

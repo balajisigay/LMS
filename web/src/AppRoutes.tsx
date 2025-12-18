@@ -7,6 +7,9 @@ import LoginPage from "./pages/LoginPage";
 import CartPage from "./pages/CartPage";
 import ProfilePage from "./pages/ProfilePage";
 import MyLearningPage from "./pages/MyLearningPage";
+import { ContactPage } from "./pages/ContactPage";
+import { AboutPage } from "./pages/AboutPage";
+
 
 
 
@@ -21,6 +24,9 @@ export const AppRoutes: React.FC = () => {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my-learning" element={<MyLearningPage />} />
+        <Route path="/contact" element={<ContactPage />} />   {/* NEW ROUTE */}
+        <Route path="/about" element={<AboutPage />} />
+
 
 
 
