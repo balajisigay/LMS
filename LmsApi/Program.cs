@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using LmsApi.Data;
 using Newtonsoft.Json.Serialization;
@@ -31,6 +32,11 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSwaggerGen();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB
+});
+
 
 var app = builder.Build();
 
@@ -41,6 +47,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseStaticFiles();
 app.MapControllers();
 app.Run();

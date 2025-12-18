@@ -6,6 +6,9 @@ import { CourseDetailPage } from "./pages/CourseDetailPage";
 import LoginPage from "./pages/LoginPage";
 import CartPage from "./pages/CartPage";
 import ProfilePage from "./pages/ProfilePage";
+import MyLearningPage from "./pages/MyLearningPage";
+
+
 
 
 export const AppRoutes: React.FC = () => {
@@ -17,6 +20,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />   {/* REQUIRED */}
         <Route path="/cart" element={<CartPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/my-learning" element={<MyLearningPage />} />
+
 
 
       </Routes>

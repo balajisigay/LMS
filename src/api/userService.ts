@@ -75,17 +75,18 @@ export async function updateUserProfile(
   return result;
 }
 
-// Upload profile photo
 export async function uploadProfilePhoto(
   userId: number,
   file: File
 ): Promise<{ message: string; imageUrl: string }> {
+
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("profileImage", file); // ✅ FIXED
 
   const response = await fetch(USER_API.UPLOAD_PHOTO(userId), {
     method: "POST",
     body: formData,
+    credentials: "include", // ✅ important if auth/session used
   });
 
   const data = await parseResponse(response);
@@ -96,6 +97,7 @@ export async function uploadProfilePhoto(
 
   return data;
 }
+
 
 // Delete profile photo
 export async function deleteProfilePhoto(

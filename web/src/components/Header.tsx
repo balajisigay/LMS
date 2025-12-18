@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiHeart, HiShoppingCart, HiSearch, HiUser, HiMenu, HiX } from "react-icons/hi";
+import { HiHeart, HiShoppingCart, HiSearch, HiUser, HiMenu, HiX, HiBookOpen } from "react-icons/hi";
 import { getAllCourses } from "../services/courseService";
+import { getEnrollments } from "../../../src/api/enrollmentService";
+import { getUserProfile } from "../../../src/api/userService";
 
 interface Course {
   id: number;
@@ -17,13 +19,27 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesOpen, setCoursesOpen] = useState(false);
+  const [myLearningOpen, setMyLearningOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     getAllCourses()
       .then(setCourses)
       .catch(console.error);
+
+    // Check if user is logged in
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user.userId) {
+      setIsLoggedIn(true);
+      setUserName(user.name || "User");
+      loadUserProfile(user.userId);
+      loadEnrollments(user.userId);
+    }
 
     // Add scroll listener for header shadow
     const handleScroll = () => {
@@ -33,12 +49,39 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const loadUserProfile = async (userId: number) => {
+    try {
+      const profile = await getUserProfile(userId);
+      if (profile.profileImageUrl) {
+        setProfileImage(`http://localhost:5000${profile.profileImageUrl}`);
+      }
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+    }
+  };
+
+  const loadEnrollments = async (userId: string) => {
+    try {
+      const enrollments = await getEnrollments(userId);
+      setEnrolledCourses(enrollments);
+    } catch (err) {
+      console.error("Failed to load enrollments:", err);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchValue.trim()) {
       console.log("Searching for:", searchValue);
-      // Add your search logic here
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setProfileImage(null);
+    setUserName("");
+    navigate("/");
   };
 
   return (
@@ -104,6 +147,78 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             )}
           </div>
 
+          {/* MY LEARNING DROPDOWN - Only show if logged in */}
+          {isLoggedIn && (
+            <div
+              style={styles.courseMenu}
+              onMouseEnter={() => setMyLearningOpen(true)}
+              onMouseLeave={() => setMyLearningOpen(false)}
+            >
+              <button style={styles.navButton}>
+                <HiBookOpen size={18} />
+                <span>My Learning</span>
+                <svg 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 16 16" 
+                  fill="currentColor"
+                  style={{
+                    transform: myLearningOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s',
+                  }}
+                >
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
+                </svg>
+              </button>
+
+              {myLearningOpen && (
+                <div style={styles.dropdown}>
+                  <div style={styles.dropdownHeader}>
+                    <h3 style={styles.dropdownTitle}>My Enrolled Courses</h3>
+                    <p style={styles.dropdownSubtitle}>
+                      {enrolledCourses.length} {enrolledCourses.length === 1 ? 'course' : 'courses'}
+                    </p>
+                  </div>
+                  <div style={styles.dropdownContent}>
+                    {enrolledCourses.length > 0 ? (
+                      enrolledCourses.map((enrollment) => (
+                        <div
+                          key={enrollment.id}
+                          style={styles.dropdownItem}
+                          onClick={() => {
+                            navigate(`/course/${enrollment.course.id}`);
+                            setMyLearningOpen(false);
+                          }}
+                        >
+                          <div style={styles.courseIcon}>✓</div>
+                          <div style={styles.enrollmentInfo}>
+                            <span style={styles.enrollmentTitle}>{enrollment.course.title}</span>
+                            <span style={styles.enrollmentDate}>
+                              Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={styles.emptyState}>
+                        <p style={styles.emptyText}>No enrolled courses yet</p>
+                        <button
+                          style={styles.browseCourses}
+                          onClick={() => {
+                            navigate("/");
+                            setMyLearningOpen(false);
+                          }}
+                        >
+                          Browse Courses
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <button style={styles.navButton} onClick={() => navigate("/about")}>
             About
           </button>
@@ -159,25 +274,37 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             </div>
           </button>
 
-          {/* Profile */}
-          <button 
-            style={styles.iconButton}
-            onClick={() => navigate("/profile")}
-            title="Profile"
-          >
-            <HiUser size={22} />
-          </button>
+          {/* Profile / Login */}
+          {isLoggedIn ? (
+            <div style={styles.profileDropdown}>
+              <button 
+                style={styles.profileButton}
+                onClick={() => navigate("/profile")}
+                title="Profile"
+              >
+                {profileImage ? (
+                  <img src={profileImage} alt={userName} style={styles.profileImage} />
+                ) : (
+                  <div style={styles.profilePlaceholder}>
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Divider */}
+              <div style={styles.divider}></div>
 
-          {/* Divider */}
-          <div style={styles.divider}></div>
-
-          {/* Login Button */}
-          <button 
-            style={styles.loginButton} 
-            onClick={() => navigate("/login")}
-          >
-            Log in
-          </button>
+              {/* Login Button */}
+              <button 
+                style={styles.loginButton} 
+                onClick={() => navigate("/login")}
+              >
+                Log in
+              </button>
+            </>
+          )}
 
           {/* Mobile Menu Toggle */}
           <button 
@@ -201,6 +328,17 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
           >
             Courses
           </button>
+          {isLoggedIn && (
+            <button 
+              style={styles.mobileMenuItem}
+              onClick={() => {
+                navigate("/my-learning");
+                setMobileMenuOpen(false);
+              }}
+            >
+              My Learning ({enrolledCourses.length})
+            </button>
+          )}
           <button 
             style={styles.mobileMenuItem}
             onClick={() => {
@@ -219,34 +357,50 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
           >
             Contact
           </button>
-          <button 
-            style={styles.mobileMenuItem}
-            onClick={() => {
-              navigate("/profile");
-              setMobileMenuOpen(false);
-            }}
-          >
-            Profile
-          </button>
+          {isLoggedIn && (
+            <button 
+              style={styles.mobileMenuItem}
+              onClick={() => {
+                navigate("/profile");
+                setMobileMenuOpen(false);
+              }}
+            >
+              Profile
+            </button>
+          )}
           <div style={styles.mobileDivider}></div>
-          <button 
-            style={styles.mobileMenuItemPrimary}
-            onClick={() => {
-              navigate("/login");
-              setMobileMenuOpen(false);
-            }}
-          >
-            Log in
-          </button>
-          <button 
-            style={styles.mobileMenuItemAccent}
-            onClick={() => {
-              navigate("/signup");
-              setMobileMenuOpen(false);
-            }}
-          >
-            Join for Free
-          </button>
+          {isLoggedIn ? (
+            <button 
+              style={styles.mobileMenuItemAccent}
+              onClick={() => {
+                handleLogout();
+                setMobileMenuOpen(false);
+              }}
+            >
+              Logout
+            </button>
+          ) : (
+            <>
+              <button 
+                style={styles.mobileMenuItemPrimary}
+                onClick={() => {
+                  navigate("/login");
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Log in
+              </button>
+              <button 
+                style={styles.mobileMenuItemAccent}
+                onClick={() => {
+                  navigate("/signup");
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Join for Free
+              </button>
+            </>
+          )}
         </div>
       )}
     </header>
@@ -381,6 +535,39 @@ const styles: Record<string, React.CSSProperties> = {
   courseIcon: {
     fontSize: "20px",
   },
+  enrollmentInfo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  enrollmentTitle: {
+    fontSize: "15px",
+    fontWeight: 600,
+    color: "#111827",
+  },
+  enrollmentDate: {
+    fontSize: "12px",
+    color: "#6b7280",
+  },
+  emptyState: {
+    padding: "32px 24px",
+    textAlign: "center",
+  },
+  emptyText: {
+    fontSize: "14px",
+    color: "#6b7280",
+    marginBottom: "16px",
+  },
+  browseCourses: {
+    padding: "10px 20px",
+    background: "linear-gradient(135deg, #667eea, #764ba2)",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
 
   // Search
   searchWrapper: {
@@ -481,20 +668,34 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     transition: "all 0.2s",
   },
-  joinButton: {
+  profileDropdown: {
+    position: "relative",
+  },
+  profileButton: {
+    width: "44px",
+    height: "44px",
+    borderRadius: "50%",
+    border: "2px solid #e5e7eb",
+    background: "transparent",
+    cursor: "pointer",
+    overflow: "hidden",
+    transition: "all 0.2s",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  profilePlaceholder: {
+    width: "100%",
+    height: "100%",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    padding: "12px 24px",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    border: "none",
-    borderRadius: "12px",
-    fontSize: "15px",
-    fontWeight: 700,
+    justifyContent: "center",
+    background: "linear-gradient(135deg, #667eea, #764ba2)",
     color: "white",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+    fontSize: "18px",
+    fontWeight: "bold",
   },
 
   // Mobile Menu
@@ -575,7 +776,6 @@ styleSheet.textContent = `
     }
   }
 
-  /* Hover Effects */
   button:hover {
     transform: translateY(-2px);
   }
@@ -584,101 +784,14 @@ styleSheet.textContent = `
     transform: translateY(0);
   }
 
-  /* Logo Hover */
-  [style*="logoContainer"]:hover [style*="logoIcon"] {
-    transform: rotate(-10deg) scale(1.05);
-  }
-
-  /* Nav Button Hover */
-  [style*="navButton"]:hover {
-    background: #f3f4f6 !important;
-    color: #667eea !important;
-  }
-
-  /* Dropdown Item Hover */
-  [style*="dropdownItem"]:hover {
-    background: #f9fafb !important;
-    padding-left: 28px !important;
-  }
-
-  /* Icon Button Hover */
-  [style*="iconButton"]:hover {
-    background: #f3f4f6 !important;
-    border-color: #667eea !important;
-    color: #667eea !important;
-  }
-
-  /* Search Focus */
-  input[style*="searchInput"]:focus {
-    border-color: #667eea !important;
-    background: white !important;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-  }
-
-  /* Login Button Hover */
-  [style*="loginButton"]:hover {
-    background: #f9fafb !important;
-    border-color: #667eea !important;
-    color: #667eea !important;
-  }
-
-  /* Join Button Hover */
-  [style*="joinButton"]:hover {
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-  }
-
-  /* Clear Button Hover */
-  [style*="clearButton"]:hover {
-    background: #d1d5db !important;
-  }
-
-  /* Mobile Styles */
   @media (max-width: 1024px) {
     [style*="desktopNav"] {
       display: none !important;
     }
     
-    [style*="searchWrapper"] {
-      max-width: 300px !important;
-    }
-    
     [style*="mobileMenuButton"] {
       display: flex !important;
     }
-  }
-
-  @media (max-width: 768px) {
-    [style*="searchWrapper"] {
-      display: none !important;
-    }
-    
-    [style*="iconButton"] {
-      width: 40px !important;
-      height: 40px !important;
-    }
-    
-    [style*="loginButton"],
-    [style*="joinButton"] {
-      display: none !important;
-    }
-  }
-
-  /* Scrollbar for dropdown */
-  [style*="dropdownContent"]::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  [style*="dropdownContent"]::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
-
-  [style*="dropdownContent"]::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-    border-radius: 3px;
-  }
-
-  [style*="dropdownContent"]::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
   }
 `;
 document.head.appendChild(styleSheet);

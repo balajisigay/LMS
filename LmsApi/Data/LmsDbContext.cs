@@ -59,5 +59,10 @@ public class LmsDbContext : DbContext
             .HasConversion(
                 v => string.Join(";", v),
                 v => v.Split(";", StringSplitOptions.RemoveEmptyEntries).ToList());
+                modelBuilder.Entity<Enrollment>()
+        .HasOne(e => e.Course)
+        .WithMany()
+        .HasForeignKey(e => e.CourseId)
+        .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -5,8 +5,6 @@ import { getCart, removeCartItem } from "../../../src/api/cartService";
 import { createOrder, verifyPayment } from "../../../src/api/paymentService";
 import { HiTrash, HiShoppingCart, HiCheck, HiX } from "react-icons/hi";
 
-const demoUserId = "demoUser";
-
 // TypeScript declaration for Razorpay
 declare global {
   interface Window {
@@ -21,6 +19,12 @@ export const CartPage: React.FC = () => {
   const [razorpayLoaded, setRazorpayLoaded] = useState<boolean>(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Get user ID from localStorage
+  const getUserId = () => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return user.userId?.toString() || "demoUser";
+  };
 
   // Load Razorpay script
   useEffect(() => {
@@ -43,10 +47,13 @@ export const CartPage: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await getCart(demoUserId);
+      const userId = getUserId();
+      console.log("Loading cart for userId:", userId);
+      const res = await getCart(userId);
+      console.log("Cart items:", res.data);
       setItems(res.data);
     } catch (err: any) {
-      console.error(err);
+      console.error("Cart load error:", err);
       setError(err?.message || "Failed to load cart");
     } finally {
       setLoading(false);
@@ -88,10 +95,16 @@ export const CartPage: React.FC = () => {
       }
 
       const amountInt = Math.round(total);
+      const userId = getUserId();
+
+      console.log("Starting checkout for userId:", userId);
+      console.log("Total amount:", amountInt);
+      console.log("Items to purchase:", items);
 
       // Step 1 — create order
       const res = await createOrder(amountInt);
       const { orderId, key } = res.data;
+      console.log("Order created:", orderId);
 
       const options = {
         key,
@@ -102,38 +115,51 @@ export const CartPage: React.FC = () => {
         order_id: orderId,
 
         handler: async function (response: any) {
+          console.log("Payment successful, response:", response);
           try {
             const enrolledCourses: number[] = [];
 
+            // Verify payment and enroll for each course
             for (const item of items) {
+              console.log("Verifying payment for course:", item.courseId);
+              
               await verifyPayment({
-                userId: demoUserId,
+                userId: userId,
                 amount: item.course?.price ?? 0,
                 courseId: item.courseId,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpayOrderId: response.razorpay_order_id,
                 razorpaySignature: response.razorpay_signature,
               });
+              
               enrolledCourses.push(item.courseId);
+              console.log("Course enrolled:", item.courseId);
             }
 
-            // Clear cart after successful payment
+            // Clear cart after successful payment and enrollment
+            console.log("Clearing cart...");
             for (const item of items) {
               await removeCartItem(item.id);
             }
+            console.log("Cart cleared successfully");
 
             if (enrolledCourses.length > 0) {
               setSuccess(
-                `Payment Successful! You are enrolled in ${enrolledCourses.length} course(s).`
+                `🎉 Payment Successful! You are now enrolled in ${enrolledCourses.length} course(s).`
               );
-              setTimeout(() => navigate(`/course/${enrolledCourses[0]}`), 1500);
+              
+              // Redirect to My Learning page after 2 seconds
+              setTimeout(() => {
+                console.log("Redirecting to My Learning...");
+                navigate("/my-learning");
+              }, 2000);
             } else {
               setSuccess("Payment Successful!");
               await loadCart();
             }
-          } catch (err) {
+          } catch (err: any) {
             console.error("Verification error:", err);
-            setError("Payment verification failed!");
+            setError("Payment verification failed! Please contact support.");
           }
         },
 
@@ -143,7 +169,7 @@ export const CartPage: React.FC = () => {
           contact: "9999999999",
         },
 
-        theme: { color: "#0f172a" },
+        theme: { color: "#667eea" },
 
         modal: {
           ondismiss: function () {
@@ -223,7 +249,7 @@ export const CartPage: React.FC = () => {
                     </p>
                     <button
                       style={styles.browseButton}
-                      onClick={() => navigate("/courses")}
+                      onClick={() => navigate("/")}
                     >
                       Explore Courses
                     </button>
@@ -247,7 +273,7 @@ export const CartPage: React.FC = () => {
                           {item.course?.title}
                         </h3>
                         <p style={styles.instructor}>
-                          {item.course?.instructor?.name ?? ""}
+                          {item.course?.instructorName ?? ""}
                         </p>
                         <p style={styles.price}>
                           ₹ {item.course?.price?.toFixed(2)}
@@ -589,7 +615,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-// keyframes + button hover like ProfilePage
+// keyframes + button hover
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes spin {

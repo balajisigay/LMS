@@ -12,20 +12,24 @@ export const COURSE_API = {
 };
 
 export const CART_API = {
-  GET: `${BASE_URL}/Cart`,   // GET /Cart/{userId}
+  GET: `${BASE_URL}/Cart`, // GET /Cart/{userId}
   ADD: `${BASE_URL}/Cart/add`,
   REMOVE: `${BASE_URL}/Cart/remove`, // DELETE /Cart/remove/{id}
 };
 
 export const PAYMENT_API = {
   CREATE_ORDER: `${BASE_URL}/payment/create-order`,
-  VERIFY: `${BASE_URL}/payment/verify-payment`
+  VERIFY: `${BASE_URL}/payment/verify-payment`,
 };
 
-// ⭐ NEW: User Profile API
 export const USER_API = {
   GET_PROFILE: (userId: number) => `${BASE_URL}/Users/${userId}`,
   UPDATE_PROFILE: (userId: number) => `${BASE_URL}/Users/${userId}`,
   UPLOAD_PHOTO: (userId: number) => `${BASE_URL}/Users/${userId}/upload-photo`,
   DELETE_PHOTO: (userId: number) => `${BASE_URL}/Users/${userId}/delete-photo`,
+};
+export const ENROLLMENT_API = {
+  GET: (userId: string) => `${BASE_URL}/Enrollment/${userId}`,
+  CHECK: (userId: string, courseId: number) => `${BASE_URL}/Enrollment/check/${userId}/${courseId}`,
+  CREATE: `${BASE_URL}/Enrollment`,
 };
