@@ -2,11 +2,16 @@ import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { CourseDetailPage } from './pages/CourseDetailPage';
-import { AdminDashboard } from './pages/AdminDashboard';
 import { globalStyles } from './styles/global';
 import LoginPage from "./pages/LoginPage";
 import CartPage from './pages/CartPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminRouter from './admin/AdminRouter';
+import AdminCourseCRUD from './admin/pages/AdminCourseCRUD';
+
+
+
+
 
 
 function App() {
@@ -38,11 +43,11 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/course/:courseId" element={<CourseDetailPage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-
+          <Route path="/admin/*" element={<AdminRouter />} />
+          <Route path="/admin/course-crud" element={<AdminCourseCRUD />} />
         </Routes>
       </Router>
     </div>

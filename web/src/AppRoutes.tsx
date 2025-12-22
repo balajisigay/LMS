@@ -9,6 +9,8 @@ import ProfilePage from "./pages/ProfilePage";
 import MyLearningPage from "./pages/MyLearningPage";
 import { ContactPage } from "./pages/ContactPage";
 import { AboutPage } from "./pages/AboutPage";
+import AdminRouter from './admin/AdminRouter';
+import AdminCourseCRUD from "./admin/pages/AdminCourseCRUD";
 
 
 
@@ -26,6 +28,9 @@ export const AppRoutes: React.FC = () => {
         <Route path="/my-learning" element={<MyLearningPage />} />
         <Route path="/contact" element={<ContactPage />} />   {/* NEW ROUTE */}
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/admin/*" element={<AdminRouter />} />
+        <Route path="/admin/course-crud" element={<AdminCourseCRUD />} />
+
 
 
 

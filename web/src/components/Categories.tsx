@@ -1,6 +1,9 @@
 ﻿import React, { useState, useMemo, useEffect } from "react";
 import { Course } from "../types/course";
 import { addToCart } from "../../../src/api/cartService";
+import { getUserId } from "../utils/getUserId";
+
+
 
 /* -------------------------------------------------- */
 /*                  CATEGORY CARD COMPONENT            */
@@ -149,8 +152,8 @@ export const Categories: React.FC<CategoriesProps> = ({
 
   const handleAddToCart = async (courseId: number) => {
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const userId = user.userId?.toString() || "demoUser";
+    const userId = getUserId();
+await addToCart(userId, courseId);
       
       await addToCart(userId, courseId);
       

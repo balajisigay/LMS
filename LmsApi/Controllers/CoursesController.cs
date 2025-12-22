@@ -92,44 +92,55 @@ public class CoursesController : ControllerBase
     }
 
     // POST: api/courses
-    [HttpPost]
-    public async Task<ActionResult<CourseDto>> CreateCourse(CreateCourseDto dto)
+   [HttpPost]
+public async Task<ActionResult<CourseDto>> CreateCourse([FromBody] CreateCourseDto dto)
+{
+    try
     {
-        try
-        {
-            var course = new Course
-            {
-                Title = dto.Title,
-                Description = dto.Description,
-                Category = dto.Category,
-                Subcategory = dto.Subcategory,
-                Price = dto.Price,
-                OriginalPrice = dto.OriginalPrice,
-                Discount = (int)((1 - (dto.Price / dto.OriginalPrice)) * 100),
-                Badge = dto.Badge,
-                InstructorId = dto.InstructorId,
-                ImageUrl = dto.ImageUrl,
-                WhatYouLearn = dto.WhatYouLearn,
-                Includes = dto.Includes,
-                Companies = dto.Companies,
-                Rating = 4.5,
-                ReviewCount = 0,
-                StudentCount = 0,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+        var instructorExists = await _context.Instructors
+            .AnyAsync(i => i.Id == dto.InstructorId);
 
-            _context.Courses.Add(course);
-            await _context.SaveChangesAsync();
+        if (!instructorExists)
+            return BadRequest(new { message = "Invalid instructor" });
 
-            return CreatedAtAction(nameof(GetCourse), new { id = course.Id }, MapToCourseDto(course));
-        }
-        catch (Exception ex)
+        var discount = dto.OriginalPrice > 0
+            ? (int)((1 - (dto.Price / dto.OriginalPrice)) * 100)
+            : 0;
+
+        var course = new Course
         {
-            _logger.LogError(ex, "Error creating course");
-            return StatusCode(500, new { message = "Error creating course", error = ex.Message });
-        }
+            Title = dto.Title,
+            Description = dto.Description,
+            Category = dto.Category,
+            Subcategory = dto.Subcategory,
+            Price = dto.Price,
+            OriginalPrice = dto.OriginalPrice,
+            Discount = discount,
+            Badge = dto.Badge,
+            InstructorId = dto.InstructorId,
+            ImageUrl = dto.ImageUrl,
+            WhatYouLearn = dto.WhatYouLearn,
+            Includes = dto.Includes,
+            Companies = dto.Companies,
+            Rating = 4.5,
+            ReviewCount = 0,
+            StudentCount = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.Courses.Add(course);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetCourse), new { id = course.Id }, MapToCourseDto(course));
     }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error creating course");
+        return StatusCode(500, new { message = "Error creating course" });
+    }
+}
+
 
     // PUT: api/courses/{id}
     [HttpPut("{id}")]

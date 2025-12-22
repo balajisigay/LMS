@@ -4,23 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { HiBookOpen, HiClock, HiAcademicCap, HiArrowRight } from "react-icons/hi";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-
-interface Enrollment {
-  id: number;
-  userId: string;
-  courseId: number;
-  enrolledAt: string;
-  course: {
-    id: number;
-    title: string;
-    description: string;
-    imageUrl: string;
-    price: number;
-    instructor: {
-      name: string;
-    };
-  };
-}
+import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
 
 export const MyLearningPage: React.FC = () => {
   const navigate = useNavigate();
@@ -35,6 +19,9 @@ export const MyLearningPage: React.FC = () => {
   const loadEnrollments = async () => {
     try {
       setLoading(true);
+      setError("");
+      
+      // Get user from localStorage
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       
       if (!user.userId) {
@@ -42,18 +29,13 @@ export const MyLearningPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/Enrollment/${user.userId}`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to load enrollments");
-      }
-
-      const data = await response.json();
+      // Fetch enrollments using the API service
+      const data = await getEnrollments(user.userId);
       console.log("Enrollments loaded:", data);
       setEnrollments(data);
     } catch (err: any) {
       console.error("Error loading enrollments:", err);
-      setError(err.message || "Failed to load enrollments");
+      setError(err.message || "Failed to load your courses. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -85,7 +67,10 @@ export const MyLearningPage: React.FC = () => {
               <div>
                 <h1 style={styles.title}>My Learning</h1>
                 <p style={styles.subtitle}>
-                  Continue your journey with {enrollments.length} enrolled {enrollments.length === 1 ? 'course' : 'courses'}
+                  {enrollments.length === 0 
+                    ? "Start your learning journey today"
+                    : `Continue your journey with ${enrollments.length} enrolled ${enrollments.length === 1 ? 'course' : 'courses'}`
+                  }
                 </p>
               </div>
             </div>
@@ -95,23 +80,36 @@ export const MyLearningPage: React.FC = () => {
           {error && (
             <div style={styles.errorAlert}>
               <span style={styles.errorIcon}>⚠️</span>
-              {error}
+              <div>
+                <div style={styles.errorTitle}>Error Loading Courses</div>
+                <div style={styles.errorText}>{error}</div>
+              </div>
+              <button 
+                style={styles.retryButton}
+                onClick={loadEnrollments}
+              >
+                Try Again
+              </button>
             </div>
           )}
 
-          {/* Courses Grid */}
-          {enrollments.length === 0 ? (
+          {/* Courses Grid or Empty State */}
+          {!error && enrollments.length === 0 ? (
             <div style={styles.emptyState}>
-              <HiBookOpen size={64} color="#9ca3af" />
+              <div style={styles.emptyIcon}>
+                <HiBookOpen size={64} />
+              </div>
               <h2 style={styles.emptyTitle}>No courses enrolled yet</h2>
               <p style={styles.emptyText}>
-                Start your learning journey by exploring our course catalog
+                Discover thousands of courses and start learning something new today. 
+                Build skills that will help you advance your career.
               </p>
               <button
                 style={styles.exploreButton}
                 onClick={() => navigate("/")}
               >
-                Explore Courses
+                <HiAcademicCap size={20} />
+                <span>Explore Courses</span>
               </button>
             </div>
           ) : (
@@ -127,6 +125,10 @@ export const MyLearningPage: React.FC = () => {
                       src={enrollment.course.imageUrl}
                       alt={enrollment.course.title}
                       style={styles.image}
+                      onError={(e) => {
+                        // Fallback image if the course image fails to load
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200/667eea/ffffff?text=Course+Image';
+                      }}
                     />
                     <div style={styles.enrolledBadge}>
                       <HiAcademicCap size={16} />
@@ -137,7 +139,7 @@ export const MyLearningPage: React.FC = () => {
                   <div style={styles.courseContent}>
                     <h3 style={styles.courseTitle}>{enrollment.course.title}</h3>
                     <p style={styles.courseInstructor}>
-                      {enrollment.course.instructor.name}
+                      By {enrollment.course.instructor.name}
                     </p>
                     <p style={styles.courseDescription}>
                       {enrollment.course.description}
@@ -230,6 +232,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     boxShadow: "0 8px 20px rgba(102, 126, 234, 0.4)",
+    flexShrink: 0,
   },
   title: {
     margin: 0,
@@ -241,22 +244,44 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "8px 0 0 0",
     fontSize: "16px",
     color: "#6b7280",
+    lineHeight: 1.5,
   },
   errorAlert: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    justifyContent: "space-between",
+    gap: "16px",
     background: "linear-gradient(135deg, #ef4444, #dc2626)",
     color: "white",
-    padding: "16px 24px",
+    padding: "20px 24px",
     borderRadius: "16px",
     marginBottom: "24px",
-    fontSize: "15px",
-    fontWeight: 500,
     boxShadow: "0 10px 30px rgba(239, 68, 68, 0.3)",
   },
   errorIcon: {
-    fontSize: "20px",
+    fontSize: "24px",
+    flexShrink: 0,
+  },
+  errorTitle: {
+    fontSize: "16px",
+    fontWeight: 700,
+    marginBottom: "4px",
+  },
+  errorText: {
+    fontSize: "14px",
+    opacity: 0.9,
+  },
+  retryButton: {
+    padding: "10px 20px",
+    background: "rgba(255, 255, 255, 0.2)",
+    color: "white",
+    border: "2px solid white",
+    borderRadius: "10px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s",
+    whiteSpace: "nowrap",
   },
   emptyState: {
     background: "rgba(255, 255, 255, 0.95)",
@@ -270,6 +295,17 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: "center",
     boxShadow: "0 25px 50px rgba(0, 0, 0, 0.15)",
   },
+  emptyIcon: {
+    width: "120px",
+    height: "120px",
+    borderRadius: "50%",
+    background: "linear-gradient(135deg, #667eea, #764ba2)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "white",
+    marginBottom: "8px",
+  },
   emptyTitle: {
     margin: 0,
     fontSize: "28px",
@@ -280,7 +316,8 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     fontSize: "16px",
     color: "#6b7280",
-    maxWidth: "400px",
+    maxWidth: "500px",
+    lineHeight: 1.6,
   },
   exploreButton: {
     marginTop: "8px",
@@ -294,6 +331,9 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     transition: "all 0.2s",
     boxShadow: "0 8px 20px rgba(102, 126, 234, 0.3)",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
   },
   coursesGrid: {
     display: "grid",
@@ -313,6 +353,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
     height: "200px",
     overflow: "hidden",
+    background: "linear-gradient(135deg, #667eea, #764ba2)",
   },
   image: {
     width: "100%",
@@ -343,6 +384,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: "#1f2937",
     marginBottom: "8px",
+    lineHeight: 1.3,
   },
   courseInstructor: {
     margin: 0,
@@ -368,6 +410,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     paddingTop: "20px",
     borderTop: "2px solid #f3f4f6",
+    gap: "12px",
   },
   enrolledDate: {
     display: "flex",
@@ -375,13 +418,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "6px",
     fontSize: "13px",
     color: "#6b7280",
+    flexShrink: 1,
   },
   continueButton: {
-    padding: "8px 16px",
+    padding: "10px 20px",
     background: "linear-gradient(135deg, #667eea, #764ba2)",
     color: "white",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "10px",
     fontSize: "14px",
     fontWeight: 600,
     cursor: "pointer",
@@ -389,6 +433,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
+    whiteSpace: "nowrap",
+    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
   },
 };
 
@@ -409,6 +455,16 @@ styleSheet.textContent = `
   [style*="continueButton"]:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 24px rgba(102, 126, 234, 0.4) !important;
+  }
+  
+  [style*="retryButton"]:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  @media (max-width: 768px) {
+    [style*="coursesGrid"] {
+      grid-template-columns: 1fr !important;
+    }
   }
 `;
 document.head.appendChild(styleSheet);
