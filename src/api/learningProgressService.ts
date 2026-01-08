@@ -1,4 +1,6 @@
-import { BASE_URL } from "./endpoints";
+import axios from "axios";
+
+const BASE_URL = "http://localhost:5000/api/CourseProgress";
 
 export interface CourseProgress {
   courseId: number;
@@ -6,8 +8,18 @@ export interface CourseProgress {
   progress: number;
 }
 
-export async function getLearningProgress(userId: string): Promise<CourseProgress[]> {
-  const res = await fetch(`${BASE_URL}/Enrollment/progress/${userId}`);
-  if (!res.ok) throw new Error("Failed to load progress");
-  return res.json();
-}
+export const getLearningProgress = async (
+  userId: string
+): Promise<CourseProgress[]> => {
+  const res = await axios.get(`${BASE_URL}/${userId}`);
+  return res.data;
+};
+
+export const updateProgress = async (
+  userId: string,
+  courseId: number
+) => {
+  return axios.post(`${BASE_URL}/update`, null, {
+    params: { userId, courseId },
+  });
+};

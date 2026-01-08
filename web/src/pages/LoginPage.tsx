@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";
 import LoginImage from "../assets/loginimage.png";
 import { HiMail, HiLockClosed, HiUser, HiEye, HiEyeOff } from "react-icons/hi";
+import { setCurrentUser } from "../utils/auth";
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +16,22 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user.userId) {
+          navigate("/");
+        }
+      } catch (e) {
+        // Invalid user data, clear it
+        localStorage.removeItem("user");
+      }
+    }
+  }, [navigate]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -32,13 +49,33 @@ const LoginPage: React.FC = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) throw new Error(await response.text());
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Login failed");
+      }
 
       const data = await response.json();
-      localStorage.setItem("user", JSON.stringify(data));
+      
+      // Validate response data
+      if (!data.userId || !data.email) {
+        throw new Error("Invalid response from server");
+      }
+
+      console.log("✅ Login successful:", {
+        userId: data.userId,
+        email: data.email,
+        fullName: data.fullName,
+        role: data.role
+      });
+
+      // Save user data using the auth utility
+      setCurrentUser(data);
+      
+      // Navigate to home page
       navigate("/");
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      console.error("❌ Login error:", err);
+      setError(err.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -55,6 +92,11 @@ const LoginPage: React.FC = () => {
       return;
     }
 
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -65,17 +107,26 @@ const LoginPage: React.FC = () => {
         body: JSON.stringify({ email, password, fullName }),
       });
 
-      if (!response.ok) throw new Error(await response.text());
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Registration failed");
+      }
 
+      console.log("✅ Registration successful");
+      
+      // Clear form and switch to login tab
       setError("");
       setActiveTab("login");
       setPassword("");
       setConfirmPassword("");
+      setFullName("");
+      
       setTimeout(() => {
-        alert("Registration successful! Please login.");
+        alert("Registration successful! Please login with your credentials.");
       }, 100);
     } catch (err: any) {
-      setError(err.message || "Registration failed");
+      console.error("❌ Registration error:", err);
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }

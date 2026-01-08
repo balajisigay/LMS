@@ -1,53 +1,62 @@
 export interface Course {
-  id: number;
+  id: number;                 // ✅ FIXED
   title: string;
   description: string;
   category: string;
   subcategory: string;
+
   price: number;
   originalPrice: number;
   discount: number;
+
   badge: string;
   rating: number;
   reviewCount: number;
   studentCount: number;
-  instructorId: number;
-  instructor: {
-    id?: number;
+
+  instructorId: number;       // ✅ FIXED
+  instructor?: {
+    id: number;
     name: string;
     title: string;
     rating: number;
     students: number;
     courses: number;
     bio: string;
-    imageUrl?: string;
+    imageUrl: string;
   };
-  imageUrl: string;
+
+  imageUrl: string;           // ✅ NOW RESOLVES FOR ALL CARDS
+
   whatYouLearn: string[];
-  courseSections: CourseSection[];
   includes: string[];
-  reviews: CourseReview[];
   companies: string[];
-  createdAt: Date | string;
-  updatedAt: Date | string;
+
+  courseSections: CourseSection[]; // ✅ MATCH API
+  reviews: CourseReview[];
+
+  createdAt: string;
+  updatedAt: string;
 }
 
+
 export interface CourseSection {
-  id?: number;
-  courseId?: number;
+  id: number;
+  courseId: number;
   day: string;
   title: string;
   duration: string;
-  lectures?: CourseLecture[];
+  lectures: CourseLecture[];   // ✅ MATCH API
 }
 
 export interface CourseLecture {
-  id?: number;
-  sectionId?: number;
+  id: number;
+  sectionId: number;
   title: string;
   duration: string;
   videoUrl?: string;
 }
+
 
 export interface CourseReview {
   id?: number;

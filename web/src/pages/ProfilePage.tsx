@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   getUserProfile, 
   updateUserProfile, 
@@ -18,8 +19,10 @@ import {
   HiTrash
 } from "react-icons/hi";
 import { FaLinkedin, FaTwitter } from "react-icons/fa";
+import { requireAuth, getUserId } from "../utils/auth";
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -39,8 +42,6 @@ const ProfilePage: React.FC = () => {
     twitter: "",
   });
 
-  const userId = JSON.parse(localStorage.getItem("user") || "{}").userId || 1;
-
   useEffect(() => {
     loadProfile();
   }, []);
@@ -48,7 +49,21 @@ const ProfilePage: React.FC = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
+      setError("");
+      
+      // Require authentication - will redirect if not logged in
+      const user = requireAuth(navigate);
+      const userId = getUserId();
+      
+      console.log("✅ Loading profile for user:", {
+        userId,
+        email: user.email,
+        fullName: user.fullName
+      });
+      
       const data = await getUserProfile(userId);
+      console.log("✅ Profile loaded:", data);
+      
       setProfile(data);
       setFormData({
         fullName: data.fullName || "",
@@ -60,7 +75,14 @@ const ProfilePage: React.FC = () => {
         twitter: data.twitter || "",
       });
     } catch (err: any) {
-      setError(err.message);
+      console.error("❌ Error loading profile:", err);
+      
+      // If authentication error, user will be redirected
+      if (err.message === "Authentication required") {
+        return;
+      }
+      
+      setError(err.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -70,13 +92,23 @@ const ProfilePage: React.FC = () => {
     try {
       setError("");
       setSuccess("");
+      
+      const userId = getUserId();
+      console.log("💾 Saving profile for userId:", userId);
+      console.log("📝 Form data:", formData);
+      
       await updateUserProfile(userId, formData);
+      
       setSuccess("Profile updated successfully!");
       setEditing(false);
+      
+      // Reload profile to get updated data
       await loadProfile();
+      
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.message);
+      console.error("❌ Error saving profile:", err);
+      setError(err.message || "Failed to update profile");
     }
   };
 
@@ -97,12 +129,18 @@ const ProfilePage: React.FC = () => {
     try {
       setUploading(true);
       setError("");
+      
+      const userId = getUserId();
+      console.log("📷 Uploading photo for userId:", userId);
+      
       await uploadProfilePhoto(userId, file);
+      
       setSuccess("Profile photo updated!");
       await loadProfile();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.message);
+      console.error("❌ Error uploading photo:", err);
+      setError(err.message || "Failed to upload photo");
     } finally {
       setUploading(false);
     }
@@ -113,12 +151,18 @@ const ProfilePage: React.FC = () => {
 
     try {
       setError("");
+      
+      const userId = getUserId();
+      console.log("🗑️ Deleting photo for userId:", userId);
+      
       await deleteProfilePhoto(userId);
+      
       setSuccess("Profile photo deleted");
       await loadProfile();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.message);
+      console.error("❌ Error deleting photo:", err);
+      setError(err.message || "Failed to delete photo");
     }
   };
 
@@ -135,6 +179,9 @@ const ProfilePage: React.FC = () => {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.errorText}>Failed to load profile</div>
+        <button onClick={loadProfile} style={styles.retryButton}>
+          Try Again
+        </button>
       </div>
     );
   }
@@ -446,6 +493,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    gap: '20px',
   },
   spinner: {
     width: '50px',
@@ -456,18 +504,27 @@ const styles: Record<string, React.CSSProperties> = {
     animation: 'spin 1s linear infinite',
   },
   loadingText: {
-    marginTop: '20px',
     fontSize: '18px',
     color: 'white',
     fontWeight: 500,
   },
   errorText: {
     fontSize: '18px',
-    color: '#ef4444',
+    color: 'white',
     fontWeight: 600,
-    background: 'white',
+    background: 'rgba(239, 68, 68, 0.9)',
     padding: '16px 32px',
     borderRadius: '12px',
+  },
+  retryButton: {
+    padding: '12px 24px',
+    background: 'white',
+    color: '#667eea',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '15px',
+    fontWeight: 600,
+    cursor: 'pointer',
   },
   successAlert: {
     display: 'flex',

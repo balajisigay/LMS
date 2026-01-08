@@ -7,8 +7,11 @@ import { Course, CourseSection, CourseLecture, CourseReview } from "../types/cou
 import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import { updateProgress } from "../../../src/api/learningProgressService";
+import { getCurrentUser, requireAuth } from "../utils/auth";
 
-const DEMO_USER_ID = "demoUser"; // replace later with auth user
+
+
 
 export const CourseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,31 +48,61 @@ export const CourseDetailPage: React.FC = () => {
     setExpandedSections(s);
   };
 
-  const handleLectureClick = (url: string) => {
-    setSelectedVideo(url);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+const handleLectureClick = async (url: string) => {
+  setSelectedVideo(url);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  try {
+    const user = getCurrentUser();
+
+    if (!user || !course) {
+      console.warn("User not logged in, skipping progress update");
+      return;
+    }
+
+    await updateProgress(String(user.userId), course.id);
+    console.log("✅ Course progress updated for user:", user.userId);
+    
+    // 🔥 Dispatch custom event to notify LearningPaths component
+    window.dispatchEvent(new CustomEvent("progress-updated"));
+    console.log("🔔 Progress update event dispatched");
+    
+  } catch (err) {
+    console.error("❌ Failed to update progress", err);
+  }
+};
+
+
 
   // 🔥 ADD TO CART
-  const handleAddToCart = async () => {
-    if (!course) return;
-    try {
-      await addToCart(DEMO_USER_ID, course.id);
-      alert("Course added to cart 🛒");
-      navigate("/cart");
-    } catch (err: any) {
-      navigate("/cart"); // already in cart → go anyway
-    }
-  };
+const handleAddToCart = async () => {
+  if (!course) return;
+
+  try {
+    const user = requireAuth(navigate); // 🔐 redirects if not logged in
+
+    await addToCart(user.userId, course.id);
+    alert("Course added to cart 🛒");
+    navigate("/cart");
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   // 🔥 BUY NOW
-  const handleBuyNow = async () => {
-    if (!course) return;
-    try {
-      await addToCart(DEMO_USER_ID, course.id);
-    } catch {}
+const handleBuyNow = async () => {
+  if (!course) return;
+
+  try {
+    const user = requireAuth(navigate);
+
+    await addToCart(user.userId, course.id);
     navigate("/cart");
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   if (loading) {
     return (

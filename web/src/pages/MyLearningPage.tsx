@@ -1,14 +1,16 @@
-// src/pages/MyLearningPage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { HiBookOpen, HiClock, HiAcademicCap, HiArrowRight } from "react-icons/hi";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
+import { getLearningProgress, CourseProgress } from "../../../src/api/learningProgressService";
+import { requireAuth } from "../utils/auth";
 
 export const MyLearningPage: React.FC = () => {
   const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [progressMap, setProgressMap] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -21,24 +23,52 @@ export const MyLearningPage: React.FC = () => {
       setLoading(true);
       setError("");
       
-      // Get user from localStorage
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const user = requireAuth(navigate);
       
-      if (!user.userId) {
-        navigate("/login");
+      console.log("✅ Authenticated user:", {
+        userId: user.userId,
+        email: user.email,
+        fullName: user.fullName
+      });
+      
+      // Fetch enrollments and progress in parallel
+      const [enrollmentsData, progressData] = await Promise.all([
+        getEnrollments(user.userId),
+        getLearningProgress(String(user.userId))
+      ]);
+      
+      console.log("✅ API Response received:", {
+        enrollments: enrollmentsData.length,
+        progress: progressData.length
+      });
+      
+      // Create a map of courseId -> progress percentage
+      const progressMapping = new Map<number, number>();
+      progressData.forEach((p: CourseProgress) => {
+        progressMapping.set(p.courseId, p.progress);
+      });
+      
+      setEnrollments(enrollmentsData);
+      setProgressMap(progressMapping);
+    } catch (err: any) {
+      console.error("❌ Error loading enrollments:", err);
+      
+      if (err.message === "Authentication required") {
         return;
       }
-
-      // Fetch enrollments using the API service
-      const data = await getEnrollments(user.userId);
-      console.log("Enrollments loaded:", data);
-      setEnrollments(data);
-    } catch (err: any) {
-      console.error("Error loading enrollments:", err);
+      
       setError(err.message || "Failed to load your courses. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCourseClick = (courseId: number) => {
+    navigate(`/course/${courseId}`);
+  };
+
+  const getProgressForCourse = (courseId: number): number => {
+    return progressMap.get(courseId) || 0;
   };
 
   if (loading) {
@@ -80,7 +110,7 @@ export const MyLearningPage: React.FC = () => {
           {error && (
             <div style={styles.errorAlert}>
               <span style={styles.errorIcon}>⚠️</span>
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={styles.errorTitle}>Error Loading Courses</div>
                 <div style={styles.errorText}>{error}</div>
               </div>
@@ -114,61 +144,90 @@ export const MyLearningPage: React.FC = () => {
             </div>
           ) : (
             <div style={styles.coursesGrid}>
-              {enrollments.map((enrollment) => (
-                <div
-                  key={enrollment.id}
-                  style={styles.courseCard}
-                  onClick={() => navigate(`/course/${enrollment.course.id}`)}
-                >
-                  <div style={styles.courseImage}>
-                    <img
-                      src={enrollment.course.imageUrl}
-                      alt={enrollment.course.title}
-                      style={styles.image}
-                      onError={(e) => {
-                        // Fallback image if the course image fails to load
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200/667eea/ffffff?text=Course+Image';
-                      }}
-                    />
-                    <div style={styles.enrolledBadge}>
-                      <HiAcademicCap size={16} />
-                      <span>Enrolled</span>
-                    </div>
-                  </div>
-
-                  <div style={styles.courseContent}>
-                    <h3 style={styles.courseTitle}>{enrollment.course.title}</h3>
-                    <p style={styles.courseInstructor}>
-                      By {enrollment.course.instructor.name}
-                    </p>
-                    <p style={styles.courseDescription}>
-                      {enrollment.course.description}
-                    </p>
-
-                    <div style={styles.courseFooter}>
-                      <div style={styles.enrolledDate}>
-                        <HiClock size={14} />
-                        <span>
-                          Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                      <button
-                        style={styles.continueButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/course/${enrollment.course.id}`);
+              {enrollments.map((enrollment) => {
+                const progress = getProgressForCourse(enrollment.course.id);
+                
+                return (
+                  <div
+                    key={enrollment.id}
+                    style={styles.courseCard}
+                    className="course-card"
+                    onClick={() => handleCourseClick(enrollment.course.id)}
+                  >
+                    <div style={styles.courseImage}>
+                      <img
+                        src={enrollment.course.imageUrl || 'https://via.placeholder.com/400x200/667eea/ffffff?text=Course+Image'}
+                        alt={enrollment.course.title}
+                        style={styles.image}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200/667eea/ffffff?text=Course+Image';
                         }}
-                      >
-                        Continue <HiArrowRight size={16} />
-                      </button>
+                      />
+                      <div style={styles.enrolledBadge}>
+                        <HiAcademicCap size={16} />
+                        <span>Enrolled</span>
+                      </div>
+                    </div>
+
+                    <div style={styles.courseContent}>
+                      <h3 style={styles.courseTitle}>{enrollment.course.title}</h3>
+                      <p style={styles.courseInstructor}>
+                        By {enrollment.course.instructor?.name || 'Unknown Instructor'}
+                      </p>
+                      <p style={styles.courseDescription}>
+                        {enrollment.course.description}
+                      </p>
+
+                      {/* Progress Bar */}
+                      <div style={styles.progressSection}>
+                        <div style={styles.progressHeader}>
+                          <span style={styles.progressLabel}>Course Progress</span>
+                          <span style={styles.progressPercent}>{progress}%</span>
+                        </div>
+                        <div style={styles.progressBarContainer}>
+                          <div 
+                            style={{
+                              ...styles.progressBarFill,
+                              width: `${progress}%`
+                            }}
+                          />
+                        </div>
+                        <p style={styles.progressHint}>
+                          {progress === 0 
+                            ? "Start watching to track your progress" 
+                            : progress === 100 
+                            ? "🎉 Course completed!" 
+                            : "Keep going! You're making great progress"}
+                        </p>
+                      </div>
+
+                      <div style={styles.courseFooter}>
+                        <div style={styles.enrolledDate}>
+                          <HiClock size={14} />
+                          <span>
+                            Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        <button
+                          style={styles.continueButton}
+                          className="continue-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCourseClick(enrollment.course.id);
+                          }}
+                        >
+                          {progress === 0 ? 'Start Course' : progress === 100 ? 'Review' : 'Continue'} 
+                          <HiArrowRight size={16} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -404,6 +463,51 @@ const styles: Record<string, React.CSSProperties> = {
     WebkitBoxOrient: "vertical",
     overflow: "hidden",
   },
+  progressSection: {
+    marginBottom: "20px",
+    padding: "16px",
+    background: "rgba(102, 126, 234, 0.05)",
+    borderRadius: "12px",
+    border: "1px solid rgba(102, 126, 234, 0.1)",
+  },
+  progressHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "8px",
+  },
+  progressLabel: {
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#4b5563",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  progressPercent: {
+    fontSize: "16px",
+    fontWeight: 700,
+    color: "#667eea",
+  },
+  progressBarContainer: {
+    width: "100%",
+    height: "8px",
+    background: "rgba(102, 126, 234, 0.15)",
+    borderRadius: "999px",
+    overflow: "hidden",
+    marginBottom: "8px",
+  },
+  progressBarFill: {
+    height: "100%",
+    background: "linear-gradient(90deg, #667eea, #764ba2)",
+    borderRadius: "999px",
+    transition: "width 0.5s ease",
+  },
+  progressHint: {
+    margin: 0,
+    fontSize: "12px",
+    color: "#6b7280",
+    fontStyle: "italic",
+  },
   courseFooter: {
     display: "flex",
     justifyContent: "space-between",
@@ -438,7 +542,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-// Add keyframe animation
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes spin {
@@ -446,23 +549,23 @@ styleSheet.textContent = `
     100% { transform: rotate(360deg); }
   }
   
-  [style*="courseCard"]:hover {
+  .course-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
   }
   
-  [style*="exploreButton"]:hover,
-  [style*="continueButton"]:hover {
+  .continue-btn:hover,
+  button[style*="exploreButton"]:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 24px rgba(102, 126, 234, 0.4) !important;
   }
   
-  [style*="retryButton"]:hover {
+  button[style*="retryButton"]:hover {
     background: rgba(255, 255, 255, 0.3) !important;
   }
   
   @media (max-width: 768px) {
-    [style*="coursesGrid"] {
+    div[style*="coursesGrid"] {
       grid-template-columns: 1fr !important;
     }
   }

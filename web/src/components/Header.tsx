@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { HiHeart, HiShoppingCart, HiSearch, HiUser, HiMenu, HiX, HiBookOpen, HiLogout, HiCog } from "react-icons/hi";
+import { getCurrentUser, clearCurrentUser } from "../utils/auth";
+import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
 
 interface Course {
   id: number;
   title: string;
+  description?: string;
+  price?: number;
+  imageUrl?: string;
 }
 
 interface HeaderProps {
@@ -20,31 +25,14 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<Enrollment[]>([]);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Mock courses data
-    setCourses([
-      { id: 1, title: "Web Development Bootcamp" },
-      { id: 2, title: "Python for Data Science" },
-      { id: 3, title: "React Advanced Patterns" },
-    ]);
-
-    // Check if user is logged in
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user.userId) {
-      setIsLoggedIn(true);
-      setUserName(user.name || "User");
-      // Mock profile image
-      setProfileImage(null);
-      // Mock enrollments
-      setEnrolledCourses([
-        { id: 1, course: { id: 1, title: "Web Development" }, enrolledAt: new Date() }
-      ]);
-    }
+    initializeHeader();
 
     // Add scroll listener
     const handleScroll = () => {
@@ -54,18 +42,100 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const initializeHeader = async () => {
+    try {
+      // Check if user is logged in
+      const user = getCurrentUser();
+      
+      if (user && user.userId) {
+        console.log("✅ User logged in:", { userId: user.userId, name: user.fullName });
+        setIsLoggedIn(true);
+        setUserName(user.fullName || user.email || "User");
+        
+        // Load user's profile image if available
+        // Note: You'll need to fetch this from your user profile API
+        setProfileImage(null); // Set to actual profile image URL when available
+        
+        // Load enrolled courses
+        await loadEnrolledCourses(user.userId);
+      } else {
+        console.log("ℹ️ No user logged in");
+        setIsLoggedIn(false);
+      }
+
+      // Load available courses from API
+      await loadAvailableCourses();
+    } catch (error) {
+      console.error("❌ Error initializing header:", error);
+    }
+  };
+
+  const loadEnrolledCourses = async (userId: number) => {
+    try {
+      setLoading(true);
+      console.log("📚 Loading enrolled courses for userId:", userId);
+      
+      const enrollments = await getEnrollments(userId);
+      console.log("✅ Loaded enrollments:", enrollments.length);
+      
+      if (enrollments.length > 0) {
+        console.log("📖 Sample enrollment:", {
+          courseTitle: enrollments[0].course.title,
+          enrolledAt: enrollments[0].enrolledAt
+        });
+      }
+      
+      setEnrolledCourses(enrollments);
+    } catch (error) {
+      console.error("❌ Error loading enrolled courses:", error);
+      setEnrolledCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAvailableCourses = async () => {
+    try {
+      console.log("🔍 Loading available courses...");
+      
+      // Fetch courses from your API
+      const response = await fetch("http://localhost:5000/api/Course", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch courses");
+      }
+
+      const data = await response.json();
+      console.log("✅ Loaded courses:", data.length);
+      
+      setCourses(data);
+    } catch (error) {
+      console.error("❌ Error loading courses:", error);
+      // Fallback to empty array if API fails
+      setCourses([]);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchValue.trim()) {
-      console.log("Searching for:", searchValue);
+      console.log("🔍 Searching for:", searchValue);
+      navigate(`/search?q=${encodeURIComponent(searchValue)}`);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    console.log("👋 Logging out user");
+    clearCurrentUser();
     setIsLoggedIn(false);
     setProfileImage(null);
     setUserName("");
+    setEnrolledCourses([]);
     setProfileMenuOpen(false);
     navigate("/");
   };
@@ -134,23 +204,49 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             {coursesOpen && (
               <div style={styles.dropdown}>
                 <div style={styles.dropdownHeader}>
-                  <h3 style={styles.dropdownTitle}>Explore Courses</h3>
+                  <h3 style={styles.dropdownTitle}>Available Courses</h3>
                   <p style={styles.dropdownSubtitle}>{courses.length} courses available</p>
                 </div>
                 <div style={styles.dropdownContent}>
-                  {courses.map((course) => (
-                    <div
-                      key={course.id}
-                      style={styles.dropdownItem}
-                      onClick={() => {
-                        navigate(`/course/${course.id}`);
-                        setCoursesOpen(false);
-                      }}
-                    >
-                      <div style={styles.courseIcon}>📚</div>
-                      <span>{course.title}</span>
+                  {courses.length > 0 ? (
+                    courses.slice(0, 6).map((course) => (
+                      <div
+                        key={course.id}
+                        style={styles.dropdownItem}
+                        onClick={() => {
+                          navigate(`/course/${course.id}`);
+                          setCoursesOpen(false);
+                        }}
+                      >
+                        <div style={styles.courseIcon}>📚</div>
+                        <div style={styles.courseItemContent}>
+                          <span style={styles.courseItemTitle}>{course.title}</span>
+                          {course.price !== undefined && (
+                            <span style={styles.courseItemPrice}>
+                              ${course.price.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={styles.emptyState}>
+                      <p style={styles.emptyText}>No courses available</p>
                     </div>
-                  ))}
+                  )}
+                  {courses.length > 6 && (
+                    <div style={styles.viewAllContainer}>
+                      <button
+                        style={styles.viewAllButton}
+                        onClick={() => {
+                          navigate("/");
+                          setCoursesOpen(false);
+                        }}
+                      >
+                        View All Courses →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -189,25 +285,47 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                     </p>
                   </div>
                   <div style={styles.dropdownContent}>
-                    {enrolledCourses.length > 0 ? (
-                      enrolledCourses.map((enrollment) => (
-                        <div
-                          key={enrollment.id}
-                          style={styles.dropdownItem}
-                          onClick={() => {
-                            navigate(`/course/${enrollment.course.id}`);
-                            setMyLearningOpen(false);
-                          }}
-                        >
-                          <div style={styles.courseIcon}>✓</div>
-                          <div style={styles.enrollmentInfo}>
-                            <span style={styles.enrollmentTitle}>{enrollment.course.title}</span>
-                            <span style={styles.enrollmentDate}>
-                              Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                            </span>
+                    {loading ? (
+                      <div style={styles.loadingState}>
+                        <div style={styles.spinner}></div>
+                        <p style={styles.loadingText}>Loading courses...</p>
+                      </div>
+                    ) : enrolledCourses.length > 0 ? (
+                      <>
+                        {enrolledCourses.slice(0, 5).map((enrollment) => (
+                          <div
+                            key={enrollment.id}
+                            style={styles.dropdownItem}
+                            onClick={() => {
+                              navigate(`/course/${enrollment.course.id}`);
+                              setMyLearningOpen(false);
+                            }}
+                          >
+                            <div style={styles.enrolledIcon}>✓</div>
+                            <div style={styles.enrollmentInfo}>
+                              <span style={styles.enrollmentTitle}>{enrollment.course.title}</span>
+                              <span style={styles.enrollmentDate}>
+                                Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            </div>
                           </div>
+                        ))}
+                        <div style={styles.viewAllContainer}>
+                          <button
+                            style={styles.viewAllButton}
+                            onClick={() => {
+                              navigate("/my-learning");
+                              setMyLearningOpen(false);
+                            }}
+                          >
+                            View All My Courses →
+                          </button>
                         </div>
-                      ))
+                      </>
                     ) : (
                       <div style={styles.emptyState}>
                         <p style={styles.emptyText}>No enrolled courses yet</p>
@@ -339,6 +457,17 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                     <button
                       style={styles.profileDropdownItem}
                       onClick={() => {
+                        navigate("/my-learning");
+                        setProfileMenuOpen(false);
+                      }}
+                    >
+                      <HiBookOpen size={18} />
+                      <span>My Learning ({enrolledCourses.length})</span>
+                    </button>
+
+                    <button
+                      style={styles.profileDropdownItem}
+                      onClick={() => {
                         navigate("/settings");
                         setProfileMenuOpen(false);
                       }}
@@ -376,7 +505,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
               {/* Sign Up Button */}
               <button 
                 style={styles.signupButton} 
-                onClick={() => navigate("/signup")}
+                onClick={() => navigate("/login")}
               >
                 Sign Up
               </button>
@@ -399,11 +528,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
           <button 
             style={styles.mobileMenuItem}
             onClick={() => {
-              navigate("/courses");
+              navigate("/");
               setMobileMenuOpen(false);
             }}
           >
-            Courses
+            Browse Courses
           </button>
           {isLoggedIn && (
             <button 
@@ -470,7 +599,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
               <button 
                 style={styles.mobileMenuItemAccent}
                 onClick={() => {
-                  navigate("/signup");
+                  navigate("/login");
                   setMobileMenuOpen(false);
                 }}
               >

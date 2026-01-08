@@ -1,4 +1,5 @@
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\appsettings.json
+C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\LmsApi.staticwebassets.runtime.json
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\LmsApi.exe
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\LmsApi.deps.json
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\LmsApi.runtimeconfig.json
@@ -18,6 +19,7 @@ C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\Microsoft.Extensions.Dependenc
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\Microsoft.OpenApi.dll
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\Mono.TextTemplating.dll
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\MySqlConnector.dll
+C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\Newtonsoft.Json.dll
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\Pomelo.EntityFrameworkCore.MySql.dll
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
 C:\Users\user\Desktop\LMS\LmsApi\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
@@ -87,6 +89,7 @@ C:\Users\user\Desktop\LMS\LmsApi\obj\Debug\net8.0\LmsApi.AssemblyInfo.cs
 C:\Users\user\Desktop\LMS\LmsApi\obj\Debug\net8.0\LmsApi.csproj.CoreCompileInputs.cache
 C:\Users\user\Desktop\LMS\LmsApi\obj\Debug\net8.0\LmsApi.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\user\Desktop\LMS\LmsApi\obj\Debug\net8.0\LmsApi.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\user\Desktop\LMS\LmsApi\obj\Debug\net8.0\LmsApi.sourcelink.json
 C:\Users\user\Desktop\LMS\LmsApi\obj\Debug\net8.0\staticwebassets.build.json
 C:\Users\user\Desktop\LMS\LmsApi\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\user\Desktop\LMS\LmsApi\obj\Debug\net8.0\staticwebassets\msbuild.LmsApi.Microsoft.AspNetCore.StaticWebAssets.props

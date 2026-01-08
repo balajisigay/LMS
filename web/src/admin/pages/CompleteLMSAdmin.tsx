@@ -658,29 +658,105 @@ const handleSubmitCourse = async (e: React.FormEvent) => {
             </div>
             <div style={styles.modalBody}>
               <form onSubmit={handleSubmitCourse} style={styles.form}>
-                <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="Course Title" style={styles.input} />
-                <textarea required value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Description" style={styles.textarea} rows={4} />
-                <div style={styles.formRow}>
-                  <select required value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} style={styles.select}>
-                    {['Development', 'Design', 'Marketing', 'IT & Software', 'Personal Growth', 'Business'].map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  <input type="number" required value={formData.price} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} placeholder="Price" style={styles.input} />
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Course Title *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={formData.title} 
+                    onChange={(e) => setFormData({...formData, title: e.target.value})} 
+                    placeholder="e.g., Complete Python Programming" 
+                    style={styles.input} 
+                  />
                 </div>
-                <div style={styles.formRow}>
-                  <select required value={formData.instructorId} onChange={(e) => setFormData({...formData, instructorId: Number(e.target.value)})} style={styles.select}>
-                    <option value="">Select Instructor</option>
-                    {instructors.map(inst => (
-                      <option key={inst.id} value={inst.id}>{inst.name}</option>
-                    ))}
-                  </select>
-                  <input type="url" required value={formData.imageUrl} onChange={(e) => setFormData({...formData, imageUrl: e.target.value})} placeholder="Image URL" style={styles.input} />
+
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Description *</label>
+                  <textarea 
+                    required 
+                    value={formData.description} 
+                    onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                    placeholder="Detailed course description" 
+                    style={styles.textarea} 
+                    rows={4} 
+                  />
                 </div>
-                <textarea value={formData.whatYouLearn} onChange={(e) => setFormData({...formData, whatYouLearn: e.target.value})} placeholder="What you'll learn (one per line)" style={styles.textarea} rows={3} />
+
+                <div style={styles.formRow}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Category *</label>
+                    <select 
+                      required 
+                      value={formData.category} 
+                      onChange={(e) => setFormData({...formData, category: e.target.value})} 
+                      style={styles.select}
+                    >
+                      {['Development', 'Design', 'Marketing', 'IT & Software', 'Personal Growth', 'Business', 'Data Science'].map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Price (₹) *</label>
+                    <input 
+                      type="number" 
+                      required 
+                      min="0"
+                      step="0.01"
+                      value={formData.price} 
+                      onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} 
+                      placeholder="19.99" 
+                      style={styles.input} 
+                    />
+                  </div>
+                </div>
+
+                <div style={styles.formRow}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Instructor *</label>
+                    <select 
+                      required 
+                      value={formData.instructorId} 
+                      onChange={(e) => setFormData({...formData, instructorId: Number(e.target.value)})} 
+                      style={styles.select}
+                    >
+                      <option value="">Select Instructor</option>
+                      {instructors.map(inst => (
+                        <option key={inst.id} value={inst.id}>{inst.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Image URL *</label>
+                    <input 
+                      type="url" 
+                      required 
+                      value={formData.imageUrl} 
+                      onChange={(e) => setFormData({...formData, imageUrl: e.target.value})} 
+                      placeholder="https://example.com/image.jpg" 
+                      style={styles.input} 
+                    />
+                  </div>
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>What You'll Learn (one per line)</label>
+                  <textarea 
+                    value={formData.whatYouLearn} 
+                    onChange={(e) => setFormData({...formData, whatYouLearn: e.target.value})} 
+                    placeholder="Python Basics&#10;OOP Concepts&#10;Web Development&#10;Data Analysis" 
+                    style={styles.textarea} 
+                    rows={4} 
+                  />
+                </div>
+
                 <div style={styles.formActions}>
                   <button type="button" onClick={() => setShowModal(false)} style={styles.cancelButton}>Cancel</button>
-                  <button type="submit" style={styles.submitButton}>{modalMode === 'add' ? 'Create' : 'Update'}</button>
+                  <button type="submit" style={styles.submitButton}>
+                    {modalMode === 'add' ? '✓ Create Course' : '✓ Update Course'}
+                  </button>
                 </div>
               </form>
             </div>

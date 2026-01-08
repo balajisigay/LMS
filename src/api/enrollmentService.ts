@@ -36,22 +36,45 @@ export interface EnrollmentResponse {
  */
 export async function getEnrollments(userId: string): Promise<Enrollment[]> {
   try {
-    const response = await fetch(ENROLLMENT_API.GET(userId), {
+    const url = ENROLLMENT_API.GET(userId);
+    console.log("📡 Fetching enrollments from:", url);
+    
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
     });
 
+    console.log("📥 Response status:", response.status, response.statusText);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to fetch enrollments");
+      console.error("❌ API Error Response:", errorData);
+      throw new Error(errorData.message || `Failed to fetch enrollments (${response.status})`);
     }
 
     const data = await response.json();
+    console.log("✅ Raw API Response:", data);
+    console.log("✅ Response type:", Array.isArray(data) ? "Array" : typeof data);
+    console.log("✅ Number of items:", Array.isArray(data) ? data.length : "N/A");
+    
+    if (Array.isArray(data) && data.length > 0) {
+      console.log("✅ First enrollment structure:", {
+        id: data[0].id,
+        userId: data[0].userId,
+        courseId: data[0].courseId,
+        hasCourse: !!data[0].course,
+        courseTitle: data[0].course?.title,
+        hasInstructor: !!data[0].course?.instructor,
+        instructorName: data[0].course?.instructor?.name
+      });
+    }
+    
     return data;
   } catch (error: any) {
-    console.error("Error fetching enrollments:", error);
+    console.error("❌ Error fetching enrollments:", error);
+    console.error("❌ Error stack:", error.stack);
     throw new Error(error.message || "Failed to fetch enrollments");
   }
 }
@@ -67,7 +90,10 @@ export async function checkEnrollment(
   courseId: number
 ): Promise<boolean> {
   try {
-    const response = await fetch(ENROLLMENT_API.CHECK(userId, courseId), {
+    const url = ENROLLMENT_API.CHECK(userId, courseId);
+    console.log("🔍 Checking enrollment:", url);
+    
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -75,13 +101,15 @@ export async function checkEnrollment(
     });
 
     if (!response.ok) {
+      console.error("❌ Check enrollment failed:", response.status);
       throw new Error("Failed to check enrollment status");
     }
 
     const data = await response.json();
+    console.log("✅ Enrollment check result:", data);
     return data.isEnrolled || false;
   } catch (error) {
-    console.error("Error checking enrollment:", error);
+    console.error("❌ Error checking enrollment:", error);
     return false;
   }
 }
@@ -95,6 +123,8 @@ export async function createEnrollment(
   enrollmentData: CreateEnrollmentDto
 ): Promise<EnrollmentResponse> {
   try {
+    console.log("➕ Creating enrollment:", enrollmentData);
+    
     const response = await fetch(ENROLLMENT_API.CREATE, {
       method: "POST",
       headers: {
@@ -104,6 +134,7 @@ export async function createEnrollment(
     });
 
     const data = await response.json();
+    console.log("📥 Create enrollment response:", data);
 
     if (!response.ok) {
       throw new Error(data.message || "Failed to create enrollment");
@@ -111,7 +142,7 @@ export async function createEnrollment(
 
     return data;
   } catch (error: any) {
-    console.error("Error creating enrollment:", error);
+    console.error("❌ Error creating enrollment:", error);
     throw new Error(error.message || "Failed to enroll in course");
   }
 }
@@ -126,7 +157,7 @@ export async function getEnrollmentCount(userId: string): Promise<number> {
     const enrollments = await getEnrollments(userId);
     return enrollments.length;
   } catch (error) {
-    console.error("Error getting enrollment count:", error);
+    console.error("❌ Error getting enrollment count:", error);
     return 0;
   }
 }

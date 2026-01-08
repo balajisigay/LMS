@@ -11,8 +11,7 @@ import { InstructorSection } from "../components/InstructorSection";
 import { Footer } from "../components/Footer";
 import { Categories } from "../components/Categories";
 import { addToCart, getCart } from "../../../src/api/cartService";
-
-const userId = "demoUser"; // ← replace after auth
+import { getCurrentUser, isAuthenticated, requireAuth } from "../utils/auth";
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,9 +21,27 @@ export const LandingPage: React.FC = () => {
 
   // 🔥 cart count state
   const [cartCount, setCartCount] = useState(0);
+  const [userId, setUserId] = useState<number | null>(null);
 
   /* ------------------------------------------- */
-  /*            LOAD COURSES                     */
+  /*           CHECK AUTH & LOAD USER            */
+  /* ------------------------------------------- */
+  useEffect(() => {
+    try {
+      if (isAuthenticated()) {
+        const user = getCurrentUser();
+        if (user) {
+          setUserId(user.userId);
+        }
+      }
+    } catch (err) {
+      // User not logged in - cart will be unavailable
+      setUserId(null);
+    }
+  }, []);
+
+  /* ------------------------------------------- */
+  /*             LOAD COURSES                    */
   /* ------------------------------------------- */
   useEffect(() => void loadCourses(), []);
 
@@ -43,24 +60,32 @@ export const LandingPage: React.FC = () => {
   };
 
   /* ------------------------------------------- */
-  /*            LOAD CART COUNT                  */
+  /*             LOAD CART COUNT                 */
   /* ------------------------------------------- */
   useEffect(() => {
+    if (!userId) return;
+
     const loadCart = async () => {
       try {
         const res = await getCart(userId);
         setCartCount(res.data.length);
       } catch (err) {
         console.error("Failed to fetch cart");
+        setCartCount(0);
       }
     };
     loadCart();
-  }, []);
+  }, [userId]);
 
   /* ------------------------------------------- */
-  /*      CLICK COURSE → ADD TO CART + NAV       */
+  /*     CLICK COURSE → ADD TO CART + NAV        */
   /* ------------------------------------------- */
   const handleCoursePress = async (courseId: number) => {
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+
     try {
       await addToCart(userId, courseId);
 
@@ -75,9 +100,9 @@ export const LandingPage: React.FC = () => {
 
   return (
     <>
-      {/* 🔥 Pass cartCount to Header */}
+      {/* 🔥 Pass cartCount to Header (0 if not logged in) */}
       <Header
-        cartCount={cartCount}
+        cartCount={userId ? cartCount : 0}
         onLoginPress={() => navigate("/login")}
         onJoinPress={() => navigate("/register")}
       />

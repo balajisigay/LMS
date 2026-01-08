@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\user\\Desktop\\LMS\\LmsApi\\wwwroot\\uploads\\3bda0765-144d-43d7-8731-5e02d6834da0.png",
+      "PackagePath": "staticwebassets\\uploads\\3bda0765-144d-43d7-8731-5e02d6834da0.png"
+    },
+    {
+      "Id": "C:\\Users\\user\\Desktop\\LMS\\LmsApi\\wwwroot\\uploads\\61c4faa4-7c8a-46f2-8047-3877193b8cd9.png",
+      "PackagePath": "staticwebassets\\uploads\\61c4faa4-7c8a-46f2-8047-3877193b8cd9.png"
+    },
+    {
+      "Id": "C:\\Users\\user\\Desktop\\LMS\\LmsApi\\wwwroot\\uploads\\b6c8c8e1-5729-42a9-a46b-2594858c3eec.png",
+      "PackagePath": "staticwebassets\\uploads\\b6c8c8e1-5729-42a9-a46b-2594858c3eec.png"
+    },
+    {
+      "Id": "C:\\Users\\user\\Desktop\\LMS\\LmsApi\\wwwroot\\uploads\\c6cc75ac-0eea-48f2-a130-1af4d4f5d59e.png",
+      "PackagePath": "staticwebassets\\uploads\\c6cc75ac-0eea-48f2-a130-1af4d4f5d59e.png"
+    },
+    {
+      "Id": "C:\\Users\\user\\Desktop\\LMS\\LmsApi\\wwwroot\\uploads\\c99df5a5-a4d0-49c8-8a69-a4f4ced9deaf.png",
+      "PackagePath": "staticwebassets\\uploads\\c99df5a5-a4d0-49c8-8a69-a4f4ced9deaf.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.LmsApi.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.LmsApi.props",
+      "PackagePath": "build\\LmsApi.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.LmsApi.props",
+      "PackagePath": "buildMultiTargeting\\LmsApi.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.LmsApi.props",
+      "PackagePath": "buildTransitive\\LmsApi.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

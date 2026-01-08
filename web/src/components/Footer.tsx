@@ -36,12 +36,44 @@ export const Footer: React.FC = () => {
             <p style={styles.modernTagline}>
               Building a better world through education
             </p>
-            <div style={styles.modernSocialLinks}>
-              <a style={styles.modernSocialIconTwitter}>𝕏</a>
-              <a style={styles.modernSocialIconFacebook}>f</a>
-              <a style={styles.modernSocialIconLinkedIn}>in</a>
-              <a style={styles.modernSocialIconYouTube}>▶</a>
-            </div>
+          <div style={styles.modernSocialLinks}>
+  <a
+    href="https://twitter.com/"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={styles.modernSocialIconTwitter}
+  >
+    𝕏
+  </a>
+
+  <a
+    href="https://facebook.com/"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={styles.modernSocialIconFacebook}
+  >
+    f
+  </a>
+
+  <a
+    href="https://linkedin.com/company/"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={styles.modernSocialIconLinkedIn}
+  >
+    in
+  </a>
+
+  <a
+    href="https://youtube.com/"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={styles.modernSocialIconYouTube}
+  >
+    ▶
+  </a>
+</div>
+
           </div>
 
           {/* Links Grid */}

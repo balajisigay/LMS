@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
 import { getLearningProgress } from "../../../src/api/learningProgressService";
+import { getCurrentUser } from "../utils/auth";
 
 /* ================= TYPES ================= */
 
@@ -27,7 +28,9 @@ const LearningPath: React.FC<{
   const accent =
     index === 0
       ? "linear-gradient(135deg, #4F46E5, #6366F1)"
-      : "linear-gradient(135deg, #EC4899, #F97316)";
+      : index === 1
+      ? "linear-gradient(135deg, #EC4899, #F97316)"
+      : "linear-gradient(135deg, #10B981, #059669)";
 
   return (
     <div
@@ -39,7 +42,7 @@ const LearningPath: React.FC<{
         transform: hovered ? "translateY(-2px)" : "translateY(0)",
         border: hovered
           ? "1px solid rgba(79,70,229,0.25)"
-          : "1px solid #e5e7eb",
+          : "1px solid rgba(229,231,235,0.2)",
       }}
       onClick={onPress}
       onMouseEnter={() => setHovered(true)}
@@ -52,11 +55,28 @@ const LearningPath: React.FC<{
       <div style={styles.pathContent}>
         <h4 style={styles.pathTitle}>{title}</h4>
         <p style={styles.pathMeta}>
-          {courses} • {duration} • {progress}%
+          {courses} • {duration}
         </p>
+        
+        {/* Progress Bar */}
+        <div style={styles.progressBarContainer}>
+          <div style={styles.progressBarTrack}>
+            <div 
+              style={{
+                ...styles.progressBarFill,
+                width: `${progress}%`,
+                backgroundImage: accent,
+              }}
+            />
+          </div>
+          <span style={styles.progressText}>{progress}%</span>
+        </div>
       </div>
 
-      <span style={styles.pathArrow}>→</span>
+      <span style={{
+        ...styles.pathArrow,
+        transform: hovered ? "translateX(4px)" : "translateX(0)",
+      }}>→</span>
     </div>
   );
 };
@@ -64,16 +84,28 @@ const LearningPath: React.FC<{
 /* ------------------ WEEKLY PROGRESS ------------------ */
 const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const safeValues = values.length
-    ? values.slice(0, 7)
-    : [0, 0, 0, 0, 0, 0, 0];
+  
+  // Pad values to always have 7 days
+  const safeValues = useMemo(() => {
+    if (values.length === 0) return [0, 0, 0, 0, 0, 0, 0];
+    
+    // If we have courses, use their progress values up to 7
+    const paddedValues = [...values.slice(0, 7)];
+    while (paddedValues.length < 7) {
+      paddedValues.push(0);
+    }
+    return paddedValues;
+  }, [values]);
 
-  const { avg, bestDay } = useMemo(() => {
+  const { avg, bestDay, maxValue } = useMemo(() => {
+    const nonZeroValues = safeValues.filter(v => v > 0);
     const sum = safeValues.reduce((a, b) => a + b, 0);
-    const avg = Math.round(sum / safeValues.length);
+    const avg = nonZeroValues.length > 0 
+      ? Math.round(sum / nonZeroValues.length) 
+      : 0;
     const max = Math.max(...safeValues);
     const idx = safeValues.indexOf(max);
-    return { avg, bestDay: days[idx] };
+    return { avg, bestDay: days[idx], maxValue: max };
   }, [safeValues]);
 
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -84,7 +116,9 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
         <div>
           <h4 style={styles.progressTitle}>Weekly Progress</h4>
           <p style={styles.progressSubtitle}>
-            Avg {avg}% completion • Best day: {bestDay}
+            {avg > 0 
+              ? `Avg ${avg}% completion • Best day: ${bestDay}` 
+              : "Start learning to see your progress"}
           </p>
         </div>
         <span style={styles.menuDots}>⋯</span>
@@ -106,14 +140,34 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
                   background:
                     hoverIndex === i
                       ? "linear-gradient(180deg, #4F46E5, #22C55E)"
-                      : "linear-gradient(180deg, #6366F1, #4F46E5)",
+                      : val > 0
+                      ? "linear-gradient(180deg, #6366F1, #4F46E5)"
+                      : "transparent",
                 }}
               />
             </div>
-            <span style={styles.label}>{days[i]}</span>
+            <span style={{
+              ...styles.label,
+              fontWeight: hoverIndex === i ? 600 : 400,
+              color: hoverIndex === i ? "#A5B4FC" : "#64748B",
+            }}>
+              {days[i]}
+            </span>
+            {hoverIndex === i && (
+              <span style={styles.tooltipValue}>{val}%</span>
+            )}
           </div>
         ))}
       </div>
+
+      {avg === 0 && (
+        <div style={styles.emptyProgressMessage}>
+          <span style={styles.emptyProgressIcon}>📚</span>
+          <p style={styles.emptyProgressText}>
+            Enroll in courses and start learning to track your weekly progress here!
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -124,18 +178,45 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 }) => {
   const [courses, setCourses] = useState<CourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!user.userId) {
+  const loadProgress = async () => {
+    const user = getCurrentUser();
+
+    if (!user) {
+      setCourses([]);
       setLoading(false);
       return;
     }
 
-    getLearningProgress(user.userId)
-      .then(setCourses)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    try {
+      const data = await getLearningProgress(String(user.userId));
+      console.log("✅ Learning progress loaded:", data);
+      setCourses(data);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to load learning progress", err);
+      setError("Failed to load progress");
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadProgress();
+  }, []);
+
+  // Listen for progress updates from CourseDetailPage
+  useEffect(() => {
+    const reload = () => {
+      console.log("🔄 Progress updated event received, reloading...");
+      loadProgress();
+    };
+
+    window.addEventListener("progress-updated", reload);
+    return () => window.removeEventListener("progress-updated", reload);
   }, []);
 
   const weeklyValues = useMemo(
@@ -156,19 +237,39 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
           </p>
 
           <div style={styles.pathsContainer}>
-            {!loading && courses.length === 0 && (
-              <p style={{ color: "#CBD5F5" }}>
-                You have not enrolled in any courses yet.
-              </p>
+            {loading && (
+              <div style={styles.loadingState}>
+                <div style={styles.loadingSpinner}></div>
+                <p style={styles.loadingText}>Loading your courses...</p>
+              </div>
             )}
 
-            {courses.map((c, i) => (
+            {!loading && error && (
+              <div style={styles.errorState}>
+                <span style={styles.errorIcon}>⚠️</span>
+                <p style={styles.errorText}>{error}</p>
+              </div>
+            )}
+
+            {!loading && !error && courses.length === 0 && (
+              <div style={styles.emptyState}>
+                <span style={styles.emptyIcon}>📚</span>
+                <p style={styles.emptyText}>
+                  You have not enrolled in any courses yet.
+                </p>
+                <p style={styles.emptySubtext}>
+                  Start your learning journey today!
+                </p>
+              </div>
+            )}
+
+            {!loading && !error && courses.map((c, i) => (
               <LearningPath
                 key={c.courseId}
                 index={i}
                 title={c.title}
                 courses="Enrolled"
-                duration="In progress"
+                duration={c.progress === 100 ? "Completed" : "In progress"}
                 progress={c.progress}
                 onPress={() => onPathPress?.(String(c.courseId))}
               />
@@ -182,9 +283,6 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
     </section>
   );
 };
-
-
-
 
 /* ------------------ STYLES ------------------ */
 const styles: Record<string, React.CSSProperties> = {
@@ -297,12 +395,41 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 18,
     color: "#E5E7EB",
     fontWeight: 600,
+    marginBottom: 4,
   },
 
   pathMeta: {
-    margin: "4px 0 0 0",
+    margin: "0 0 8px 0",
     color: "#9CA3AF",
     fontSize: 13,
+  },
+
+  progressBarContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  progressBarTrack: {
+    flex: 1,
+    height: 6,
+    background: "rgba(30,64,175,0.3)",
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 999,
+    transition: "width 0.5s ease",
+  },
+
+  progressText: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#A5B4FC",
+    minWidth: 40,
+    textAlign: "right",
   },
 
   pathArrow: {
@@ -367,6 +494,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "center",
     gap: 8,
+    position: "relative",
   },
 
   progressTrack: {
@@ -383,14 +511,133 @@ const styles: Record<string, React.CSSProperties> = {
   progressBar: {
     width: "100%",
     borderRadius: 999,
-    transition: "all 0.2s ease-out",
+    transition: "all 0.3s ease-out",
   },
 
   label: {
     fontSize: 11,
     color: "#64748B",
+    transition: "all 0.2s ease",
   },
 
-  /* Optional: basic responsiveness */
-  "@media (max-width: 960px)": {} as any,
+  tooltipValue: {
+    position: "absolute",
+    bottom: "100%",
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#F9FAFB",
+    background: "rgba(79,70,229,0.9)",
+    padding: "4px 8px",
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+
+  // Loading State
+  loadingState: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    padding: 40,
+  },
+
+  loadingSpinner: {
+    width: 40,
+    height: 40,
+    border: "3px solid rgba(165,180,252,0.3)",
+    borderTop: "3px solid #A5B4FC",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  },
+
+  loadingText: {
+    margin: 0,
+    color: "#9CA3AF",
+    fontSize: 14,
+  },
+
+  // Error State
+  errorState: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: 20,
+    background: "rgba(239,68,68,0.1)",
+    borderRadius: 12,
+    border: "1px solid rgba(239,68,68,0.3)",
+  },
+
+  errorIcon: {
+    fontSize: 24,
+  },
+
+  errorText: {
+    margin: 0,
+    color: "#FCA5A5",
+    fontSize: 14,
+  },
+
+  // Empty State
+  emptyState: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    padding: 40,
+    background: "rgba(30,64,175,0.1)",
+    borderRadius: 16,
+    border: "1px solid rgba(165,180,252,0.2)",
+  },
+
+  emptyIcon: {
+    fontSize: 48,
+  },
+
+  emptyText: {
+    margin: 0,
+    color: "#CBD5F5",
+    fontSize: 15,
+    fontWeight: 500,
+  },
+
+  emptySubtext: {
+    margin: 0,
+    color: "#9CA3AF",
+    fontSize: 13,
+  },
+
+  emptyProgressMessage: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    padding: 20,
+    marginTop: spacing.md,
+    background: "rgba(30,64,175,0.1)",
+    borderRadius: 12,
+    border: "1px solid rgba(165,180,252,0.2)",
+  },
+
+  emptyProgressIcon: {
+    fontSize: 32,
+  },
+
+  emptyProgressText: {
+    margin: 0,
+    color: "#9CA3AF",
+    fontSize: 13,
+    textAlign: "center",
+  },
 };
+
+// Add animation
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(styleSheet);
+
+export default LearningPaths;
