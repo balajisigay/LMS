@@ -24,7 +24,6 @@ const LearningPath: React.FC<{
   progress: number;
   onPress?: () => void;
 }> = ({ index, title, courses, duration, progress, onPress }) => {
-  const [hovered, setHovered] = useState(false);
   const accent =
     index === 0
       ? "linear-gradient(135deg, #4F46E5, #6366F1)"
@@ -36,17 +35,11 @@ const LearningPath: React.FC<{
     <div
       style={{
         ...styles.pathCard,
-        boxShadow: hovered
-          ? "0 18px 40px rgba(15,23,42,0.28)"
-          : "0 10px 25px rgba(15,23,42,0.16)",
-        transform: hovered ? "translateY(-2px)" : "translateY(0)",
-        border: hovered
-          ? "1px solid rgba(79,70,229,0.25)"
-          : "1px solid rgba(229,231,235,0.2)",
+        boxShadow: "0 12px 30px rgba(15,23,42,0.18)",
+        transform: "translateY(0)",
+        border: "1px solid rgba(79,70,229,0.2)",
       }}
       onClick={onPress}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       <div style={{ ...styles.pathIcon, backgroundImage: accent }}>
         <span style={styles.pathNumber}>{index + 1}</span>
@@ -75,7 +68,7 @@ const LearningPath: React.FC<{
 
       <span style={{
         ...styles.pathArrow,
-        transform: hovered ? "translateX(4px)" : "translateX(0)",
+        transform: "translateX(0)",
       }}>→</span>
     </div>
   );
@@ -108,8 +101,6 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
     return { avg, bestDay: days[idx], maxValue: max };
   }, [safeValues]);
 
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-
   return (
     <div style={styles.progressWidget}>
       <div style={styles.progressHeader}>
@@ -129,8 +120,6 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
           <div
             key={i}
             style={styles.progressColumn}
-            onMouseEnter={() => setHoverIndex(i)}
-            onMouseLeave={() => setHoverIndex(null)}
           >
             <div style={styles.progressTrack}>
               <div
@@ -138,9 +127,7 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
                   ...styles.progressBar,
                   height: `${val}%`,
                   background:
-                    hoverIndex === i
-                      ? "linear-gradient(180deg, #4F46E5, #22C55E)"
-                      : val > 0
+                    val > 0
                       ? "linear-gradient(180deg, #6366F1, #4F46E5)"
                       : "transparent",
                 }}
@@ -148,14 +135,11 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
             </div>
             <span style={{
               ...styles.label,
-              fontWeight: hoverIndex === i ? 600 : 400,
-              color: hoverIndex === i ? "#A5B4FC" : "#64748B",
+              fontWeight: 500,
+              color: "#64748B",
             }}>
               {days[i]}
             </span>
-            {hoverIndex === i && (
-              <span style={styles.tooltipValue}>{val}%</span>
-            )}
           </div>
         ))}
       </div>

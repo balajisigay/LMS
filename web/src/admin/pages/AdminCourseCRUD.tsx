@@ -41,7 +41,10 @@ interface CourseFormData {
   title: string;
   description: string;
   category: string;
+  subcategory: string;
   price: number;
+  originalPrice: number;
+  badge: string;
   imageUrl: string;
   instructorId: number;
   whatYouLearn: string;
@@ -66,7 +69,10 @@ const AdminCourseCRUD: React.FC = () => {
     title: '',
     description: '',
     category: 'Development',
+    subcategory: '',
     price: 0,
+    originalPrice: 0,
+    badge: 'Best Seller',
     imageUrl: '',
     instructorId: 0,
     whatYouLearn: '',
@@ -119,7 +125,10 @@ const AdminCourseCRUD: React.FC = () => {
       title: '',
       description: '',
       category: 'Development',
+      subcategory: '',
       price: 0,
+      originalPrice: 0,
+      badge: 'Best Seller',
       imageUrl: '',
       instructorId: instructors.length > 0 ? instructors[0].id : 0,
       whatYouLearn: '',
@@ -136,7 +145,10 @@ const AdminCourseCRUD: React.FC = () => {
       title: course.title,
       description: course.description,
       category: course.category,
+      subcategory: '',
       price: course.price,
+      originalPrice: course.price * 1.2,
+      badge: 'Best Seller',
       imageUrl: course.imageUrl,
       instructorId: course.instructorId,
       whatYouLearn: course.whatYouLearn?.join('\n') || '',
@@ -179,7 +191,10 @@ const AdminCourseCRUD: React.FC = () => {
       title: formData.title,
       description: formData.description,
       category: formData.category,
+      subcategory: formData.subcategory || formData.category,
       price: Number(formData.price),
+      originalPrice: Number(formData.originalPrice),
+      badge: formData.badge,
       imageUrl: formData.imageUrl,
       instructorId: Number(formData.instructorId),
       whatYouLearn: formData.whatYouLearn.split('\n').filter(item => item.trim()),
@@ -299,7 +314,7 @@ const AdminCourseCRUD: React.FC = () => {
       {/* Courses Grid */}
       <div style={styles.coursesGrid}>
         {filteredCourses.map((course) => (
-          <div key={course.id} style={styles.courseCard}>
+          <div key={course.id} style={styles.courseCard} className="course-card">
             <div style={styles.courseImageContainer}>
               <img 
                 src={course.imageUrl} 
@@ -309,10 +324,11 @@ const AdminCourseCRUD: React.FC = () => {
                   (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200/667eea/ffffff?text=Course';
                 }}
               />
-              <div style={styles.courseOverlay}>
+              <div style={styles.courseOverlay} className="course-overlay">
                 <button 
                   onClick={() => handleViewCourse(course)}
                   style={styles.overlayButton}
+                  className="overlay-button"
                   title="View Details"
                 >
                   <HiEye size={18} />
@@ -320,6 +336,7 @@ const AdminCourseCRUD: React.FC = () => {
                 <button 
                   onClick={() => handleEditCourse(course)}
                   style={styles.overlayButton}
+                  className="overlay-button"
                   title="Edit Course"
                 >
                   <HiPencil size={18} />
@@ -327,6 +344,7 @@ const AdminCourseCRUD: React.FC = () => {
                 <button 
                   onClick={() => handleDeleteCourse(course.id, course.title)}
                   style={{...styles.overlayButton, background: '#ef4444'}}
+                  className="overlay-button"
                   title="Delete Course"
                 >
                   <HiTrash size={18} />
@@ -486,6 +504,19 @@ const AdminCourseCRUD: React.FC = () => {
                     </div>
 
                     <div style={styles.formGroup}>
+                      <label style={styles.label}>Subcategory</label>
+                      <input
+                        type="text"
+                        value={formData.subcategory}
+                        onChange={(e) => setFormData({...formData, subcategory: e.target.value})}
+                        style={styles.input}
+                        placeholder="e.g., React, Node.js, etc."
+                      />
+                    </div>
+                  </div>
+
+                  <div style={styles.formRow}>
+                    <div style={styles.formGroup}>
                       <label style={styles.label}>Price (₹) *</label>
                       <input
                         type="number"
@@ -497,6 +528,34 @@ const AdminCourseCRUD: React.FC = () => {
                         style={styles.input}
                         placeholder="2999"
                       />
+                    </div>
+
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Original Price (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.originalPrice}
+                        onChange={(e) => setFormData({...formData, originalPrice: Number(e.target.value)})}
+                        style={styles.input}
+                        placeholder="4999"
+                      />
+                    </div>
+
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Badge</label>
+                      <select
+                        value={formData.badge}
+                        onChange={(e) => setFormData({...formData, badge: e.target.value})}
+                        style={styles.select}
+                      >
+                        <option value="Best Seller">Best Seller</option>
+                        <option value="New">New</option>
+                        <option value="Popular">Popular</option>
+                        <option value="Hot">Hot</option>
+                        <option value="">None</option>
+                      </select>
                     </div>
                   </div>
 
@@ -530,7 +589,7 @@ const AdminCourseCRUD: React.FC = () => {
                   </div>
 
                   <div style={styles.formGroup}>
-                    <label style={styles.label}>What You'll Learn (one per line)</label>
+                    <label style={styles.label}>What You'll Learn</label>
                     <textarea
                       value={formData.whatYouLearn}
                       onChange={(e) => setFormData({...formData, whatYouLearn: e.target.value})}
@@ -1071,17 +1130,21 @@ styleSheet.textContent = `
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
   
-  [style*="courseCard"]:hover {
-    transform: translateY(-8px);
+  .course-card {
+    transition: all 0.3s ease !important;
+  }
+  
+  .course-card:hover {
+    transform: translateY(-8px) !important;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
   }
   
-  [style*="courseCard"]:hover [style*="courseOverlay"] {
+  .course-card:hover .course-overlay {
     opacity: 1 !important;
   }
   
-  [style*="overlayButton"]:hover {
-    transform: scale(1.1);
+  .overlay-button:hover {
+    transform: scale(1.1) !important;
   }
   
   [style*="categoryButton"]:hover {

@@ -443,9 +443,9 @@ styleSheet.textContent = `
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
   }
   
-  button:not(:disabled):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5) !important;
+  button:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
   }
   
   button:not(:disabled):active {

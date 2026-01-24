@@ -3,100 +3,12 @@ import { Course } from "../types/course";
 import { addToCart } from "../../../src/api/cartService";
 import { getUserId } from "../utils/getUserId";
 
-
-
-/* -------------------------------------------------- */
-/*                  CATEGORY CARD COMPONENT            */
-/* -------------------------------------------------- */
-
+// --- Types ---
 interface CategoryCardProps {
   course: Course;
   onPress?: (id: number) => void;
   onAddToCart?: (id: number) => void;
 }
-
-const CategoryCard: React.FC<CategoryCardProps> = ({ course, onPress, onAddToCart }) => {
-  const [adding, setAdding] = useState(false);
-
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-    setAdding(true);
-    try {
-      await onAddToCart?.(course.id);
-    } finally {
-      setTimeout(() => setAdding(false), 1000);
-    }
-  };
-
-  return (
-    <div 
-      style={styles.modernCard} 
-      onClick={() => onPress?.(course.id)}
-    >
-      {/* Image */}
-      <div style={styles.modernCardImage}>
-        {course.imageUrl ? (
-          <img src={course.imageUrl} alt={course.title} style={styles.modernCardImageReal} />
-        ) : (
-          <div style={styles.modernCardImagePlaceholder}>
-            <span>No Image</span>
-          </div>
-        )}
-      </div>
-
-      {/* Content Overlay */}
-      <div style={styles.modernCardOverlay}>
-        {/* Badge */}
-        {course.badge && (
-          <span style={styles.modernBadge}>{course.badge}</span>
-        )}
-
-        {/* Title */}
-        <h4 style={styles.modernCardTitle}>{course.title}</h4>
-
-        {/* Rating & Reviews */}
-        <div style={styles.modernRatingSection}>
-          <div style={styles.modernRating}>
-            <span style={styles.modernStar}>★</span>
-            <span style={styles.modernRatingText}>{course.rating.toFixed(1)}</span>
-          </div>
-          <span style={styles.modernReviewCount}>
-            ({course.reviewCount.toLocaleString()})
-          </span>
-        </div>
-
-        {/* Footer */}
-        <div style={styles.modernCardFooter}>
-          <div style={styles.modernStudents}>
-            {course.studentCount.toLocaleString()} students
-          </div>
-          <div style={styles.modernPriceSection}>
-            <span style={styles.modernPrice}>₹{course.price.toFixed(2)}</span>
-            {course.originalPrice > course.price && (
-              <span style={styles.modernOriginalPrice}>₹{course.originalPrice.toFixed(2)}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Add to Cart Button */}
-        <button
-          style={{
-            ...styles.addToCartBtn,
-            ...(adding ? styles.addingBtn : {}),
-          }}
-          onClick={handleAddToCart}
-          disabled={adding}
-        >
-          {adding ? "✓ Added!" : "🛒 Add to Cart"}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-/* -------------------------------------------------- */
-/*                  MAIN CATEGORIES COMPONENT          */
-/* -------------------------------------------------- */
 
 interface CategoriesProps {
   courses: Course[];
@@ -107,6 +19,373 @@ interface CategoriesProps {
   onRetry?: () => void;
 }
 
+// --- CSS Styles (Injected) ---
+// We inject this once to handle media queries and pseudo-states properly
+const cssStyles = `
+  :root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --bg-dark: #0f172a;
+    --bg-card: rgba(30, 41, 59, 0.7);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: rgba(255, 255, 255, 0.1);
+  }
+
+  .page-container {
+    min-height: 100vh;
+    background: var(--bg-dark);
+    color: var(--text-main);
+    padding: 40px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .header-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(to right, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header-subtitle {
+    color: var(--text-muted);
+    margin-top: 10px;
+    font-size: 1.1rem;
+  }
+
+  .view-all-btn {
+    padding: 10px 24px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--text-main);
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .view-all-btn:hover { background: rgba(255,255,255,0.1); }
+
+  /* Layout Grid */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: sticky;
+    top: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 24px;
+  }
+
+  .category-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .category-item:hover {
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+  }
+
+  .category-item.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  /* Course Grid */
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  /* Card Component */
+  .course-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+  }
+
+  .course-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    border-color: rgba(99, 102, 241, 0.5);
+  }
+
+  .card-image-wrapper {
+    position: relative;
+    padding-top: 60%; /* Aspect Ratio 16:9 */
+    overflow: hidden;
+  }
+
+  .card-image {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  
+  .course-card:hover .card-image { transform: scale(1.05); }
+
+  .badge {
+    position: absolute;
+    top: 12px; left: 12px;
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 100px;
+    backdrop-filter: blur(4px);
+  }
+
+  .card-content {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    line-height: 1.4;
+    color: #fff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .rating-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+  
+  .star { color: #fbbf24; }
+  .rating-num { font-weight: 700; color: #fff; }
+  .review-count { color: var(--text-muted); font-size: 0.8rem; }
+
+  .card-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .price { font-size: 1.25rem; font-weight: 700; color: #fff; }
+  .original-price { font-size: 0.9rem; text-decoration: line-through; color: var(--text-muted); margin-left: 8px;}
+
+  .cart-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .cart-btn:hover:not(:disabled) { background: var(--primary-dark); }
+  .cart-btn:disabled { background: #10b981; cursor: default; }
+
+  /* Notification Toast */
+  .toast {
+    position: fixed;
+    top: 20px; right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    font-weight: 600;
+    z-index: 100;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* Loading & Error */
+  .state-card {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px;
+    background: var(--bg-card);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* --- RESPONSIVE QUERIES --- */
+  @media (max-width: 1024px) {
+    .main-layout {
+      grid-template-columns: 1fr; /* Stack sidebar on top */
+      gap: 24px;
+    }
+
+    .sidebar {
+      position: relative;
+      top: 0;
+      padding: 16px;
+      overflow-x: auto; /* Horizontal scroll */
+      white-space: nowrap;
+      border-radius: 16px;
+      
+      /* Hide scrollbar but keep functionality */
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .sidebar::-webkit-scrollbar { display: none; }
+
+    .sidebar-list {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+    }
+
+    .category-item {
+      margin: 0;
+      background: rgba(255,255,255,0.05);
+      padding: 10px 20px;
+      border-radius: 100px;
+    }
+    
+    .sidebar-title { display: none; } /* Hide title on mobile to save space */
+  }
+
+  @media (max-width: 600px) {
+    .header-title { font-size: 2rem; }
+    .course-grid { grid-template-columns: 1fr; }
+  }
+`;
+
+// --- Components ---
+
+const CategoryCard: React.FC<CategoryCardProps> = ({ course, onPress, onAddToCart }) => {
+  const [adding, setAdding] = useState(false);
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAdding(true);
+    try {
+      await onAddToCart?.(course.id);
+    } finally {
+      setTimeout(() => setAdding(false), 1500);
+    }
+  };
+
+  return (
+    <div className="course-card" onClick={() => onPress?.(course.id)}>
+      <div className="card-image-wrapper">
+        <img 
+          src={course.imageUrl || "https://via.placeholder.com/400x225?text=No+Image"} 
+          alt={course.title} 
+          className="card-image" 
+        />
+        {course.badge && <span className="badge">{course.badge}</span>}
+      </div>
+
+      <div className="card-content">
+        <h4 className="card-title">{course.title}</h4>
+
+        <div className="rating-row">
+          <span className="star">★</span>
+          <span className="rating-num">{course.rating.toFixed(1)}</span>
+          <span className="review-count">({course.reviewCount.toLocaleString()})</span>
+        </div>
+
+        <div className="card-footer">
+          <div>
+            <div className="price">₹{course.price.toFixed(0)}</div>
+            {course.originalPrice > course.price && (
+              <span className="original-price">₹{course.originalPrice.toFixed(0)}</span>
+            )}
+          </div>
+          
+          <button 
+            className="cart-btn" 
+            onClick={handleAddToCart} 
+            disabled={adding}
+          >
+            {adding ? (
+              <>✓ Added</>
+            ) : (
+              <>
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Add
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Categories: React.FC<CategoriesProps> = ({
   courses,
   loading = false,
@@ -116,131 +395,98 @@ export const Categories: React.FC<CategoriesProps> = ({
   onRetry,
 }) => {
   const [activeCategory, setActiveCategory] = useState("All Courses");
-  const [filteredCourses, setFilteredCourses] = useState<Course[]>(courses);
   const [cartSuccess, setCartSuccess] = useState("");
 
-  useEffect(() => {
-    setFilteredCourses(courses);
-  }, [courses]);
+  const categories = useMemo(() => [
+    "All Courses", "Development", "Design", "Marketing", "IT & Software", "Personal Growth", "Business", "Photography"
+  ], []);
 
-  const categories = useMemo(
-    () => [
-      "All Courses",
-      "Development",
-      "Design",
-      "Marketing",
-      "IT & Software",
-      "Personal Growth",
-    ],
-    []
-  );
+  const filteredCourses = useMemo(() => {
+    if (activeCategory === "All Courses") return courses;
+    return courses.filter(c => c.category?.toLowerCase() === activeCategory.toLowerCase());
+  }, [courses, activeCategory]);
 
   const handleCategorySelect = (category: string) => {
     setActiveCategory(category);
     onCategoryPress?.(category);
-
-    if (category === "All Courses") {
-      setFilteredCourses(courses);
-    } else {
-      setFilteredCourses(
-        courses.filter(
-          (course) => course.category?.toLowerCase() === category.toLowerCase()
-        )
-      );
-    }
   };
 
   const handleAddToCart = async (courseId: number) => {
     try {
-    const userId = getUserId();
-await addToCart(userId, courseId);
-      
+      const userId = getUserId();
       await addToCart(userId, courseId);
-      
-      setCartSuccess("Course added to cart! 🎉");
+      setCartSuccess("Course added to cart successfully!");
       setTimeout(() => setCartSuccess(""), 3000);
     } catch (err: any) {
-      console.error("Add to cart failed:", err);
       if (err.response?.status === 400) {
-        setCartSuccess("Already in cart!");
+        setCartSuccess("Course is already in your cart!");
         setTimeout(() => setCartSuccess(""), 3000);
       }
     }
   };
 
   return (
-    <section style={styles.modernContainer}>
-      <div style={styles.modernWrapper}>
-        {/* Cart Success Message */}
-        {cartSuccess && (
-          <div style={styles.cartSuccessAlert}>
-            <span>✓</span>
-            {cartSuccess}
-          </div>
-        )}
+    <section className="page-container">
+      <style>{cssStyles}</style>
 
-        {/* Modern Header */}
-        <div style={styles.modernHeader}>
-          <div style={styles.modernHeaderContent}>
-            <h2 style={styles.modernHeaderTitle}>Explore Top Categories</h2>
-            <p style={styles.modernHeaderSubtitle}>Find the right path for your career goals</p>
+      {/* Toast Notification */}
+      {cartSuccess && <div className="toast">{cartSuccess}</div>}
+
+      <div className="wrapper">
+        {/* Header */}
+        <div className="header-section">
+          <div>
+            <h2 className="header-title">Explore Courses</h2>
+            <p className="header-subtitle">Discover new skills to ignite your potential</p>
           </div>
-          <a style={styles.modernViewAll}>View all categories →</a>
+          <a href="#" className="view-all-btn">View All Categories →</a>
         </div>
 
-        {/* Modern Layout */}
-        <div style={styles.modernMainLayout}>
-          {/* Modern Sidebar */}
-          <aside style={styles.modernSidebar}>
-            <div style={styles.modernSidebarHeader}>
-              <h3 style={styles.modernSidebarTitle}>Categories</h3>
-            </div>
-            <div style={styles.modernSidebarList}>
+        {/* Main Layout */}
+        <div className="main-layout">
+          
+          {/* Sidebar (Vertical on Desktop, Horizontal Scroll on Mobile) */}
+          <aside className="sidebar">
+            <h3 className="sidebar-title" style={{ marginTop: 0, marginBottom: '20px', fontSize: '1.2rem' }}>Categories</h3>
+            <div className="sidebar-list">
               {categories.map((cat) => (
                 <div
                   key={cat}
+                  className={`category-item ${activeCategory === cat ? 'active' : ''}`}
                   onClick={() => handleCategorySelect(cat)}
-                  style={{
-                    ...styles.modernSidebarItem,
-                    ...(activeCategory === cat ? styles.modernSidebarItemActive : {}),
-                  }}
                 >
                   <span>{cat}</span>
-                  {activeCategory === cat && (
-                    <div style={styles.modernSidebarIndicator}></div>
-                  )}
+                  {activeCategory === cat && <span style={{fontSize: '1.2rem'}}>•</span>}
                 </div>
               ))}
             </div>
           </aside>
 
-          {/* Modern Content Area */}
-          <div style={styles.modernContentArea}>
-            {error && (
-              <div style={styles.modernErrorCard}>
-                <div style={styles.modernErrorContent}>
-                  <span style={styles.modernErrorIcon}>⚠️</span>
-                  <span style={styles.modernErrorText}>{error}</span>
-                </div>
-                <button style={styles.modernRetryButton} onClick={onRetry}>
-                  Retry
+          {/* Content Area */}
+          <div className="content-area">
+            {error ? (
+              <div className="state-card">
+                <div style={{ fontSize: '40px', marginBottom: '16px' }}>⚠️</div>
+                <h3 style={{ color: '#ef4444', margin: '0 0 16px 0' }}>{error}</h3>
+                <button className="view-all-btn" onClick={onRetry} style={{ background: '#ef4444', borderColor: '#ef4444' }}>
+                  Try Again
                 </button>
               </div>
-            )}
-
-            {loading && (
-              <div style={styles.modernLoadingCard}>
-                <div style={styles.modernSpinner}></div>
-                <p style={styles.modernLoadingText}>Loading courses...</p>
+            ) : loading ? (
+              <div className="state-card">
+                <div className="spinner"></div>
+                <p>Loading your courses...</p>
               </div>
-            )}
-
-            {!loading && !error && (
-              <div style={styles.modernCourseGrid}>
+            ) : filteredCourses.length === 0 ? (
+              <div className="state-card">
+                <p>No courses found in this category.</p>
+              </div>
+            ) : (
+              <div className="course-grid">
                 {filteredCourses.map((course) => (
-                  <CategoryCard 
-                    key={course.id} 
-                    course={course} 
+                  <CategoryCard
+                    key={course.id}
+                    course={course}
                     onPress={onCoursePress}
                     onAddToCart={handleAddToCart}
                   />
@@ -254,399 +500,4 @@ await addToCart(userId, courseId);
   );
 };
 
-/* -------------------------------------------------- */
-/*                        STYLES                      */
-/* -------------------------------------------------- */
-
-const styles: Record<string, React.CSSProperties> = {
-  // Container
-  modernContainer: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '60px 20px',
-  },
-  modernWrapper: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-
-  // Cart Success Alert
-  cartSuccessAlert: {
-    position: 'fixed',
-    top: '20px',
-    right: '20px',
-    background: 'linear-gradient(135deg, #10b981, #059669)',
-    color: 'white',
-    padding: '16px 24px',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: 600,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    boxShadow: '0 10px 30px rgba(16, 185, 129, 0.4)',
-    zIndex: 9999,
-    animation: 'slideIn 0.3s ease-out',
-  },
-
-  // Header
-  modernHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '48px',
-    flexWrap: 'wrap',
-    gap: '16px',
-  },
-  modernHeaderContent: {
-    flex: 1,
-  },
-  modernHeaderTitle: {
-    fontSize: '40px',
-    fontWeight: 800,
-    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    margin: 0,
-    lineHeight: '1.2',
-  },
-  modernHeaderSubtitle: {
-    fontSize: '18px',
-    color: 'rgba(255, 255, 255, 0.9)',
-    margin: '8px 0 0 0',
-    fontWeight: 400,
-  },
-  modernViewAll: {
-    fontSize: '16px',
-    fontWeight: 600,
-    color: 'rgba(255, 255, 255, 0.95)',
-    textDecoration: 'none',
-    padding: '12px 24px',
-    border: '2px solid rgba(255, 255, 255, 0.2)',
-    borderRadius: '50px',
-    transition: 'all 0.3s ease',
-    backdropFilter: 'blur(10px)',
-  },
-
-  // Main Layout
-  modernMainLayout: {
-    display: 'grid',
-    gridTemplateColumns: '300px 1fr',
-    gap: '48px',
-    alignItems: 'start',
-  },
-
-  // Sidebar
-  modernSidebar: {
-    background: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    borderRadius: '24px',
-    padding: '32px',
-    height: 'fit-content',
-    position: 'sticky',
-    top: '100px',
-  },
-  modernSidebarHeader: {
-    marginBottom: '24px',
-  },
-  modernSidebarTitle: {
-    fontSize: '20px',
-    fontWeight: 700,
-    background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    margin: 0,
-  },
-  modernSidebarList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  modernSidebarItem: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '16px 20px',
-    borderRadius: '16px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: 500,
-    color: 'rgba(255, 255, 255, 0.8)',
-    transition: 'all 0.3s ease',
-  },
-  modernSidebarItemActive: {
-    background: 'rgba(255, 255, 255, 0.2)',
-    color: 'white',
-    transform: 'translateX(4px)',
-  },
-  modernSidebarIndicator: {
-    width: '4px',
-    height: '4px',
-    borderRadius: '50%',
-    background: 'white',
-  },
-
-  // Content Area
-  modernContentArea: {
-    width: '100%',
-  },
-
-  // Course Grid
-  modernCourseGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: '24px',
-  },
-
-  // Modern Cards
-  modernCard: {
-    borderRadius: '24px',
-    overflow: 'hidden',
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(20px)',
-    cursor: 'pointer',
-    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
-    position: 'relative',
-    height: '480px',
-  },
-  modernCardImage: {
-    width: '100%',
-    height: '50%',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  modernCardImageReal: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    transition: 'transform 0.4s ease',
-  },
-  modernCardImagePlaceholder: {
-    width: '100%',
-    height: '100%',
-    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: '14px',
-    fontWeight: 500,
-  },
-  modernCardOverlay: {
-    position: 'absolute',
-    bottom: '0',
-    left: '0',
-    right: '0',
-    height: '60%',
-    background: 'linear-gradient(transparent, rgba(0, 0, 0, 0.95))',
-    padding: '32px 24px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'flex-end',
-  },
-  modernBadge: {
-    fontSize: '12px',
-    color: '#10b981',
-    fontWeight: 700,
-    padding: '4px 12px',
-    background: 'rgba(16, 185, 129, 0.2)',
-    borderRadius: '20px',
-    alignSelf: 'flex-start',
-    marginBottom: '12px',
-  },
-  modernCardTitle: {
-    fontSize: '20px',
-    fontWeight: 700,
-    color: 'white',
-    margin: '0 0 16px 0',
-    lineHeight: '1.3',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-  },
-  modernRatingSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '16px',
-  },
-  modernRating: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-  },
-  modernStar: {
-    fontSize: '18px',
-    color: '#fbbf24',
-  },
-  modernRatingText: {
-    fontSize: '16px',
-    fontWeight: 700,
-    color: 'white',
-  },
-  modernReviewCount: {
-    fontSize: '14px',
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  modernCardFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  },
-  modernStudents: {
-    fontSize: '14px',
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: 500,
-  },
-  modernPriceSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: '2px',
-  },
-  modernPrice: {
-    fontSize: '24px',
-    fontWeight: 800,
-    color: 'white',
-    lineHeight: '1',
-  },
-  modernOriginalPrice: {
-    fontSize: '14px',
-    color: 'rgba(255, 255, 255, 0.6)',
-    textDecoration: 'line-through',
-  },
-
-  // Add to Cart Button
-  addToCartBtn: {
-    width: '100%',
-    padding: '12px 20px',
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-  },
-  addingBtn: {
-    background: 'linear-gradient(135deg, #10b981, #059669)',
-  },
-
-  // Error States
-  modernErrorCard: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(20px)',
-    border: '1px solid rgba(239, 68, 68, 0.2)',
-    borderRadius: '24px',
-    padding: '32px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    boxShadow: '0 20px 40px rgba(239, 68, 68, 0.1)',
-  },
-  modernErrorContent: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-  },
-  modernErrorIcon: {
-    fontSize: '24px',
-  },
-  modernErrorText: {
-    fontSize: '16px',
-    color: '#dc2626',
-    fontWeight: 600,
-  },
-  modernRetryButton: {
-    padding: '12px 24px',
-    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  },
-
-  // Loading States
-  modernLoadingCard: {
-    background: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '24px',
-    padding: '60px 32px',
-    textAlign: 'center',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-  },
-  modernSpinner: {
-    width: '48px',
-    height: '48px',
-    border: '3px solid rgba(255, 255, 255, 0.3)',
-    borderTop: '3px solid rgba(255, 255, 255, 0.8)',
-    borderRadius: '50%',
-    animation: 'modernSpin 1s linear infinite',
-    margin: '0 auto 24px',
-  },
-  modernLoadingText: {
-    fontSize: '18px',
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: 500,
-    margin: 0,
-  },
-};
-
-// Add modern animations
-const styleSheet = document.createElement("style");
-styleSheet.textContent = `
-  @keyframes modernSpin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateX(100px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  [style*="modernCard"]:hover {
-    transform: translateY(-12px) scale(1.02);
-    box-shadow: 0 35px 60px rgba(0, 0, 0, 0.15);
-  }
-  
-  [style*="modernCard"]:hover [style*="modernCardImageReal"] {
-    transform: scale(1.1);
-  }
-  
-  [style*="modernViewAll"]:hover {
-    background: rgba(255, 255, 255, 0.95);
-    color: #667eea;
-    transform: translateY(-2px);
-  }
-  
-  [style*="modernSidebarItem"]:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    transform: translateX(8px);
-  }
-  
-  [style*="modernRetryButton"]:hover,
-  [style*="addToCartBtn"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
-  }
-`;
-document.head.appendChild(styleSheet);
+export default Categories;

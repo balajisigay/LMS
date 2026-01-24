@@ -676,37 +676,37 @@ styleSheet.textContent = `
     50% { transform: translateY(-20px); }
   }
   
-  [style*="statCard"]:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2) !important;
+  [style*="statCard"] {
+    transform: translateY(0);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
   }
   
-  [style*="featureCard"]:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+  [style*="featureCard"] {
+    transform: translateY(0);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
   }
   
-  [style*="valueItem"]:hover {
-    background: white !important;
-    border-color: #667eea !important;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+  [style*="valueItem"] {
+    background: white;
+    border-color: #667eea;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.12);
   }
   
-  button:hover {
-    transform: translateY(-2px);
+  button {
+    transform: translateY(0);
   }
   
   button:active {
     transform: translateY(0);
   }
   
-  [style*="ctaPrimary"]:hover {
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3) !important;
-    transform: translateY(-4px);
+  [style*="ctaPrimary"] {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    transform: translateY(0);
   }
   
-  [style*="ctaSecondary"]:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
+  [style*="ctaSecondary"] {
+    background: rgba(255, 255, 255, 0.25);
   }
 `;
 document.head.appendChild(styleSheet);

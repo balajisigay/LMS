@@ -3,10 +3,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCart, removeCartItem } from "../../../src/api/cartService";
 import { createOrder, verifyPayment } from "../../../src/api/paymentService";
-import { HiTrash, HiShoppingCart, HiCheck, HiX } from "react-icons/hi";
+import { HiTrash, HiShoppingCart, HiCheck, HiX, HiArrowLeft, HiCreditCard } from "react-icons/hi";
 import { getUserId } from "../utils/getUserId";
 
-// TypeScript declaration for Razorpay
 declare global {
   interface Window {
     Razorpay: any;
@@ -21,69 +20,51 @@ export const CartPage: React.FC = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  /* -------------------- Razorpay Loader -------------------- */
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
     script.onload = () => setRazorpayLoaded(true);
-    script.onerror = () =>
-      setError("Payment system could not be loaded. Please refresh.");
+    script.onerror = () => setError("Payment system unavailable. Please refresh.");
     document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
+    return () => { document.body.removeChild(script); };
   }, []);
 
-  /* -------------------- Load Cart -------------------- */
   const loadCart = async () => {
     try {
       setLoading(true);
-      setError("");
       const userId = getUserId();
       const res = await getCart(userId);
       setItems(res.data || []);
-    } catch (err: any) {
-      console.error(err);
+    } catch (err) {
       setError("Failed to load cart");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    void loadCart();
-  }, []);
+  useEffect(() => { void loadCart(); }, []);
 
-  /* -------------------- Remove Item -------------------- */
   const handleRemove = async (id: number) => {
     try {
       await removeCartItem(id);
-      await loadCart();
-      setSuccess("Item removed from cart");
+      setItems(items.filter(item => item.id !== id));
+      setSuccess("Item removed");
       setTimeout(() => setSuccess(""), 2000);
     } catch {
       setError("Failed to remove item");
     }
   };
 
-  const total = items.reduce(
-    (sum, it) => sum + (it.course?.price ?? 0),
-    0
-  );
+  const total = items.reduce((sum, it) => sum + (it.course?.price ?? 0), 0);
 
-  /* -------------------- Checkout -------------------- */
   const handleCheckout = async () => {
+    // Note: This logic assumes single-item checkout based on your original code.
+    // If you want to checkout the whole cart, your backend 'createOrder' needs to support 'items' array.
+    if (items.length === 0) return;
+    
     try {
       setError("");
-      setSuccess("");
-
-      if (!razorpayLoaded || items.length === 0) {
-        setError("Cart is empty or payment system not ready");
-        return;
-      }
-
       const firstItem = items[0];
       const userId = getUserId();
 
@@ -100,9 +81,8 @@ export const CartPage: React.FC = () => {
         amount: firstItem.course.price * 100,
         currency: "INR",
         name: "Lumina LMS",
-        description: "Course Purchase",
+        description: `Enrollment: ${firstItem.course.title}`,
         order_id: orderId,
-
         handler: async (response: any) => {
           try {
             await verifyPayment({
@@ -113,151 +93,142 @@ export const CartPage: React.FC = () => {
               razorpayOrderId: response.razorpay_order_id,
               razorpaySignature: response.razorpay_signature,
             });
-
             await removeCartItem(firstItem.id);
-            setSuccess("Payment Successful! Enrolled.");
-            setTimeout(
-              () => navigate(`/course/${firstItem.course.id}`),
-              1500
-            );
+            setSuccess("Payment Successful! Redirecting...");
+            setTimeout(() => navigate(`/course/${firstItem.course.id}`), 2000);
           } catch {
             setError("Payment verification failed");
           }
         },
-
-        modal: {
-          ondismiss: () => console.log("Payment cancelled"),
-        },
-
-        prefill: {
-          name: "Demo User",
-          email: "demo@example.com",
-          contact: "9999999999",
-        },
-
-        theme: { color: "#0f172a" },
+        theme: { color: "#6366f1" },
       };
 
       const rz = new window.Razorpay(options);
-      rz.on("payment.failed", (res: any) =>
-        setError(res.error?.description || "Payment failed")
-      );
       rz.open();
     } catch (err: any) {
-      setError(err?.message || "Checkout failed");
+      setError("Checkout initialization failed");
     }
   };
 
-  /* -------------------- UI -------------------- */
   return (
     <div style={styles.pageContainer}>
       <div style={styles.contentWrapper}>
-        {success && (
-          <div style={styles.successAlert}>
-            <HiCheck /> {success}
-          </div>
-        )}
-        {error && (
-          <div style={styles.errorAlert}>
-            <HiX /> {error}
-          </div>
-        )}
+        {/* Header Section */}
+        <header style={styles.header}>
+          <button onClick={() => navigate("/courses")} style={styles.backBtn}>
+            <HiArrowLeft /> Continue Shopping
+          </button>
+          <h1 style={styles.mainTitle}>Shopping Cart</h1>
+          <p style={styles.countText}>{items.length} Courses in Cart</p>
+        </header>
 
-        <div style={styles.cartCard}>
-          <div style={styles.coverPhoto}>
-            <div style={styles.coverGradient} />
-            <div style={styles.headerContent}>
-              <HiShoppingCart size={28} />
-              <div>
-                <h1 style={styles.title}>My Cart</h1>
-                <p style={styles.subtitle}>Review and checkout</p>
+        {/* Notifications */}
+        {success && <div style={styles.successAlert}><HiCheck /> {success}</div>}
+        {error && <div style={styles.errorAlert}><HiX /> {error}</div>}
+
+        <div style={styles.mainGrid}>
+          {/* Cart Items List */}
+          <section style={styles.itemsSection}>
+            {loading ? (
+              <div style={styles.skeletonBox}>Loading items...</div>
+            ) : items.length === 0 ? (
+              <div style={styles.emptyState}>
+                <HiShoppingCart size={60} color="#cbd5e1" />
+                <h2>Your cart is empty</h2>
+                <p>Looks like you haven't added any courses yet.</p>
+                <button style={styles.primaryBtn} onClick={() => navigate("/courses")}>
+                  Browse Courses
+                </button>
               </div>
-            </div>
-          </div>
-
-          <div style={styles.cartContent}>
-            <div style={styles.grid}>
-              <div>
-                {loading && <p>Loading cart...</p>}
-
-                {!loading && items.length === 0 && (
-                  <div style={styles.emptyState}>
-                    <HiShoppingCart size={40} />
-                    <h2>Your cart is empty</h2>
-                    <button
-                      style={styles.browseButton}
-                      onClick={() => navigate("/courses")}
-                    >
-                      Browse Courses
-                    </button>
+            ) : (
+              items.map((item) => (
+                <div key={item.id} style={styles.cartCard}>
+                  <img src={item.course?.imageUrl} alt="" style={styles.courseImg} />
+                  <div style={styles.itemDetails}>
+                    <h3 style={styles.courseTitle}>{item.course?.title}</h3>
+                    <p style={styles.instructor}>By Lumina Instructor</p>
                   </div>
-                )}
-
-                {items.map((item) => (
-                  <div key={item.id} style={styles.cartItem}>
-                    <img
-                      src={item.course?.imageUrl}
-                      alt=""
-                      style={styles.image}
-                    />
-                    <div style={styles.itemInfo}>
-                      <h3>{item.course?.title}</h3>
-                      <p>₹ {item.course?.price}</p>
-                    </div>
-                    <button
-                      style={styles.removeBtn}
-                      onClick={() => handleRemove(item.id)}
-                    >
+                  <div style={styles.priceSection}>
+                    <span style={styles.priceTag}>₹{item.course?.price}</span>
+                    <button style={styles.removeBtn} onClick={() => handleRemove(item.id)}>
                       <HiTrash />
                     </button>
                   </div>
-                ))}
-              </div>
-
-              <aside>
-                <div style={styles.summary}>
-                  <h3>Summary</h3>
-                  <p>Courses: {items.length}</p>
-                  <h2>₹ {total.toFixed(2)}</h2>
-                  <button
-                    style={styles.checkoutBtn}
-                    onClick={handleCheckout}
-                    disabled={!razorpayLoaded || items.length === 0}
-                  >
-                    Proceed to Checkout
-                  </button>
                 </div>
-              </aside>
+              ))
+            )}
+          </section>
+
+          {/* Checkout Sidebar */}
+          <aside style={styles.sidebar}>
+            <div style={styles.summaryCard}>
+              <h3 style={styles.summaryTitle}>Order Summary</h3>
+              <div style={styles.summaryRow}>
+                <span>Subtotal</span>
+                <span>₹{total.toFixed(2)}</span>
+              </div>
+              <div style={styles.summaryRow}>
+                <span>Tax (GST)</span>
+                <span>₹0.00</span>
+              </div>
+              <hr style={styles.divider} />
+              <div style={styles.totalRow}>
+                <span>Total:</span>
+                <span>₹{total.toFixed(2)}</span>
+              </div>
+              <button 
+                style={{...styles.checkoutBtn, opacity: (!razorpayLoaded || items.length === 0) ? 0.6 : 1}}
+                onClick={handleCheckout}
+                disabled={!razorpayLoaded || items.length === 0}
+              >
+                <HiCreditCard /> Checkout Now
+              </button>
+              <p style={styles.secureText}>🔒 Secure Checkout via Razorpay</p>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>
   );
 };
 
-/* -------------------- Styles (UNCHANGED LOGIC) -------------------- */
 const styles: Record<string, React.CSSProperties> = {
-  pageContainer: { minHeight: "100vh", padding: 40 },
-  contentWrapper: { maxWidth: 1100, margin: "0 auto" },
-  successAlert: { background: "#16a34a", color: "#fff", padding: 16 },
-  errorAlert: { background: "#dc2626", color: "#fff", padding: 16 },
-  cartCard: { background: "#fff", borderRadius: 24 },
-  coverPhoto: { height: 160, position: "relative" },
-  coverGradient: { height: "100%", background: "#667eea" },
-  headerContent: { position: "absolute", bottom: 20, left: 20, color: "#fff" },
-  title: { margin: 0 },
-  subtitle: { margin: 0 },
-  cartContent: { padding: 24 },
-  grid: { display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 },
-  emptyState: { textAlign: "center", padding: 40 },
-  browseButton: { padding: 12 },
-  cartItem: { display: "flex", gap: 16, marginBottom: 12 },
-  image: { width: 120, height: 80, objectFit: "cover" },
-  itemInfo: { flex: 1 },
-  removeBtn: { background: "#fee2e2" },
-  summary: { background: "#111827", color: "#fff", padding: 20 },
-  checkoutBtn: { marginTop: 16, padding: 12, width: "100%" },
+  pageContainer: { backgroundColor: "#f8fafc", minHeight: "100vh", padding: "40px 20px" },
+  contentWrapper: { maxWidth: "1200px", margin: "0 auto" },
+  header: { marginBottom: "32px" },
+  backBtn: { background: "none", border: "none", color: "#6366f1", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", fontWeight: 600, marginBottom: "12px" },
+  mainTitle: { fontSize: "2.5rem", fontWeight: 800, color: "#1e293b", margin: 0 },
+  countText: { color: "#64748b", marginTop: "4px" },
+  mainGrid: { display: "grid", gridTemplateColumns: "1fr 350px", gap: "32px", alignItems: "start" },
+  
+  // Cart Card
+  itemsSection: { display: "flex", flexDirection: "column", gap: "16px" },
+  cartCard: { 
+    display: "flex", backgroundColor: "#fff", borderRadius: "16px", padding: "16px", 
+    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)", alignItems: "center", gap: "20px" 
+  },
+  courseImg: { width: "140px", height: "90px", borderRadius: "12px", objectFit: "cover" },
+  itemDetails: { flex: 1 },
+  courseTitle: { margin: "0 0 4px 0", fontSize: "1.1rem", color: "#1e293b" },
+  instructor: { color: "#64748b", fontSize: "0.9rem", margin: 0 },
+  priceSection: { textAlign: "right", display: "flex", flexDirection: "column", gap: "12px" },
+  priceTag: { fontSize: "1.25rem", fontWeight: 700, color: "#1e293b" },
+  removeBtn: { background: "#fee2e2", color: "#ef4444", border: "none", padding: "8px", borderRadius: "8px", cursor: "pointer", fontSize: "1.2rem", transition: "0.2s" },
+
+  // Sidebar
+  summaryCard: { backgroundColor: "#fff", borderRadius: "20px", padding: "24px", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)", position: "sticky", top: "20px" },
+  summaryTitle: { marginTop: 0, marginBottom: "20px", fontSize: "1.25rem" },
+  summaryRow: { display: "flex", justifyContent: "space-between", marginBottom: "12px", color: "#64748b" },
+  divider: { border: "none", borderTop: "1px solid #e2e8f0", margin: "16px 0" },
+  totalRow: { display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "1.5rem", color: "#1e293b", marginBottom: "24px" },
+  checkoutBtn: { width: "100%", padding: "16px", borderRadius: "12px", border: "none", backgroundColor: "#4f46e5", color: "#fff", fontWeight: 700, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" },
+  secureText: { textAlign: "center", fontSize: "0.8rem", color: "#94a3b8", marginTop: "12px" },
+
+  // Alerts
+  successAlert: { backgroundColor: "#dcfce7", color: "#166534", padding: "16px", borderRadius: "12px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" },
+  errorAlert: { backgroundColor: "#fee2e2", color: "#991b1b", padding: "16px", borderRadius: "12px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" },
+  emptyState: { textAlign: "center", padding: "60px", backgroundColor: "#fff", borderRadius: "20px" },
+  primaryBtn: { marginTop: "20px", padding: "12px 24px", borderRadius: "8px", border: "none", backgroundColor: "#4f46e5", color: "#fff", fontWeight: 600, cursor: "pointer" }
 };
 
 export default CartPage;

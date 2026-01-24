@@ -11,6 +11,7 @@ import { ContactPage } from "./pages/ContactPage";
 import { AboutPage } from "./pages/AboutPage";
 import AdminRouter from './admin/AdminRouter';
 import AdminCourseCRUD from "./admin/pages/AdminCourseCRUD";
+import { Chatbot } from "./components/Chatbot";
 
 
 
@@ -19,6 +20,7 @@ import AdminCourseCRUD from "./admin/pages/AdminCourseCRUD";
 export const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
+      <Chatbot />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/course/:id" element={<CourseDetailPage />} />

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiHeart, HiShoppingCart, HiSearch, HiUser, HiMenu, HiX, HiBookOpen, HiLogout, HiCog } from "react-icons/hi";
+import { HiShoppingCart, HiUser, HiMenu, HiBookOpen, HiLogout, HiCog } from "react-icons/hi";
 import { getCurrentUser, clearCurrentUser } from "../utils/auth";
 import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
 
@@ -18,7 +18,6 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState("");
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesOpen, setCoursesOpen] = useState(false);
   const [myLearningOpen, setMyLearningOpen] = useState(false);
@@ -121,14 +120,6 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchValue.trim()) {
-      console.log("🔍 Searching for:", searchValue);
-      navigate(`/search?q=${encodeURIComponent(searchValue)}`);
-    }
-  };
-
   const handleLogout = () => {
     console.log("👋 Logging out user");
     clearCurrentUser();
@@ -183,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
           <div
             style={styles.courseMenu}
             onMouseEnter={() => setCoursesOpen(true)}
-            onMouseLeave={() => setCoursesOpen(false)}
+            onMouseLeave={() => setTimeout(() => setCoursesOpen(false), 100)}
           >
             <button style={styles.navButton}>
               <span>Courses</span>
@@ -257,7 +248,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             <div
               style={styles.courseMenu}
               onMouseEnter={() => setMyLearningOpen(true)}
-              onMouseLeave={() => setMyLearningOpen(false)}
+              onMouseLeave={() => setTimeout(() => setMyLearningOpen(false), 100)}
             >
               <button style={styles.navButton}>
                 <HiBookOpen size={18} />
@@ -354,36 +345,8 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
           </button>
         </nav>
 
-        {/* SEARCH BAR */}
-        <form style={styles.searchWrapper} onSubmit={handleSearch}>
-          <HiSearch size={20} style={styles.searchIcon} />
-          <input
-            style={styles.searchInput}
-            placeholder="Search for courses..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-          />
-          {searchValue && (
-            <button
-              type="button"
-              onClick={() => setSearchValue("")}
-              style={styles.clearButton}
-            >
-              <HiX size={16} />
-            </button>
-          )}
-        </form>
-
         {/* RIGHT ACTIONS */}
         <div style={styles.rightActions}>
-          {/* Wishlist */}
-          <button 
-            style={styles.iconButton}
-            onClick={() => navigate("/wishlist")}
-            title="Wishlist"
-          >
-            <HiHeart size={22} />
-          </button>
 
           {/* Cart */}
           <button 
@@ -406,7 +369,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             <div 
               style={styles.profileDropdown}
               onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setProfileMenuOpen(false)}
+              onMouseLeave={() => setTimeout(() => setProfileMenuOpen(false), 100)}
             >
               <button 
                 style={styles.profileButton}
@@ -1123,46 +1086,83 @@ styleSheet.textContent = `
     }
   }
 
-  button:hover {
-    transform: translateY(-2px);
+  button {
+    background: #667eea;
+    color: white;
+    transition: background 0.2s ease;
   }
 
   button:active {
-    transform: translateY(0);
+    opacity: 0.95;
   }
   
-  [style*="logoContainer"]:hover [style*="logoIconContainer"] {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+  [style*="logoContainer"] [style*="logoIconContainer"] {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   }
   
-  [style*="navButton"]:hover {
-    background: rgba(102, 126, 234, 0.1);
-    color: #667eea;
+  [style*="navButton"] {
+    background: rgba(102, 126, 234, 0.08);
+    color: #333;
   }
   
-  [style*="dropdownItem"]:hover {
-    background: #f9fafb;
+  [style*="dropdownItem"] {
+    background: #f5f5f5;
   }
   
-  [style*="iconButton"]:hover {
-    background: rgba(102, 126, 234, 0.1);
+  [style*="iconButton"] {
+    background: rgba(102, 126, 234, 0.08);
     border-color: #667eea;
     color: #667eea;
   }
   
-  [style*="profileDropdownItem"]:hover {
-    background: rgba(102, 126, 234, 0.1);
-    color: #667eea;
+  [style*="profileDropdownItem"] {
+    background: rgba(102, 126, 234, 0.08);
+    color: #333;
   }
   
-  [style*="profileDropdownItemLogout"]:hover {
-    background: rgba(239, 68, 68, 0.1);
+  [style*="profileDropdownItemLogout"] {
+    background: rgba(239, 68, 68, 0.08);
   }
   
   input:focus {
     border-color: #667eea !important;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+  }
+
+  /* Tooltip Styling */
+  [title] {
+    position: relative;
+  }
+
+  [title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    color: #1a202c;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+  }
+
+  [title]:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: white;
+    z-index: 1000;
+    pointer-events: none;
   }
 
   @media (max-width: 1024px) {
