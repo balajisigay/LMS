@@ -7,7 +7,6 @@ import { Header } from "../components/Header";
 import { HeroSection } from "../components/HeroSection";
 import { TrustedPartners } from "../components/TrustedPartners";
 import { LearningPaths } from "../components/LearningPaths";
-import { InstructorSection } from "../components/InstructorSection";
 import { Footer } from "../components/Footer";
 import { Categories } from "../components/Categories";
 import { addToCart, getCart } from "../../../src/api/cartService";
@@ -124,7 +123,6 @@ export const LandingPage: React.FC = () => {
       />
 
       <LearningPaths onPathPress={(id) => console.log("path:", id)} />
-      <InstructorSection onPress={() => navigate("/teach")} />
       <Footer />
     </>
   );

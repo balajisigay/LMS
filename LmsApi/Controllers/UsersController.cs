@@ -29,7 +29,14 @@ namespace LmsApi.Controllers
                     u.FullName,
                     u.Email,
                     u.Role,
-                    u.ProfileImageUrl
+                    u.ProfileImageUrl,
+                    u.Bio,
+                    u.Phone,
+                    u.Location,
+                    u.Website,
+                    u.LinkedIn,
+                    u.Twitter,
+                    u.CreatedAt
                 })
                 .FirstOrDefaultAsync();
 
@@ -37,6 +44,41 @@ namespace LmsApi.Controllers
                 return NotFound("User not found");
 
             return Ok(user);
+        }
+
+        // ✅ UPDATE PROFILE
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateProfileRequest request)
+        {
+            var user = await _db.Users.FindAsync(id);
+            if (user == null)
+                return NotFound("User not found");
+
+            // Update fields if provided
+            if (!string.IsNullOrEmpty(request.FullName))
+                user.FullName = request.FullName;
+
+            if (!string.IsNullOrEmpty(request.Bio))
+                user.Bio = request.Bio;
+
+            if (!string.IsNullOrEmpty(request.Phone))
+                user.Phone = request.Phone;
+
+            if (!string.IsNullOrEmpty(request.Location))
+                user.Location = request.Location;
+
+            if (!string.IsNullOrEmpty(request.Website))
+                user.Website = request.Website;
+
+            if (!string.IsNullOrEmpty(request.LinkedIn))
+                user.LinkedIn = request.LinkedIn;
+
+            if (!string.IsNullOrEmpty(request.Twitter))
+                user.Twitter = request.Twitter;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = "Profile updated successfully" });
         }
 
         // ✅ UPLOAD PROFILE PHOTO
@@ -102,4 +144,16 @@ namespace LmsApi.Controllers
             return Ok(new { message = "Profile photo deleted" });
         }
     }
+}
+
+// Update Profile Request DTO
+public class UpdateProfileRequest
+{
+    public string? FullName { get; set; }
+    public string? Bio { get; set; }
+    public string? Phone { get; set; }
+    public string? Location { get; set; }
+    public string? Website { get; set; }
+    public string? LinkedIn { get; set; }
+    public string? Twitter { get; set; }
 }
