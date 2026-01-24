@@ -1,7 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { colors, spacing, fontSize, borderRadius } from "../styles/colors";
-import { getLearningProgress } from "../../../src/api/learningProgressService";
-import { getCurrentUser } from "../utils/auth";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 
 /* ================= TYPES ================= */
 
@@ -24,21 +21,33 @@ const LearningPath: React.FC<{
   progress: number;
   onPress?: () => void;
 }> = ({ index, title, courses, duration, progress, onPress }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   const accent =
-    index === 0
-      ? "linear-gradient(135deg, #4F46E5, #6366F1)"
-      : index === 1
-      ? "linear-gradient(135deg, #EC4899, #F97316)"
-      : "linear-gradient(135deg, #10B981, #059669)";
+    index % 3 === 0
+      ? "linear-gradient(135deg, #4F46E5, #7C3AED)"
+      : index % 3 === 1
+      ? "linear-gradient(135deg, #EC4899, #F43F5E)"
+      : "linear-gradient(135deg, #10B981, #14B8A6)";
+
+  const glowColor =
+    index % 3 === 0
+      ? "rgba(79, 70, 229, 0.4)"
+      : index % 3 === 1
+      ? "rgba(236, 72, 153, 0.4)"
+      : "rgba(16, 185, 129, 0.4)";
 
   return (
     <div
       style={{
         ...styles.pathCard,
-        boxShadow: "0 12px 30px rgba(15,23,42,0.18)",
-        transform: "translateY(0)",
-        border: "1px solid rgba(79,70,229,0.2)",
+        transform: isHovered ? "translateY(-4px)" : "translateY(0)",
+        boxShadow: isHovered
+          ? `0 20px 40px rgba(15,23,42,0.3), 0 0 0 1px ${glowColor}`
+          : "0 8px 24px rgba(15,23,42,0.2)",
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onClick={onPress}
     >
       <div style={{ ...styles.pathIcon, backgroundImage: accent }}>
@@ -47,29 +56,39 @@ const LearningPath: React.FC<{
 
       <div style={styles.pathContent}>
         <h4 style={styles.pathTitle}>{title}</h4>
-        <p style={styles.pathMeta}>
-          {courses} • {duration}
-        </p>
-        
+        <div style={styles.pathMetaContainer}>
+          <span style={styles.pathBadge}>{courses}</span>
+          <span style={styles.pathDivider}>•</span>
+          <span style={styles.pathStatus}>{duration}</span>
+        </div>
+
         {/* Progress Bar */}
         <div style={styles.progressBarContainer}>
           <div style={styles.progressBarTrack}>
-            <div 
+            <div
               style={{
                 ...styles.progressBarFill,
                 width: `${progress}%`,
                 backgroundImage: accent,
               }}
-            />
+            >
+              <div style={styles.progressShimmer} />
+            </div>
           </div>
           <span style={styles.progressText}>{progress}%</span>
         </div>
       </div>
 
-      <span style={{
-        ...styles.pathArrow,
-        transform: "translateX(0)",
-      }}>→</span>
+      <div style={styles.pathArrowContainer}>
+        <span
+          style={{
+            ...styles.pathArrow,
+            transform: isHovered ? "translateX(4px)" : "translateX(0)",
+          }}
+        >
+          →
+        </span>
+      </div>
     </div>
   );
 };
@@ -77,12 +96,11 @@ const LearningPath: React.FC<{
 /* ------------------ WEEKLY PROGRESS ------------------ */
 const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  
-  // Pad values to always have 7 days
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   const safeValues = useMemo(() => {
     if (values.length === 0) return [0, 0, 0, 0, 0, 0, 0];
-    
-    // If we have courses, use their progress values up to 7
+
     const paddedValues = [...values.slice(0, 7)];
     while (paddedValues.length < 7) {
       paddedValues.push(0);
@@ -90,15 +108,13 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
     return paddedValues;
   }, [values]);
 
-  const { avg, bestDay, maxValue } = useMemo(() => {
-    const nonZeroValues = safeValues.filter(v => v > 0);
+  const { avg, bestDay, maxValue, totalProgress } = useMemo(() => {
+    const nonZeroValues = safeValues.filter((v) => v > 0);
     const sum = safeValues.reduce((a, b) => a + b, 0);
-    const avg = nonZeroValues.length > 0 
-      ? Math.round(sum / nonZeroValues.length) 
-      : 0;
+    const avg = nonZeroValues.length > 0 ? Math.round(sum / nonZeroValues.length) : 0;
     const max = Math.max(...safeValues);
     const idx = safeValues.indexOf(max);
-    return { avg, bestDay: days[idx], maxValue: max };
+    return { avg, bestDay: days[idx], maxValue: max, totalProgress: sum };
   }, [safeValues]);
 
   return (
@@ -107,12 +123,17 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
         <div>
           <h4 style={styles.progressTitle}>Weekly Progress</h4>
           <p style={styles.progressSubtitle}>
-            {avg > 0 
-              ? `Avg ${avg}% completion • Best day: ${bestDay}` 
-              : "Start learning to see your progress"}
+            {avg > 0
+              ? `Average ${avg}% • Best: ${bestDay} (${maxValue}%)`
+              : "Start learning to track your progress"}
           </p>
         </div>
-        <span style={styles.menuDots}>⋯</span>
+        {totalProgress > 0 && (
+          <div style={styles.statsChip}>
+            <span style={styles.statsNumber}>{totalProgress}</span>
+            <span style={styles.statsLabel}>pts</span>
+          </div>
+        )}
       </div>
 
       <div style={styles.progressBars}>
@@ -120,7 +141,12 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
           <div
             key={i}
             style={styles.progressColumn}
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseLeave={() => setHoveredIndex(null)}
           >
+            {hoveredIndex === i && val > 0 && (
+              <div style={styles.tooltip}>{val}%</div>
+            )}
             <div style={styles.progressTrack}>
               <div
                 style={{
@@ -128,16 +154,19 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
                   height: `${val}%`,
                   background:
                     val > 0
-                      ? "linear-gradient(180deg, #6366F1, #4F46E5)"
+                      ? "linear-gradient(180deg, #818CF8, #4F46E5)"
                       : "transparent",
+                  opacity: hoveredIndex === i ? 1 : hoveredIndex !== null ? 0.5 : 1,
                 }}
               />
             </div>
-            <span style={{
-              ...styles.label,
-              fontWeight: 500,
-              color: "#64748B",
-            }}>
+            <span
+              style={{
+                ...styles.label,
+                fontWeight: hoveredIndex === i ? 600 : 500,
+                color: hoveredIndex === i ? "#E0E7FF" : "#64748B",
+              }}
+            >
               {days[i]}
             </span>
           </div>
@@ -146,9 +175,9 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
 
       {avg === 0 && (
         <div style={styles.emptyProgressMessage}>
-          <span style={styles.emptyProgressIcon}>📚</span>
+          <span style={styles.emptyProgressIcon}>📊</span>
           <p style={styles.emptyProgressText}>
-            Enroll in courses and start learning to track your weekly progress here!
+            Your weekly progress will appear here once you start learning
           </p>
         </div>
       )}
@@ -157,26 +186,24 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
 };
 
 /* ------------------ MAIN COMPONENT ------------------ */
-export const LearningPaths: React.FC<LearningPathsProps> = ({
-  onPathPress,
-}) => {
+export const LearningPaths: React.FC<LearningPathsProps> = ({ onPathPress }) => {
   const [courses, setCourses] = useState<CourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadProgress = async () => {
-    const user = getCurrentUser();
+  // Mock data for demonstration
+  const mockCourses: CourseProgress[] = [
+    { courseId: 1, title: "React Fundamentals & Hooks", progress: 75 },
+    { courseId: 2, title: "Advanced TypeScript Patterns", progress: 45 },
+    { courseId: 3, title: "Full-Stack Development", progress: 30 },
+  ];
 
-    if (!user) {
-      setCourses([]);
-      setLoading(false);
-      return;
-    }
-
+  const loadProgress = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await getLearningProgress(String(user.userId));
-      console.log("✅ Learning progress loaded:", data);
-      setCourses(data);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setCourses(mockCourses);
       setError(null);
     } catch (err) {
       console.error("Failed to load learning progress", err);
@@ -185,45 +212,37 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Initial load
   useEffect(() => {
     loadProgress();
-  }, []);
+  }, [loadProgress]);
 
-  // Listen for progress updates from CourseDetailPage
-  useEffect(() => {
-    const reload = () => {
-      console.log("🔄 Progress updated event received, reloading...");
-      loadProgress();
-    };
-
-    window.addEventListener("progress-updated", reload);
-    return () => window.removeEventListener("progress-updated", reload);
-  }, []);
-
-  const weeklyValues = useMemo(
-    () => courses.map((c) => c.progress),
-    [courses]
-  );
+  const weeklyValues = useMemo(() => courses.map((c) => c.progress), [courses]);
 
   return (
     <section style={styles.container}>
       <div style={styles.innerGradient} />
+
       <div style={styles.wrapper}>
         {/* LEFT SIDE */}
         <div style={styles.leftSection}>
-          <p style={styles.kicker}>Guided roadmaps</p>
-          <h2 style={styles.title}>Don't know where to start?</h2>
-          <p style={styles.subtitle}>
-            Continue learning from where you stopped.
-          </p>
+          <div style={styles.headerSection}>
+            <span style={styles.kicker}>
+              <span style={styles.kickerIcon}>🎯</span>
+              Guided Learning Paths
+            </span>
+            <h2 style={styles.title}>Continue Your Journey</h2>
+            <p style={styles.subtitle}>
+              Pick up right where you left off and keep building your skills with
+              personalized learning paths.
+            </p>
+          </div>
 
           <div style={styles.pathsContainer}>
             {loading && (
               <div style={styles.loadingState}>
-                <div style={styles.loadingSpinner}></div>
+                <div style={styles.loadingSpinner} />
                 <p style={styles.loadingText}>Loading your courses...</p>
               </div>
             )}
@@ -231,33 +250,38 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
             {!loading && error && (
               <div style={styles.errorState}>
                 <span style={styles.errorIcon}>⚠️</span>
-                <p style={styles.errorText}>{error}</p>
+                <div>
+                  <p style={styles.errorText}>{error}</p>
+                  <button style={styles.retryButton} onClick={loadProgress}>
+                    Try Again
+                  </button>
+                </div>
               </div>
             )}
 
             {!loading && !error && courses.length === 0 && (
               <div style={styles.emptyState}>
-                <span style={styles.emptyIcon}>📚</span>
-                <p style={styles.emptyText}>
-                  You have not enrolled in any courses yet.
-                </p>
+                <span style={styles.emptyIcon}>🚀</span>
+                <p style={styles.emptyText}>Ready to start learning?</p>
                 <p style={styles.emptySubtext}>
-                  Start your learning journey today!
+                  Explore our courses and begin your journey today
                 </p>
               </div>
             )}
 
-            {!loading && !error && courses.map((c, i) => (
-              <LearningPath
-                key={c.courseId}
-                index={i}
-                title={c.title}
-                courses="Enrolled"
-                duration={c.progress === 100 ? "Completed" : "In progress"}
-                progress={c.progress}
-                onPress={() => onPathPress?.(String(c.courseId))}
-              />
-            ))}
+            {!loading &&
+              !error &&
+              courses.map((c, i) => (
+                <LearningPath
+                  key={c.courseId}
+                  index={i}
+                  title={c.title}
+                  courses="Enrolled"
+                  duration={c.progress === 100 ? "✓ Completed" : "In Progress"}
+                  progress={c.progress}
+                  onPress={() => onPathPress?.(String(c.courseId))}
+                />
+              ))}
           </div>
         </div>
 
@@ -272,10 +296,9 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 const styles: Record<string, React.CSSProperties> = {
   container: {
     position: "relative",
-    background:
-      "radial-gradient(circle at top left, #1D4ED8 0, #0F172A 45%, #020617 100%)",
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.xxl,
+    background: "linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)",
+    paddingTop: 80,
+    paddingBottom: 80,
     overflow: "hidden",
   },
 
@@ -283,8 +306,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "absolute",
     inset: 0,
     background:
-      "radial-gradient(circle at 10% 20%, rgba(59,130,246,0.28), transparent 55%), radial-gradient(circle at 80% 10%, rgba(236,72,153,0.3), transparent 55%)",
-    opacity: 0.9,
+      "radial-gradient(circle at 20% 30%, rgba(79,70,229,0.15), transparent 50%), radial-gradient(circle at 80% 20%, rgba(236,72,153,0.12), transparent 50%), radial-gradient(circle at 40% 80%, rgba(16,185,129,0.1), transparent 50%)",
     pointerEvents: "none",
   },
 
@@ -292,184 +314,277 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
     maxWidth: 1400,
     margin: "0 auto",
-    padding: `0 ${spacing.lg}px`,
+    padding: "0 32px",
     display: "grid",
-    gridTemplateColumns: "minmax(0,1.4fr) minmax(0,0.9fr)",
-    gap: spacing.xxl,
-    alignItems: "stretch",
+    gridTemplateColumns: "1.5fr 1fr",
+    gap: 48,
+    alignItems: "start",
   },
 
   /* LEFT */
   leftSection: {
     display: "flex",
     flexDirection: "column",
-    gap: spacing.lg,
-    color: "#E5E7EB",
+    gap: 32,
+  },
+
+  headerSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
   },
 
   kicker: {
-    margin: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
     fontSize: 13,
-    letterSpacing: 2,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
-    color: "rgba(148,163,184,0.9)",
-    fontWeight: 600,
+    color: "#A5B4FC",
+    fontWeight: 700,
+    background: "rgba(79,70,229,0.1)",
+    padding: "8px 16px",
+    borderRadius: 8,
+    border: "1px solid rgba(79,70,229,0.2)",
+    alignSelf: "flex-start",
+  },
+
+  kickerIcon: {
+    fontSize: 16,
   },
 
   title: {
-    fontSize: 40,
+    fontSize: 48,
     fontWeight: 800,
-    color: "#F9FAFB",
+    background: "linear-gradient(135deg, #F9FAFB 0%, #CBD5E1 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
     margin: 0,
+    lineHeight: 1.2,
   },
 
   subtitle: {
-    fontSize: 16,
-    color: "rgba(209,213,219,0.9)",
-    lineHeight: 1.7,
+    fontSize: 17,
+    color: "#94A3B8",
+    lineHeight: 1.6,
     margin: 0,
-    maxWidth: 540,
+    maxWidth: 560,
   },
 
   pathsContainer: {
     display: "flex",
     flexDirection: "column",
-    gap: spacing.lg,
-    marginTop: spacing.md,
+    gap: 16,
   },
 
   pathCard: {
     display: "flex",
     alignItems: "center",
-    gap: spacing.lg,
-    background:
-      "linear-gradient(135deg, rgba(15,23,42,0.98), rgba(15,23,42,0.94))",
-    padding: 20,
-    borderRadius: 18,
+    gap: 20,
+    background: "rgba(30, 41, 59, 0.6)",
+    padding: 24,
+    borderRadius: 20,
     cursor: "pointer",
-    transition: "all 0.18s ease-out",
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    border: "1px solid rgba(148,163,184,0.1)",
   },
 
   pathIcon: {
-    width: 52,
-    height: 52,
+    width: 56,
+    height: 56,
     borderRadius: 16,
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
-    boxShadow: "0 10px 26px rgba(15,23,42,0.55)",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+    position: "relative",
+    overflow: "hidden",
   },
 
   pathNumber: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 700,
+    position: "relative",
+    zIndex: 1,
   },
 
   pathContent: {
     flex: 1,
     minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
   },
 
   pathTitle: {
     margin: 0,
     fontSize: 18,
-    color: "#E5E7EB",
+    color: "#F1F5F9",
     fontWeight: 600,
-    marginBottom: 4,
+    letterSpacing: "-0.01em",
   },
 
-  pathMeta: {
-    margin: "0 0 8px 0",
-    color: "#9CA3AF",
+  pathMetaContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  pathBadge: {
+    fontSize: 12,
+    color: "#A5B4FC",
+    background: "rgba(79,70,229,0.15)",
+    padding: "4px 10px",
+    borderRadius: 6,
+    fontWeight: 600,
+  },
+
+  pathDivider: {
+    color: "#475569",
+  },
+
+  pathStatus: {
     fontSize: 13,
+    color: "#94A3B8",
+    fontWeight: 500,
   },
 
   progressBarContainer: {
     display: "flex",
     alignItems: "center",
     gap: 12,
+    marginTop: 4,
   },
 
   progressBarTrack: {
     flex: 1,
-    height: 6,
-    background: "rgba(30,64,175,0.3)",
+    height: 8,
+    background: "rgba(30,64,175,0.25)",
     borderRadius: 999,
     overflow: "hidden",
+    position: "relative",
   },
 
   progressBarFill: {
     height: "100%",
     borderRadius: 999,
-    transition: "width 0.5s ease",
+    transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+    position: "relative",
+    overflow: "hidden",
+  },
+
+  progressShimmer: {
+    position: "absolute",
+    top: 0,
+    left: "-100%",
+    width: "100%",
+    height: "100%",
+    background:
+      "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+    animation: "shimmer 2s infinite",
   },
 
   progressText: {
-    fontSize: 13,
-    fontWeight: 600,
+    fontSize: 14,
+    fontWeight: 700,
     color: "#A5B4FC",
-    minWidth: 40,
+    minWidth: 45,
     textAlign: "right",
   },
 
+  pathArrowContainer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "rgba(79,70,229,0.1)",
+    border: "1px solid rgba(79,70,229,0.2)",
+  },
+
   pathArrow: {
-    fontSize: 22,
+    fontSize: 20,
     color: "#A5B4FC",
-    transition: "transform 0.18s ease-out",
+    transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    display: "block",
   },
 
   /* RIGHT — PROGRESS WIDGET */
   progressWidget: {
-    background:
-      "linear-gradient(145deg, rgba(15,23,42,0.96), rgba(15,23,42,0.98))",
-    borderRadius: 22,
-    padding: spacing.lg,
+    background: "rgba(30, 41, 59, 0.6)",
+    borderRadius: 24,
+    padding: 28,
     display: "flex",
     flexDirection: "column",
-    gap: spacing.md,
-    boxShadow: "0 24px 55px rgba(15,23,42,0.8)",
-    border: "1px solid rgba(148,163,184,0.25)",
-    backdropFilter: "blur(18px)",
-    WebkitBackdropFilter: "blur(18px)",
+    gap: 24,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+    border: "1px solid rgba(148,163,184,0.15)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    position: "sticky",
+    top: 32,
   },
 
   progressHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: spacing.md,
+    gap: 16,
   },
 
   progressTitle: {
     margin: 0,
-    fontSize: 18,
-    fontWeight: 600,
+    fontSize: 20,
+    fontWeight: 700,
     color: "#F9FAFB",
+    letterSpacing: "-0.01em",
   },
 
   progressSubtitle: {
-    margin: "4px 0 0 0",
+    margin: "6px 0 0 0",
     fontSize: 13,
-    color: "#9CA3AF",
+    color: "#94A3B8",
+    lineHeight: 1.5,
   },
 
-  menuDots: {
-    fontSize: 22,
-    cursor: "pointer",
-    opacity: 0.7,
-    color: "#9CA3AF",
+  statsChip: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    background: "rgba(79,70,229,0.15)",
+    padding: "8px 16px",
+    borderRadius: 12,
+    border: "1px solid rgba(79,70,229,0.3)",
+  },
+
+  statsNumber: {
+    fontSize: 20,
+    fontWeight: 700,
+    color: "#A5B4FC",
+    lineHeight: 1,
+  },
+
+  statsLabel: {
+    fontSize: 10,
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
 
   progressBars: {
     display: "flex",
     alignItems: "flex-end",
-    gap: spacing.md,
-    height: 180,
-    marginTop: spacing.md,
+    gap: 12,
+    height: 200,
+    marginTop: 8,
   },
 
   progressColumn: {
@@ -477,117 +592,134 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     position: "relative",
+    cursor: "pointer",
   },
 
   progressTrack: {
     width: "100%",
     height: "100%",
-    background:
-      "linear-gradient(180deg, rgba(30,64,175,0.2), rgba(15,23,42,0.8))",
+    background: "rgba(30,58,138,0.2)",
     borderRadius: 999,
-    padding: 4,
+    padding: 3,
     display: "flex",
     alignItems: "flex-end",
+    border: "1px solid rgba(79,70,229,0.1)",
   },
 
   progressBar: {
     width: "100%",
     borderRadius: 999,
-    transition: "all 0.3s ease-out",
+    transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+    boxShadow: "0 -4px 12px rgba(79,70,229,0.3)",
   },
 
   label: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#64748B",
     transition: "all 0.2s ease",
+    fontWeight: 500,
   },
 
-  tooltipValue: {
+  tooltip: {
     position: "absolute",
-    bottom: "100%",
-    fontSize: 12,
-    fontWeight: 600,
+    bottom: "calc(100% + 12px)",
+    fontSize: 13,
+    fontWeight: 700,
     color: "#F9FAFB",
-    background: "rgba(79,70,229,0.9)",
-    padding: "4px 8px",
-    borderRadius: 6,
-    marginBottom: 4,
+    background: "rgba(79,70,229,0.95)",
+    padding: "6px 12px",
+    borderRadius: 8,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    whiteSpace: "nowrap",
+    zIndex: 10,
   },
 
-  // Loading State
+  // States
   loadingState: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 12,
-    padding: 40,
+    gap: 16,
+    padding: 60,
   },
 
   loadingSpinner: {
-    width: 40,
-    height: 40,
-    border: "3px solid rgba(165,180,252,0.3)",
-    borderTop: "3px solid #A5B4FC",
+    width: 48,
+    height: 48,
+    border: "4px solid rgba(165,180,252,0.2)",
+    borderTop: "4px solid #A5B4FC",
     borderRadius: "50%",
-    animation: "spin 1s linear infinite",
+    animation: "spin 0.8s linear infinite",
   },
 
   loadingText: {
     margin: 0,
-    color: "#9CA3AF",
-    fontSize: 14,
+    color: "#94A3B8",
+    fontSize: 15,
+    fontWeight: 500,
   },
 
-  // Error State
   errorState: {
     display: "flex",
     alignItems: "center",
-    gap: 12,
-    padding: 20,
+    gap: 16,
+    padding: 24,
     background: "rgba(239,68,68,0.1)",
-    borderRadius: 12,
+    borderRadius: 16,
     border: "1px solid rgba(239,68,68,0.3)",
   },
 
   errorIcon: {
-    fontSize: 24,
+    fontSize: 28,
   },
 
   errorText: {
-    margin: 0,
+    margin: "0 0 8px 0",
     color: "#FCA5A5",
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: 500,
   },
 
-  // Empty State
+  retryButton: {
+    background: "rgba(239,68,68,0.2)",
+    color: "#FCA5A5",
+    border: "1px solid rgba(239,68,68,0.4)",
+    padding: "6px 14px",
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+
   emptyState: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: 12,
-    padding: 40,
-    background: "rgba(30,64,175,0.1)",
-    borderRadius: 16,
+    padding: 60,
+    background: "rgba(79,70,229,0.08)",
+    borderRadius: 20,
     border: "1px solid rgba(165,180,252,0.2)",
   },
 
   emptyIcon: {
-    fontSize: 48,
+    fontSize: 56,
   },
 
   emptyText: {
     margin: 0,
-    color: "#CBD5F5",
-    fontSize: 15,
-    fontWeight: 500,
+    color: "#E0E7FF",
+    fontSize: 18,
+    fontWeight: 600,
   },
 
   emptySubtext: {
     margin: 0,
-    color: "#9CA3AF",
-    fontSize: 13,
+    color: "#94A3B8",
+    fontSize: 14,
   },
 
   emptyProgressMessage: {
@@ -595,31 +727,37 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "center",
     gap: 12,
-    padding: 20,
-    marginTop: spacing.md,
-    background: "rgba(30,64,175,0.1)",
-    borderRadius: 12,
-    border: "1px solid rgba(165,180,252,0.2)",
+    padding: 24,
+    marginTop: 16,
+    background: "rgba(79,70,229,0.08)",
+    borderRadius: 16,
+    border: "1px solid rgba(165,180,252,0.15)",
   },
 
   emptyProgressIcon: {
-    fontSize: 32,
+    fontSize: 36,
   },
 
   emptyProgressText: {
     margin: 0,
-    color: "#9CA3AF",
+    color: "#94A3B8",
     fontSize: 13,
     textAlign: "center",
+    lineHeight: 1.5,
   },
 };
 
-// Add animation
+// Animations
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
   }
 `;
 document.head.appendChild(styleSheet);
