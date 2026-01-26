@@ -59,7 +59,6 @@ public class AdminController : ControllerBase
 
             _logger.LogInformation($"Stats - Users: {totalUsers}, Courses: {totalCourses}, Enrollments: {totalEnrollments}, Revenue: {totalRevenue}");
 
-            // Recent enrollments - UserId is string, so convert to int for User lookup
             var recentEnrollments = await _context.Enrollments
                 .OrderByDescending(e => e.EnrolledAt)
                 .Take(5)
@@ -80,7 +79,6 @@ public class AdminController : ControllerBase
                 };
             }).ToList();
 
-            // Popular courses
             var popularCourses = await _context.Enrollments
                 .GroupBy(e => e.CourseId)
                 .Select(g => new
@@ -275,66 +273,324 @@ public class AdminController : ControllerBase
             });
         }
     }
-    // ==================== CREATE COURSE ====================
-[HttpPost("courses")]
-public async Task<IActionResult> CreateCourse([FromBody] CreateCourseDto dto)
-{
-    try
+
+    [HttpGet("courses/{id}/detail")]
+    public async Task<IActionResult> GetCourseDetail(int id)
     {
-        var instructor = await _context.Instructors.FindAsync(dto.InstructorId);
-        if (instructor == null)
-            return BadRequest(new { message = "Invalid instructor" });
-
-        var course = new Course
+        try
         {
-            Title = dto.Title,
-            Description = dto.Description,
-            Category = dto.Category,
-            Subcategory = dto.Subcategory,
-            Price = dto.Price,
-            OriginalPrice = dto.OriginalPrice,
-            Discount = dto.OriginalPrice > 0
-                ? (int)((dto.OriginalPrice - dto.Price) / dto.OriginalPrice * 100)
-                : 0,
-            Badge = dto.Badge,
-            InstructorId = dto.InstructorId,
-            ImageUrl = dto.ImageUrl,
-            WhatYouLearn = dto.WhatYouLearn,
-            Includes = dto.Includes,
-            Companies = dto.Companies,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            _logger.LogInformation($"Fetching course detail for course {id}");
 
-        _context.Courses.Add(course);
-        await _context.SaveChangesAsync();
+            var course = await _context.Courses
+                .Include(c => c.Instructor)
+                .Include(c => c.CourseSections)
+                    .ThenInclude(s => s.Lectures)
+                .FirstOrDefaultAsync(c => c.Id == id);
 
-        return Ok(new
+            if (course == null)
+                return NotFound(new { message = "Course not found" });
+
+            var result = new
+            {
+                course.Id,
+                course.Title,
+                course.Description,
+                course.Category,
+                course.Subcategory,
+                course.Price,
+                course.OriginalPrice,
+                course.Discount,
+                course.Badge,
+                course.Rating,
+                course.ReviewCount,
+                course.StudentCount,
+                course.InstructorId,
+                Instructor = course.Instructor != null ? new
+                {
+                    course.Instructor.Id,
+                    course.Instructor.Name,
+                    course.Instructor.Title
+                } : null,
+                course.ImageUrl,
+                course.WhatYouLearn,
+                course.Includes,
+                course.Companies,
+                CourseSections = course.CourseSections.Select(s => new
+                {
+                    s.Id,
+                    s.CourseId,
+                    s.Day,
+                    s.Title,
+                    s.Duration,
+                    Lectures = s.Lectures.Select(l => new
+                    {
+                        l.Id,
+                        l.SectionId,
+                        l.Title,
+                        l.Duration,
+                        l.VideoUrl
+                    }).ToList()
+                }).ToList(),
+                course.CreatedAt
+            };
+
+            return Ok(result);
+        }
+        catch (Exception ex)
         {
-            message = "Course created successfully",
-            courseId = course.Id
-        });
+            _logger.LogError(ex, "Error fetching course detail");
+            return StatusCode(500, new { 
+                message = "Error fetching course detail", 
+                error = ex.Message 
+            });
+        }
     }
-    catch (Exception ex)
+
+    [HttpPost("courses")]
+    public async Task<IActionResult> CreateCourse([FromBody] CreateCourseDto dto)
     {
-        _logger.LogError(ex, "Error creating course");
-        return StatusCode(500, new { message = "Error creating course" });
+        try
+        {
+            var instructor = await _context.Instructors.FindAsync(dto.InstructorId);
+            if (instructor == null)
+                return BadRequest(new { message = "Invalid instructor" });
+
+            var course = new Course
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                Category = dto.Category,
+                Subcategory = dto.Subcategory,
+                Price = dto.Price,
+                OriginalPrice = dto.OriginalPrice,
+                Discount = dto.OriginalPrice > 0
+                    ? (int)((dto.OriginalPrice - dto.Price) / dto.OriginalPrice * 100)
+                    : 0,
+                Badge = dto.Badge,
+                InstructorId = dto.InstructorId,
+                ImageUrl = dto.ImageUrl,
+                WhatYouLearn = dto.WhatYouLearn,
+                Includes = dto.Includes,
+                Companies = dto.Companies,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.Courses.Add(course);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Course created successfully",
+                courseId = course.Id
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating course");
+            return StatusCode(500, new { message = "Error creating course", error = ex.Message });
+        }
     }
-}
-[HttpDelete("courses/{id}")]
-public async Task<IActionResult> DeleteCourse(int id)
-{
-    var course = await _context.Courses.FindAsync(id);
-    if (course == null)
-        return NotFound(new { message = "Course not found" });
 
-    _context.Courses.Remove(course);
-    await _context.SaveChangesAsync();
+    [HttpDelete("courses/{id}")]
+    public async Task<IActionResult> DeleteCourse(int id)
+    {
+        try
+        {
+            var course = await _context.Courses.FindAsync(id);
+            if (course == null)
+                return NotFound(new { message = "Course not found" });
 
-    return Ok(new { message = "Course deleted successfully" });
-}
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
 
+            return Ok(new { message = "Course deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting course");
+            return StatusCode(500, new { message = "Error deleting course", error = ex.Message });
+        }
+    }
 
+    // ==================== SECTION MANAGEMENT ====================
+    [HttpPost("courses/sections")]
+    public async Task<IActionResult> CreateSection([FromBody] CreateSectionDto dto)
+    {
+        try
+        {
+            _logger.LogInformation($"Creating section for course {dto.CourseId}");
+
+            var course = await _context.Courses.FindAsync(dto.CourseId);
+            if (course == null)
+                return NotFound(new { message = "Course not found" });
+
+            var section = new CourseSection
+            {
+                CourseId = dto.CourseId,
+                Day = dto.Day,
+                Title = dto.Title,
+                Duration = dto.Duration
+            };
+
+            _context.CourseSections.Add(section);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Section created with ID {section.Id}");
+            return Ok(new 
+            { 
+                message = "Section created successfully",
+                sectionId = section.Id
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating section");
+            return StatusCode(500, new { message = "Error creating section", error = ex.Message });
+        }
+    }
+
+    [HttpPut("courses/sections/{id}")]
+    public async Task<IActionResult> UpdateSection(int id, [FromBody] UpdateSectionDto dto)
+    {
+        try
+        {
+            _logger.LogInformation($"Updating section {id}");
+
+            var section = await _context.CourseSections.FindAsync(id);
+            if (section == null)
+                return NotFound(new { message = "Section not found" });
+
+            section.Day = dto.Day;
+            section.Title = dto.Title;
+            section.Duration = dto.Duration;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Section {id} updated successfully");
+            return Ok(new { message = "Section updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating section");
+            return StatusCode(500, new { message = "Error updating section", error = ex.Message });
+        }
+    }
+
+    [HttpDelete("courses/sections/{id}")]
+    public async Task<IActionResult> DeleteSection(int id)
+    {
+        try
+        {
+            _logger.LogInformation($"Deleting section {id}");
+
+            var section = await _context.CourseSections
+                .Include(s => s.Lectures)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (section == null)
+                return NotFound(new { message = "Section not found" });
+
+            _context.CourseSections.Remove(section);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Section {id} and its lectures deleted successfully");
+            return Ok(new { message = "Section deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting section");
+            return StatusCode(500, new { message = "Error deleting section", error = ex.Message });
+        }
+    }
+
+    // ==================== LECTURE MANAGEMENT ====================
+    [HttpPost("courses/lectures")]
+    public async Task<IActionResult> CreateLecture([FromBody] CreateLectureDto dto)
+    {
+        try
+        {
+            _logger.LogInformation($"Creating lecture for section {dto.SectionId}");
+
+            var section = await _context.CourseSections.FindAsync(dto.SectionId);
+            if (section == null)
+                return NotFound(new { message = "Section not found" });
+
+            var lecture = new CourseLecture
+            {
+                SectionId = dto.SectionId,
+                Title = dto.Title,
+                Duration = dto.Duration,
+                VideoUrl = dto.VideoUrl
+            };
+
+            _context.CourseLectures.Add(lecture);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Lecture created with ID {lecture.Id}");
+            return Ok(new 
+            { 
+                message = "Lecture created successfully",
+                lectureId = lecture.Id
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating lecture");
+            return StatusCode(500, new { message = "Error creating lecture", error = ex.Message });
+        }
+    }
+
+    [HttpPut("courses/lectures/{id}")]
+    public async Task<IActionResult> UpdateLecture(int id, [FromBody] UpdateLectureDto dto)
+    {
+        try
+        {
+            _logger.LogInformation($"Updating lecture {id}");
+
+            var lecture = await _context.CourseLectures.FindAsync(id);
+            if (lecture == null)
+                return NotFound(new { message = "Lecture not found" });
+
+            lecture.Title = dto.Title;
+            lecture.Duration = dto.Duration;
+            lecture.VideoUrl = dto.VideoUrl;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Lecture {id} updated successfully");
+            return Ok(new { message = "Lecture updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating lecture");
+            return StatusCode(500, new { message = "Error updating lecture", error = ex.Message });
+        }
+    }
+
+    [HttpDelete("courses/lectures/{id}")]
+    public async Task<IActionResult> DeleteLecture(int id)
+    {
+        try
+        {
+            _logger.LogInformation($"Deleting lecture {id}");
+
+            var lecture = await _context.CourseLectures.FindAsync(id);
+            if (lecture == null)
+                return NotFound(new { message = "Lecture not found" });
+
+            _context.CourseLectures.Remove(lecture);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Lecture {id} deleted successfully");
+            return Ok(new { message = "Lecture deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting lecture");
+            return StatusCode(500, new { message = "Error deleting lecture", error = ex.Message });
+        }
+    }
 
     // ==================== ENROLLMENT MANAGEMENT ====================
     [HttpGet("enrollments")]
@@ -354,7 +610,6 @@ public async Task<IActionResult> DeleteCourse(int id)
                 .ToListAsync();
 
             var enrollmentsWithDetails = enrollments.Select(e => {
-                // UserId is string, convert to int for User lookup
                 var user = _context.Users.FirstOrDefault(u => u.Id.ToString() == e.UserId);
                 var course = _context.Courses.FirstOrDefault(c => c.Id == e.CourseId);
                 
@@ -366,7 +621,7 @@ public async Task<IActionResult> DeleteCourse(int id)
                     e.CourseId,
                     CourseName = course?.Title ?? "Unknown Course",
                     e.EnrolledAt,
-                    Progress = 0 // You don't have Progress in Enrollment model
+                    Progress = 0
                 };
             }).ToList();
 
@@ -410,7 +665,6 @@ public async Task<IActionResult> DeleteCourse(int id)
                 .ToListAsync();
 
             var paymentsWithDetails = payments.Select(p => {
-                // UserId is string, convert to int for User lookup
                 var user = _context.Users.FirstOrDefault(u => u.Id.ToString() == p.UserId);
                 var course = _context.Courses.FirstOrDefault(c => c.Id == p.CourseId);
                 
@@ -548,10 +802,4 @@ public async Task<IActionResult> DeleteCourse(int id)
             });
         }
     }
-}
-
-// ==================== DTOs ====================
-public class UpdateRoleDto
-{
-    public string Role { get; set; } = string.Empty;
 }

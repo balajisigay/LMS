@@ -24,6 +24,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { id: 'users', label: 'Users', icon: <HiUsers size={20} />, path: '/admin/users' },
     { id: 'courses', label: 'Courses', icon: <HiAcademicCap size={20} />, path: '/admin/courses' },
     { id: 'messages', label: 'Messages', icon: <HiMail size={20} />, path: '/admin/messages' },
+    { id: 'complete-manager', label: 'Course Manager', icon: <HiAcademicCap size={20} />, path: '/admin/complete-manager' },
   ];
 
   const handleLogout = () => {
