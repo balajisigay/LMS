@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiShoppingCart, HiUser, HiMenu, HiX, HiBookOpen, HiLogout, HiCog, HiSearch } from "react-icons/hi";
+import { HiShoppingCart, HiUser, HiMenu, HiBookOpen, HiLogout, HiCog } from "react-icons/hi";
+import { getCurrentUser, clearCurrentUser } from "../utils/auth";
+import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
 
 interface Course {
   id: number;
@@ -8,13 +10,6 @@ interface Course {
   description?: string;
   price?: number;
   imageUrl?: string;
-  category?: string;
-}
-
-interface Enrollment {
-  id: number;
-  course: Course;
-  enrolledAt: string;
 }
 
 interface HeaderProps {
@@ -30,36 +25,15 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<Enrollment[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [userName, setUserName] = useState("John Doe");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Mock data for demonstration
-  const mockCourses: Course[] = [
-    { id: 1, title: "React Fundamentals & Hooks", price: 49.99, category: "Development", imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400" },
-    { id: 2, title: "Advanced TypeScript Patterns", price: 59.99, category: "Development", imageUrl: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=400" },
-    { id: 3, title: "Node.js Complete Guide", price: 54.99, category: "Development", imageUrl: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=400" },
-    { id: 4, title: "UI/UX Design Masterclass", price: 44.99, category: "Design", imageUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400" },
-    { id: 5, title: "Digital Marketing Strategy", price: 39.99, category: "Marketing", imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400" },
-    { id: 6, title: "Python for Data Science", price: 64.99, category: "Development", imageUrl: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400" },
-    { id: 7, title: "Full-Stack Web Development", price: 79.99, category: "Development", imageUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400" },
-    { id: 8, title: "Graphic Design Essentials", price: 34.99, category: "Design", imageUrl: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400" },
-  ];
-
-  const mockEnrollments: Enrollment[] = [
-    { id: 1, course: mockCourses[0], enrolledAt: "2025-01-15T10:00:00Z" },
-    { id: 2, course: mockCourses[1], enrolledAt: "2025-01-10T14:30:00Z" },
-    { id: 3, course: mockCourses[5], enrolledAt: "2025-01-05T09:15:00Z" },
-  ];
 
   useEffect(() => {
-    // Simulate loading courses
-    setTimeout(() => {
-      setCourses(mockCourses);
-      setEnrolledCourses(mockEnrollments);
-    }, 500);
+    initializeHeader();
 
+    // Add scroll listener
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
@@ -67,23 +41,95 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    console.log("Logging out...");
-    setIsLoggedIn(false);
-    setProfileMenuOpen(false);
+  const initializeHeader = async () => {
+    try {
+      // Check if user is logged in
+      const user = getCurrentUser();
+      
+      if (user && user.userId) {
+        console.log("✅ User logged in:", { userId: user.userId, name: user.fullName });
+        setIsLoggedIn(true);
+        setUserName(user.fullName || user.email || "User");
+        
+        // Load user's profile image if available
+        // Note: You'll need to fetch this from your user profile API
+        setProfileImage(null); // Set to actual profile image URL when available
+        
+        // Load enrolled courses
+        await loadEnrolledCourses(user.userId);
+      } else {
+        console.log("ℹ️ No user logged in");
+        setIsLoggedIn(false);
+      }
+
+      // Load available courses from API
+      await loadAvailableCourses();
+    } catch (error) {
+      console.error("❌ Error initializing header:", error);
+    }
   };
 
-  const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const loadEnrolledCourses = async (userId: number) => {
+    try {
+      setLoading(true);
+      console.log("📚 Loading enrolled courses for userId:", userId);
+      
+      const enrollments = await getEnrollments(userId);
+      console.log("✅ Loaded enrollments:", enrollments.length);
+      
+      if (enrollments.length > 0) {
+        console.log("📖 Sample enrollment:", {
+          courseTitle: enrollments[0].course.title,
+          enrolledAt: enrollments[0].enrolledAt
+        });
+      }
+      
+      setEnrolledCourses(enrollments);
+    } catch (error) {
+      console.error("❌ Error loading enrolled courses:", error);
+      setEnrolledCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const groupedCourses = filteredCourses.reduce((acc, course) => {
-    const category = course.category || "Other";
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(course);
-    return acc;
-  }, {} as Record<string, Course[]>);
+  const loadAvailableCourses = async () => {
+    try {
+      console.log("🔍 Loading available courses...");
+      
+      // Fetch courses from your API
+      const response = await fetch("http://localhost:5000/api/Course", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch courses");
+      }
+
+      const data = await response.json();
+      console.log("✅ Loaded courses:", data.length);
+      
+      setCourses(data);
+    } catch (error) {
+      console.error("❌ Error loading courses:", error);
+      // Fallback to empty array if API fails
+      setCourses([]);
+    }
+  };
+
+  const handleLogout = () => {
+    console.log("👋 Logging out user");
+    clearCurrentUser();
+    setIsLoggedIn(false);
+    setProfileImage(null);
+    setUserName("");
+    setEnrolledCourses([]);
+    setProfileMenuOpen(false);
+    navigate("/");
+  };
 
   return (
     <header style={{
@@ -91,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
       ...(isScrolled ? styles.containerScrolled : {}),
     }}>
       <div style={styles.content}>
-        {/* LOGO */}
+        {/* MODERN LOGO */}
         <div style={styles.logoContainer} onClick={() => navigate("/")}>
           <div style={styles.logoWrapper}>
             <div style={styles.logoIconContainer}>
@@ -124,11 +170,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
 
         {/* DESKTOP NAVIGATION */}
         <nav style={styles.desktopNav}>
-          {/* COURSES DROPDOWN - ENHANCED */}
+          {/* COURSES DROPDOWN */}
           <div
             style={styles.courseMenu}
             onMouseEnter={() => setCoursesOpen(true)}
-            onMouseLeave={() => setTimeout(() => setCoursesOpen(false), 200)}
+            onMouseLeave={() => setTimeout(() => setCoursesOpen(false), 100)}
           >
             <button style={styles.navButton}>
               <span>Courses</span>
@@ -139,7 +185,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                 fill="currentColor"
                 style={{
                   transform: coursesOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.3s ease',
+                  transition: 'transform 0.2s',
                 }}
               >
                 <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
@@ -147,71 +193,51 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             </button>
 
             {coursesOpen && (
-              <div style={styles.megaDropdown}>
-                {/* Search Bar */}
-                <div style={styles.dropdownSearchContainer}>
-                  <HiSearch style={styles.searchIcon} />
-                  <input
-                    type="text"
-                    placeholder="Search courses..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={styles.dropdownSearch}
-                  />
+              <div style={styles.dropdown}>
+                <div style={styles.dropdownHeader}>
+                  <h3 style={styles.dropdownTitle}>Available Courses</h3>
+                  <p style={styles.dropdownSubtitle}>{courses.length} courses available</p>
                 </div>
-
-                {/* Course Categories */}
-                <div style={styles.megaContent}>
-                  {Object.keys(groupedCourses).length > 0 ? (
-                    Object.entries(groupedCourses).map(([category, categoryCourses]) => (
-                      <div key={category} style={styles.categorySection}>
-                        <h4 style={styles.categoryTitle}>
-                          {category}
-                          <span style={styles.categoryCount}>({categoryCourses.length})</span>
-                        </h4>
-                        <div style={styles.categoryGrid}>
-                          {categoryCourses.map((course) => (
-                            <div
-                              key={course.id}
-                              style={styles.courseCard}
-                            >
-                              <div style={styles.courseCardImage}>
-                                <img 
-                                  src={course.imageUrl || "https://via.placeholder.com/300x160"} 
-                                  alt={course.title}
-                                  style={styles.courseImage}
-                                />
-                              </div>
-                              <div style={styles.courseCardContent}>
-                                <h5 style={styles.courseCardTitle}>{course.title}</h5>
-                                <div style={styles.courseCardFooter}>
-                                  <span style={styles.coursePrice}>${course.price?.toFixed(2)}</span>
-                                  <span style={styles.courseArrow}>→</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                <div style={styles.dropdownContent}>
+                  {courses.length > 0 ? (
+                    courses.slice(0, 6).map((course) => (
+                      <div
+                        key={course.id}
+                        style={styles.dropdownItem}
+                        onClick={() => {
+                          navigate(`/course/${course.id}`);
+                          setCoursesOpen(false);
+                        }}
+                      >
+                        <div style={styles.courseIcon}>📚</div>
+                        <div style={styles.courseItemContent}>
+                          <span style={styles.courseItemTitle}>{course.title}</span>
+                          {course.price !== undefined && (
+                            <span style={styles.courseItemPrice}>
+                              ${course.price.toFixed(2)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div style={styles.emptySearch}>
-                      <p style={styles.emptyText}>No courses found matching "{searchQuery}"</p>
+                    <div style={styles.emptyState}>
+                      <p style={styles.emptyText}>No courses available</p>
                     </div>
                   )}
-                </div>
-
-                {/* View All Footer */}
-                <div style={styles.dropdownFooter}>
-                  <button
-                    style={styles.viewAllButton}
-                    onClick={() => {
-                      navigate("/courses");
-                      setCoursesOpen(false);
-                    }}
-                  >
-                    View All {courses.length} Courses →
-                  </button>
+                  {courses.length > 6 && (
+                    <div style={styles.viewAllContainer}>
+                      <button
+                        style={styles.viewAllButton}
+                        onClick={() => {
+                          navigate("/");
+                          setCoursesOpen(false);
+                        }}
+                      >
+                        View All Courses →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -222,7 +248,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             <div
               style={styles.courseMenu}
               onMouseEnter={() => setMyLearningOpen(true)}
-              onMouseLeave={() => setTimeout(() => setMyLearningOpen(false), 200)}
+              onMouseLeave={() => setTimeout(() => setMyLearningOpen(false), 100)}
             >
               <button style={styles.navButton}>
                 <HiBookOpen size={18} />
@@ -234,7 +260,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                   fill="currentColor"
                   style={{
                     transform: myLearningOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.3s ease',
+                    transition: 'transform 0.2s',
                   }}
                 >
                   <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
@@ -250,24 +276,23 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                     </p>
                   </div>
                   <div style={styles.dropdownContent}>
-                    {enrolledCourses.length > 0 ? (
+                    {loading ? (
+                      <div style={styles.loadingState}>
+                        <div style={styles.spinner}></div>
+                        <p style={styles.loadingText}>Loading courses...</p>
+                      </div>
+                    ) : enrolledCourses.length > 0 ? (
                       <>
-                        {enrolledCourses.map((enrollment) => (
+                        {enrolledCourses.slice(0, 5).map((enrollment) => (
                           <div
                             key={enrollment.id}
-                            style={styles.enrollmentItem}
+                            style={styles.dropdownItem}
                             onClick={() => {
                               navigate(`/course/${enrollment.course.id}`);
                               setMyLearningOpen(false);
                             }}
                           >
-                            <div style={styles.enrollmentImage}>
-                              <img 
-                                src={enrollment.course.imageUrl || "https://via.placeholder.com/60"} 
-                                alt={enrollment.course.title}
-                                style={styles.enrollmentImg}
-                              />
-                            </div>
+                            <div style={styles.enrolledIcon}>✓</div>
                             <div style={styles.enrollmentInfo}>
                               <span style={styles.enrollmentTitle}>{enrollment.course.title}</span>
                               <span style={styles.enrollmentDate}>
@@ -278,12 +303,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                                 })}
                               </span>
                             </div>
-                            <div style={styles.enrolledBadge}>✓</div>
                           </div>
                         ))}
                         <div style={styles.viewAllContainer}>
                           <button
-                            style={styles.viewAllButtonAlt}
+                            style={styles.viewAllButton}
                             onClick={() => {
                               navigate("/my-learning");
                               setMyLearningOpen(false);
@@ -323,6 +347,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
 
         {/* RIGHT ACTIONS */}
         <div style={styles.rightActions}>
+
           {/* Cart */}
           <button 
             style={styles.iconButton}
@@ -344,21 +369,33 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             <div 
               style={styles.profileDropdown}
               onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setTimeout(() => setProfileMenuOpen(false), 200)}
+              onMouseLeave={() => setTimeout(() => setProfileMenuOpen(false), 100)}
             >
-              <button style={styles.profileButton}>
-                <div style={styles.profilePlaceholder}>
-                  {userName.charAt(0).toUpperCase()}
-                </div>
+              <button 
+                style={styles.profileButton}
+                title="Profile"
+              >
+                {profileImage ? (
+                  <img src={profileImage} alt={userName} style={styles.profileImage} />
+                ) : (
+                  <div style={styles.profilePlaceholder}>
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
               </button>
 
+              {/* Profile Dropdown Menu */}
               {profileMenuOpen && (
                 <div style={styles.profileDropdownMenu}>
                   <div style={styles.profileDropdownHeader}>
                     <div style={styles.profileDropdownAvatar}>
-                      <div style={styles.profileDropdownPlaceholder}>
-                        {userName.charAt(0).toUpperCase()}
-                      </div>
+                      {profileImage ? (
+                        <img src={profileImage} alt={userName} style={styles.profileDropdownImage} />
+                      ) : (
+                        <div style={styles.profileDropdownPlaceholder}>
+                          {userName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                     </div>
                     <div style={styles.profileDropdownInfo}>
                       <div style={styles.profileDropdownName}>{userName}</div>
@@ -417,11 +454,22 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             </div>
           ) : (
             <>
+              {/* Divider */}
               <div style={styles.divider}></div>
-              <button style={styles.loginButton} onClick={() => navigate("/login")}>
+
+              {/* Login Button */}
+              <button 
+                style={styles.loginButton} 
+                onClick={() => navigate("/login")}
+              >
                 Log in
               </button>
-              <button style={styles.signupButton} onClick={() => navigate("/login")}>
+
+              {/* Sign Up Button */}
+              <button 
+                style={styles.signupButton} 
+                onClick={() => navigate("/login")}
+              >
                 Sign Up
               </button>
             </>
@@ -528,19 +576,21 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   );
 };
 
+/* ================= STYLES ================= */
+
 const styles: Record<string, React.CSSProperties> = {
   container: {
     backgroundColor: "rgba(255, 255, 255, 0.98)",
-    backdropFilter: "blur(20px)",
+    backdropFilter: "blur(10px)",
     padding: "16px 32px",
     borderBottom: "1px solid rgba(229, 231, 235, 0.5)",
     position: "sticky",
     top: 0,
     zIndex: 1000,
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    transition: "all 0.3s ease",
   },
   containerScrolled: {
-    boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06)",
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
     borderBottom: "1px solid rgba(229, 231, 235, 0.8)",
   },
   content: {
@@ -550,6 +600,8 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: "1600px",
     margin: "0 auto",
   },
+
+  // Modern Logo
   logoContainer: {
     cursor: "pointer",
     transition: "transform 0.3s ease",
@@ -567,7 +619,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     borderRadius: "14px",
     background: "white",
-    boxShadow: "0 8px 24px rgba(102, 126, 234, 0.2)",
+    boxShadow: "0 4px 16px rgba(102, 126, 234, 0.25)",
     transition: "all 0.3s ease",
   },
   logoSvg: {
@@ -608,6 +660,8 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: "1px",
     textTransform: "uppercase",
   },
+
+  // Desktop Navigation
   desktopNav: {
     display: "flex",
     alignItems: "center",
@@ -620,196 +674,33 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "10px 16px",
     background: "transparent",
     border: "none",
-    borderRadius: "12px",
+    borderRadius: "10px",
     fontSize: "15px",
     fontWeight: 600,
     color: "#374151",
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
   },
+
+  // Courses Dropdown
   courseMenu: {
     position: "relative",
   },
-  
-  // MEGA DROPDOWN STYLES
-  megaDropdown: {
-    position: "absolute",
-    top: "calc(100% + 16px)",
-    left: "-100px",
-    background: "white",
-    width: "900px",
-    maxHeight: "600px",
-    borderRadius: "24px",
-    boxShadow: "0 24px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05)",
-    overflow: "hidden",
-    zIndex: 2000,
-    animation: "slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-  },
-  
-  dropdownSearchContainer: {
-    position: "relative",
-    padding: "24px 24px 16px 24px",
-    borderBottom: "1px solid #f3f4f6",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  },
-  
-  searchIcon: {
-    position: "absolute",
-    left: "38px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#9ca3af",
-    fontSize: "18px",
-  },
-  
-  dropdownSearch: {
-    width: "100%",
-    padding: "14px 20px 14px 44px",
-    borderRadius: "12px",
-    border: "2px solid rgba(255,255,255,0.3)",
-    fontSize: "15px",
-    outline: "none",
-    transition: "all 0.2s ease",
-    background: "rgba(255,255,255,0.95)",
-  },
-  
-  megaContent: {
-    maxHeight: "450px",
-    overflowY: "auto" as const,
-    padding: "24px",
-  },
-  
-  categorySection: {
-    marginBottom: "32px",
-  },
-  
-  categoryTitle: {
-    fontSize: "16px",
-    fontWeight: 700,
-    color: "#111827",
-    marginBottom: "16px",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  
-  categoryCount: {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#6b7280",
-    background: "#f3f4f6",
-    padding: "2px 8px",
-    borderRadius: "6px",
-  },
-  
-  categoryGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "16px",
-  },
-  
-  courseCard: {
-    display: "flex",
-    flexDirection: "column",
-    background: "#f9fafb",
-    borderRadius: "16px",
-    overflow: "hidden",
-    cursor: "pointer",
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    border: "2px solid transparent",
-  },
-  
-  courseCardImage: {
-    width: "100%",
-    height: "120px",
-    overflow: "hidden",
-    background: "#e5e7eb",
-  },
-  
-  courseImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    transition: "transform 0.4s ease",
-  },
-  
-  courseCardContent: {
-    padding: "14px",
-  },
-  
-  courseCardTitle: {
-    fontSize: "14px",
-    fontWeight: 600,
-    color: "#111827",
-    marginBottom: "8px",
-    lineHeight: 1.4,
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-  },
-  
-  courseCardFooter: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  
-  coursePrice: {
-    fontSize: "16px",
-    fontWeight: 700,
-    background: "linear-gradient(135deg, #667eea, #764ba2)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    backgroundClip: "text",
-  },
-  
-  courseArrow: {
-    fontSize: "18px",
-    color: "#9ca3af",
-    transition: "transform 0.2s ease",
-  },
-  
-  dropdownFooter: {
-    padding: "16px 24px",
-    borderTop: "1px solid #f3f4f6",
-    background: "#fafafa",
-  },
-  
-  viewAllButton: {
-    width: "100%",
-    padding: "14px 24px",
-    background: "linear-gradient(135deg, #667eea, #764ba2)",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-  },
-  
-  emptySearch: {
-    padding: "40px",
-    textAlign: "center",
-  },
-
-  // Standard Dropdown (My Learning)
   dropdown: {
     position: "absolute",
-    top: "calc(100% + 16px)",
+    top: "calc(100% + 12px)",
     left: 0,
     background: "white",
-    minWidth: "380px",
-    maxWidth: "420px",
-    borderRadius: "20px",
-    boxShadow: "0 24px 60px rgba(0, 0, 0, 0.12)",
+    minWidth: "320px",
+    maxWidth: "400px",
+    borderRadius: "16px",
+    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
     overflow: "hidden",
     zIndex: 2000,
-    animation: "slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    animation: "slideDown 0.2s ease-out",
   },
   dropdownHeader: {
-    padding: "24px",
+    padding: "20px 24px",
     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     color: "white",
   },
@@ -828,31 +719,21 @@ const styles: Record<string, React.CSSProperties> = {
     maxHeight: "400px",
     overflowY: "auto" as const,
   },
-  enrollmentItem: {
+  dropdownItem: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
-    padding: "16px 20px",
+    gap: "12px",
+    padding: "14px 24px",
     borderBottom: "1px solid #f3f4f6",
     cursor: "pointer",
-    transition: "all 0.2s ease",
-    position: "relative",
+    transition: "all 0.2s",
+    fontSize: "15px",
+    color: "#374151",
   },
-  enrollmentImage: {
-    width: "60px",
-    height: "60px",
-    borderRadius: "10px",
-    overflow: "hidden",
-    flexShrink: 0,
-    background: "#f3f4f6",
-  },
-  enrollmentImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
+  courseIcon: {
+    fontSize: "20px",
   },
   enrollmentInfo: {
-    flex: 1,
     display: "flex",
     flexDirection: "column",
     gap: "4px",
@@ -861,43 +742,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "15px",
     fontWeight: 600,
     color: "#111827",
-    lineHeight: 1.3,
   },
   enrollmentDate: {
     fontSize: "12px",
     color: "#6b7280",
   },
-  enrolledBadge: {
-    width: "24px",
-    height: "24px",
-    background: "#10b981",
-    color: "white",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "12px",
-    fontWeight: 700,
-    flexShrink: 0,
-  },
-  viewAllContainer: {
-    padding: "16px 20px",
-    borderTop: "1px solid #f3f4f6",
-  },
-  viewAllButtonAlt: {
-    width: "100%",
-    padding: "12px",
-    background: "transparent",
-    border: "2px solid #e5e7eb",
-    borderRadius: "10px",
-    fontSize: "14px",
-    fontWeight: 600,
-    color: "#374151",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-  },
   emptyState: {
-    padding: "40px 24px",
+    padding: "32px 24px",
     textAlign: "center",
   },
   emptyText: {
@@ -906,18 +757,60 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: "16px",
   },
   browseCourses: {
-    padding: "12px 24px",
+    padding: "10px 20px",
     background: "linear-gradient(135deg, #667eea, #764ba2)",
     color: "white",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     fontSize: "14px",
     fontWeight: 600,
     cursor: "pointer",
-    transition: "all 0.2s ease",
   },
+
+  // Search
+  searchWrapper: {
+    flex: 1,
+    position: "relative",
+    maxWidth: "500px",
+  },
+  searchIcon: {
+    position: "absolute",
+    top: "50%",
+    left: "16px",
+    transform: "translateY(-50%)",
+    color: "#9ca3af",
+    pointerEvents: "none",
+  },
+  searchInput: {
+    width: "100%",
+    padding: "12px 48px 12px 48px",
+    borderRadius: "12px",
+    border: "2px solid #e5e7eb",
+    fontSize: "15px",
+    outline: "none",
+    transition: "all 0.2s",
+    backgroundColor: "#f9fafb",
+  },
+  clearButton: {
+    position: "absolute",
+    top: "50%",
+    right: "16px",
+    transform: "translateY(-50%)",
+    background: "#e5e7eb",
+    border: "none",
+    borderRadius: "50%",
+    width: "24px",
+    height: "24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    color: "#6b7280",
+    transition: "all 0.2s",
+  },
+
+  // Right Actions
   rightActions: {
-    marginLeft: "auto",
     display: "flex",
     alignItems: "center",
     gap: "12px",
@@ -932,7 +825,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
     color: "#374151",
     position: "relative",
   },
@@ -954,7 +847,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "10px",
     minWidth: "20px",
     textAlign: "center",
-    boxShadow: "0 4px 12px rgba(239, 68, 68, 0.4)",
+    boxShadow: "0 2px 8px rgba(239, 68, 68, 0.4)",
   },
   divider: {
     width: "1px",
@@ -971,7 +864,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: "#374151",
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
   },
   signupButton: {
     padding: "10px 20px",
@@ -982,9 +875,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: "white",
     cursor: "pointer",
-    transition: "all 0.2s ease",
-    boxShadow: "0 4px 16px rgba(102, 126, 234, 0.3)",
+    transition: "all 0.2s",
+    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
   },
+
+  // Profile Dropdown
   profileDropdown: {
     position: "relative",
   },
@@ -996,7 +891,12 @@ const styles: Record<string, React.CSSProperties> = {
     background: "transparent",
     cursor: "pointer",
     overflow: "hidden",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   profilePlaceholder: {
     width: "100%",
@@ -1009,17 +909,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "18px",
     fontWeight: "bold",
   },
+
+  // Profile Dropdown Menu
   profileDropdownMenu: {
     position: "absolute",
-    top: "calc(100% + 16px)",
+    top: "calc(100% + 12px)",
     right: 0,
     background: "white",
     minWidth: "280px",
-    borderRadius: "20px",
-    boxShadow: "0 24px 60px rgba(0, 0, 0, 0.12)",
+    borderRadius: "16px",
+    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
     overflow: "hidden",
     zIndex: 2000,
-    animation: "slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    animation: "slideDown 0.2s ease-out",
   },
   profileDropdownHeader: {
     display: "flex",
@@ -1036,6 +938,11 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
     border: "3px solid rgba(255, 255, 255, 0.3)",
     flexShrink: 0,
+  },
+  profileDropdownImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   profileDropdownPlaceholder: {
     width: "100%",
@@ -1082,7 +989,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: "#374151",
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
     textAlign: "left",
   },
   profileDropdownItemLogout: {
@@ -1097,9 +1004,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: "#ef4444",
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
     textAlign: "left",
   },
+
+  // Mobile Menu
   mobileMenuButton: {
     display: "none",
     width: "44px",
@@ -1130,7 +1039,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#374151",
     cursor: "pointer",
     textAlign: "left",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
   },
   mobileDivider: {
     height: "1px",
@@ -1147,7 +1056,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#374151",
     cursor: "pointer",
     textAlign: "center",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
   },
   mobileMenuItemAccent: {
     padding: "14px 20px",
@@ -1159,10 +1068,11 @@ const styles: Record<string, React.CSSProperties> = {
     color: "white",
     cursor: "pointer",
     textAlign: "center",
-    transition: "all 0.2s ease",
+    transition: "all 0.2s",
   },
 };
 
+// Add CSS for animations and hover effects
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes slideDown {
@@ -1176,64 +1086,91 @@ styleSheet.textContent = `
     }
   }
 
-  [style*="navButton"]:hover {
+  button {
+    background: #667eea;
+    color: white;
+    transition: background 0.2s ease;
+  }
+
+  button:active {
+    opacity: 0.95;
+  }
+  
+  [style*="logoContainer"] [style*="logoIconContainer"] {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+  
+  [style*="navButton"] {
     background: rgba(102, 126, 234, 0.08);
+    color: #333;
   }
   
-  [style*="courseCard"]:hover {
+  [style*="dropdownItem"] {
+    background: #f5f5f5;
+  }
+  
+  [style*="iconButton"] {
+    background: rgba(102, 126, 234, 0.08);
     border-color: #667eea;
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
-  }
-  
-  [style*="courseCard"]:hover [style*="courseImage"] {
-    transform: scale(1.1);
-  }
-  
-  [style*="courseCard"]:hover [style*="courseArrow"] {
-    transform: translateX(4px);
     color: #667eea;
   }
   
-  [style*="enrollmentItem"]:hover {
-    background: #f9fafb;
-  }
-  
-  [style*="iconButton"]:hover {
+  [style*="profileDropdownItem"] {
     background: rgba(102, 126, 234, 0.08);
-    border-color: #667eea;
+    color: #333;
   }
   
-  [style*="profileDropdownItem"]:hover {
-    background: rgba(102, 126, 234, 0.08);
+  [style*="profileDropdownItemLogout"] {
+    background: rgba(239, 68, 68, 0.08);
   }
   
-  [style*="loginButton"]:hover {
-    background: #f9fafb;
-    border-color: #667eea;
-  }
-  
-  [style*="signupButton"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-  }
-  
-  [style*="viewAllButton"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-  }
-  
-  [style*="viewAllButtonAlt"]:hover {
-    background: #f9fafb;
-    border-color: #667eea;
+  input:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
   }
 
-  input:focus {
-    border-color: rgba(255,255,255,0.6) !important;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+  /* Tooltip Styling */
+  [title] {
+    position: relative;
+  }
+
+  [title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    color: #1a202c;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+  }
+
+  [title]:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: white;
+    z-index: 1000;
+    pointer-events: none;
   }
 
   @media (max-width: 1024px) {
     [style*="desktopNav"] {
+      display: none !important;
+    }
+    
+    [style*="searchWrapper"] {
       display: none !important;
     }
     
@@ -1248,4 +1185,4 @@ styleSheet.textContent = `
 `;
 document.head.appendChild(styleSheet);
 
-export default Header;
+export default Header;  
