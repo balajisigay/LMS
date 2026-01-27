@@ -1,4 +1,16 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
+import { getLearningProgress, CourseProgress } from "../../../src/api/learningProgressService";
+import { requireAuth } from "../utils/auth";
+import { useNavigate } from "react-router-dom";
+import { 
+  HiAcademicCap, 
+  HiClock, 
+  HiCheckCircle, 
+  HiChartBar,
+  HiLightningBolt,
+  HiTrendingUp
+} from "react-icons/hi";
 
 /* ================= TYPES ================= */
 
@@ -6,21 +18,24 @@ interface LearningPathsProps {
   onPathPress?: (courseId: string) => void;
 }
 
-interface CourseProgress {
-  courseId: number;
+interface EnrichedCourse {
+  id: number;
   title: string;
   progress: number;
+  enrolledAt: Date;
+  instructor: string;
+  totalLessons?: number;
+  completedLessons?: number;
+  estimatedTime?: string;
+  imageUrl?: string;
 }
 
 /* ------------------ LEARNING PATH CARD ------------------ */
 const LearningPath: React.FC<{
+  course: EnrichedCourse;
   index: number;
-  title: string;
-  courses: string;
-  duration: string;
-  progress: number;
   onPress?: () => void;
-}> = ({ index, title, courses, duration, progress, onPress }) => {
+}> = ({ course, index, onPress }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const accent =
@@ -37,6 +52,22 @@ const LearningPath: React.FC<{
       ? "rgba(236, 72, 153, 0.4)"
       : "rgba(16, 185, 129, 0.4)";
 
+  const getStatusInfo = () => {
+    if (course.progress === 100) {
+      return { icon: <HiCheckCircle size={16} />, text: "Completed", color: "#10B981" };
+    } else if (course.progress > 0) {
+      return { icon: <HiLightningBolt size={16} />, text: "In Progress", color: "#F59E0B" };
+    } else {
+      return { icon: <HiClock size={16} />, text: "Not Started", color: "#6B7280" };
+    }
+  };
+
+  const status = getStatusInfo();
+
+  const daysSinceEnrollment = Math.floor(
+    (new Date().getTime() - new Date(course.enrolledAt).getTime()) / (1000 * 60 * 60 * 24)
+  );
+
   return (
     <div
       style={{
@@ -50,16 +81,62 @@ const LearningPath: React.FC<{
       onMouseLeave={() => setIsHovered(false)}
       onClick={onPress}
     >
+      {/* Course Image/Icon */}
       <div style={{ ...styles.pathIcon, backgroundImage: accent }}>
-        <span style={styles.pathNumber}>{index + 1}</span>
+        {course.imageUrl ? (
+          <img 
+            src={course.imageUrl} 
+            alt={course.title}
+            style={styles.courseImage}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <HiAcademicCap size={28} color="white" />
+        )}
+        {course.progress === 100 && (
+          <div style={styles.completedBadge}>
+            <HiCheckCircle size={20} color="#10B981" />
+          </div>
+        )}
       </div>
 
       <div style={styles.pathContent}>
-        <h4 style={styles.pathTitle}>{title}</h4>
+        <div style={styles.pathHeader}>
+          <h4 style={styles.pathTitle}>{course.title}</h4>
+          <div style={{ ...styles.statusBadge, background: `${status.color}22`, color: status.color }}>
+            {status.icon}
+            <span>{status.text}</span>
+          </div>
+        </div>
+
+        <p style={styles.instructorName}>
+          <HiAcademicCap size={14} />
+          {course.instructor}
+        </p>
+
         <div style={styles.pathMetaContainer}>
-          <span style={styles.pathBadge}>{courses}</span>
-          <span style={styles.pathDivider}>•</span>
-          <span style={styles.pathStatus}>{duration}</span>
+          {course.completedLessons !== undefined && course.totalLessons !== undefined && (
+            <>
+              <span style={styles.pathBadge}>
+                {course.completedLessons}/{course.totalLessons} lessons
+              </span>
+              <span style={styles.pathDivider}>•</span>
+            </>
+          )}
+          {course.estimatedTime && (
+            <>
+              <span style={styles.pathMeta}>
+                <HiClock size={12} />
+                {course.estimatedTime}
+              </span>
+              <span style={styles.pathDivider}>•</span>
+            </>
+          )}
+          <span style={styles.pathMeta}>
+            Enrolled {daysSinceEnrollment === 0 ? 'today' : `${daysSinceEnrollment}d ago`}
+          </span>
         </div>
 
         {/* Progress Bar */}
@@ -68,14 +145,14 @@ const LearningPath: React.FC<{
             <div
               style={{
                 ...styles.progressBarFill,
-                width: `${progress}%`,
+                width: `${course.progress}%`,
                 backgroundImage: accent,
               }}
             >
               <div style={styles.progressShimmer} />
             </div>
           </div>
-          <span style={styles.progressText}>{progress}%</span>
+          <span style={styles.progressText}>{course.progress}%</span>
         </div>
       </div>
 
@@ -94,90 +171,140 @@ const LearningPath: React.FC<{
 };
 
 /* ------------------ WEEKLY PROGRESS ------------------ */
-const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
+const WeeklyProgress: React.FC<{ courses: EnrichedCourse[] }> = ({ courses }) => {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  const safeValues = useMemo(() => {
-    if (values.length === 0) return [0, 0, 0, 0, 0, 0, 0];
+  // Calculate weekly progress based on actual course data
+  const { weeklyValues, stats } = useMemo(() => {
+    // Mock weekly progress calculation - in real app, this would come from API
+    const values = courses.length > 0 
+      ? courses.slice(0, 7).map(c => Math.min(c.progress, 100))
+      : [0, 0, 0, 0, 0, 0, 0];
 
-    const paddedValues = [...values.slice(0, 7)];
-    while (paddedValues.length < 7) {
-      paddedValues.push(0);
+    // Pad with zeros if needed
+    while (values.length < 7) {
+      values.push(0);
     }
-    return paddedValues;
-  }, [values]);
 
-  const { avg, bestDay, maxValue, totalProgress } = useMemo(() => {
-    const nonZeroValues = safeValues.filter((v) => v > 0);
-    const sum = safeValues.reduce((a, b) => a + b, 0);
+    const nonZeroValues = values.filter((v) => v > 0);
+    const sum = values.reduce((a, b) => a + b, 0);
     const avg = nonZeroValues.length > 0 ? Math.round(sum / nonZeroValues.length) : 0;
-    const max = Math.max(...safeValues);
-    const idx = safeValues.indexOf(max);
-    return { avg, bestDay: days[idx], maxValue: max, totalProgress: sum };
-  }, [safeValues]);
+    const max = Math.max(...values);
+    const maxIndex = values.indexOf(max);
+
+    return {
+      weeklyValues: values,
+      stats: {
+        avg,
+        bestDay: days[maxIndex],
+        maxValue: max,
+        totalProgress: sum,
+        activeDays: nonZeroValues.length,
+      }
+    };
+  }, [courses]);
+
+  const totalCourses = courses.length;
+  const completedCourses = courses.filter(c => c.progress === 100).length;
+  const inProgressCourses = courses.filter(c => c.progress > 0 && c.progress < 100).length;
 
   return (
     <div style={styles.progressWidget}>
+      {/* Header with Stats */}
       <div style={styles.progressHeader}>
         <div>
-          <h4 style={styles.progressTitle}>Weekly Progress</h4>
+          <h4 style={styles.progressTitle}>
+            <HiChartBar size={24} />
+            Learning Analytics
+          </h4>
           <p style={styles.progressSubtitle}>
-            {avg > 0
-              ? `Average ${avg}% • Best: ${bestDay} (${maxValue}%)`
+            {stats.avg > 0
+              ? `Average ${stats.avg}% progress • Best: ${stats.bestDay} (${stats.maxValue}%)`
               : "Start learning to track your progress"}
           </p>
         </div>
-        {totalProgress > 0 && (
-          <div style={styles.statsChip}>
-            <span style={styles.statsNumber}>{totalProgress}</span>
-            <span style={styles.statsLabel}>pts</span>
-          </div>
-        )}
       </div>
 
-      <div style={styles.progressBars}>
-        {safeValues.map((val, i) => (
-          <div
-            key={i}
-            style={styles.progressColumn}
-            onMouseEnter={() => setHoveredIndex(i)}
-            onMouseLeave={() => setHoveredIndex(null)}
-          >
-            {hoveredIndex === i && val > 0 && (
-              <div style={styles.tooltip}>{val}%</div>
-            )}
-            <div style={styles.progressTrack}>
-              <div
-                style={{
-                  ...styles.progressBar,
-                  height: `${val}%`,
-                  background:
-                    val > 0
-                      ? "linear-gradient(180deg, #818CF8, #4F46E5)"
-                      : "transparent",
-                  opacity: hoveredIndex === i ? 1 : hoveredIndex !== null ? 0.5 : 1,
-                }}
-              />
-            </div>
-            <span
-              style={{
-                ...styles.label,
-                fontWeight: hoveredIndex === i ? 600 : 500,
-                color: hoveredIndex === i ? "#E0E7FF" : "#64748B",
-              }}
+      {/* Stats Grid */}
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <div style={styles.statIcon}>
+            <HiAcademicCap size={20} color="#4F46E5" />
+          </div>
+          <div>
+            <div style={styles.statValue}>{totalCourses}</div>
+            <div style={styles.statLabel}>Total Courses</div>
+          </div>
+        </div>
+
+        <div style={styles.statCard}>
+          <div style={{ ...styles.statIcon, background: "rgba(16, 185, 129, 0.15)" }}>
+            <HiCheckCircle size={20} color="#10B981" />
+          </div>
+          <div>
+            <div style={styles.statValue}>{completedCourses}</div>
+            <div style={styles.statLabel}>Completed</div>
+          </div>
+        </div>
+
+        <div style={styles.statCard}>
+          <div style={{ ...styles.statIcon, background: "rgba(245, 158, 11, 0.15)" }}>
+            <HiTrendingUp size={20} color="#F59E0B" />
+          </div>
+          <div>
+            <div style={styles.statValue}>{inProgressCourses}</div>
+            <div style={styles.statLabel}>In Progress</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Weekly Progress Bars */}
+      <div style={styles.weeklySection}>
+        <h5 style={styles.weeklySectionTitle}>Weekly Activity</h5>
+        <div style={styles.progressBars}>
+          {weeklyValues.map((val, i) => (
+            <div
+              key={i}
+              style={styles.progressColumn}
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
             >
-              {days[i]}
-            </span>
-          </div>
-        ))}
+              {hoveredIndex === i && val > 0 && (
+                <div style={styles.tooltip}>{val}%</div>
+              )}
+              <div style={styles.progressTrack}>
+                <div
+                  style={{
+                    ...styles.progressBar,
+                    height: `${val}%`,
+                    background:
+                      val > 0
+                        ? "linear-gradient(180deg, #818CF8, #4F46E5)"
+                        : "transparent",
+                    opacity: hoveredIndex === i ? 1 : hoveredIndex !== null ? 0.5 : 1,
+                  }}
+                />
+              </div>
+              <span
+                style={{
+                  ...styles.label,
+                  fontWeight: hoveredIndex === i ? 600 : 500,
+                  color: hoveredIndex === i ? "#E0E7FF" : "#64748B",
+                }}
+              >
+                {days[i]}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {avg === 0 && (
+      {totalCourses === 0 && (
         <div style={styles.emptyProgressMessage}>
           <span style={styles.emptyProgressIcon}>📊</span>
           <p style={styles.emptyProgressText}>
-            Your weekly progress will appear here once you start learning
+            Enroll in courses to start tracking your learning progress
           </p>
         </div>
       )}
@@ -187,38 +314,87 @@ const WeeklyProgress: React.FC<{ values: number[] }> = ({ values }) => {
 
 /* ------------------ MAIN COMPONENT ------------------ */
 export const LearningPaths: React.FC<LearningPathsProps> = ({ onPathPress }) => {
-  const [courses, setCourses] = useState<CourseProgress[]>([]);
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState<EnrichedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Mock data for demonstration
-  const mockCourses: CourseProgress[] = [
-    { courseId: 1, title: "React Fundamentals & Hooks", progress: 75 },
-    { courseId: 2, title: "Advanced TypeScript Patterns", progress: 45 },
-    { courseId: 3, title: "Full-Stack Development", progress: 30 },
-  ];
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadProgress = useCallback(async () => {
-    setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setCourses(mockCourses);
+      setLoading(true);
       setError(null);
-    } catch (err) {
-      console.error("Failed to load learning progress", err);
-      setError("Failed to load progress");
+
+      const user = requireAuth(navigate);
+      
+      // Fetch enrollments and progress in parallel
+      const [enrollmentsData, progressData] = await Promise.all([
+        getEnrollments(user.userId),
+        getLearningProgress(String(user.userId))
+      ]);
+
+      // Create a map of courseId -> progress percentage
+      const progressMap = new Map<number, number>();
+      progressData.forEach((p: CourseProgress) => {
+        progressMap.set(p.courseId, p.progress);
+      });
+
+      // Enrich course data
+      const enrichedCourses: EnrichedCourse[] = enrollmentsData.map((enrollment: Enrollment) => ({
+        id: enrollment.course.id,
+        title: enrollment.course.title,
+        progress: progressMap.get(enrollment.course.id) || 0,
+        enrolledAt: new Date(enrollment.enrolledAt),
+        instructor: enrollment.course.instructor?.name || 'Unknown Instructor',
+        imageUrl: enrollment.course.imageUrl,
+        estimatedTime: '2-4 hours', // Could be calculated from course data
+        totalLessons: 12, // Should come from course data
+        completedLessons: Math.floor((progressMap.get(enrollment.course.id) || 0) / 100 * 12),
+      }));
+
+      // Sort by most recently enrolled
+      enrichedCourses.sort((a, b) => b.enrolledAt.getTime() - a.enrolledAt.getTime());
+
+      setCourses(enrichedCourses);
+    } catch (err: any) {
+      console.error("Failed to load learning progress:", err);
+      
+      if (err.message === "Authentication required") {
+        return;
+      }
+      
+      setError(err.message || "Failed to load progress");
       setCourses([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     loadProgress();
+
+    // Set up auto-refresh every 30 seconds for real-time updates
+    const interval = setInterval(() => {
+      setRefreshing(true);
+      loadProgress();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [loadProgress]);
 
-  const weeklyValues = useMemo(() => courses.map((c) => c.progress), [courses]);
+  const handleCourseClick = (courseId: number) => {
+    if (onPathPress) {
+      onPathPress(String(courseId));
+    } else {
+      navigate(`/course/${courseId}`);
+    }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadProgress();
+  };
 
   return (
     <section style={styles.container}>
@@ -230,13 +406,22 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({ onPathPress }) => 
           <div style={styles.headerSection}>
             <span style={styles.kicker}>
               <span style={styles.kickerIcon}>🎯</span>
-              Guided Learning Paths
+              Your Learning Journey
+              {refreshing && <span style={styles.refreshingDot} />}
             </span>
-            <h2 style={styles.title}>Continue Your Journey</h2>
+            <h2 style={styles.title}>Continue Your Progress</h2>
             <p style={styles.subtitle}>
-              Pick up right where you left off and keep building your skills with
-              personalized learning paths.
+              {courses.length > 0 
+                ? `You're enrolled in ${courses.length} ${courses.length === 1 ? 'course' : 'courses'}. Keep up the great work!`
+                : "Discover courses and start your learning journey today."
+              }
             </p>
+            {courses.length > 0 && (
+              <button style={styles.refreshButton} onClick={handleRefresh}>
+                <HiTrendingUp size={16} />
+                Refresh Progress
+              </button>
+            )}
           </div>
 
           <div style={styles.pathsContainer}>
@@ -266,27 +451,31 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({ onPathPress }) => 
                 <p style={styles.emptySubtext}>
                   Explore our courses and begin your journey today
                 </p>
+                <button 
+                  style={styles.exploreButton}
+                  onClick={() => navigate("/")}
+                >
+                  <HiAcademicCap size={20} />
+                  Explore Courses
+                </button>
               </div>
             )}
 
             {!loading &&
               !error &&
-              courses.map((c, i) => (
+              courses.map((course, index) => (
                 <LearningPath
-                  key={c.courseId}
-                  index={i}
-                  title={c.title}
-                  courses="Enrolled"
-                  duration={c.progress === 100 ? "✓ Completed" : "In Progress"}
-                  progress={c.progress}
-                  onPress={() => onPathPress?.(String(c.courseId))}
+                  key={course.id}
+                  course={course}
+                  index={index}
+                  onPress={() => handleCourseClick(course.id)}
                 />
               ))}
           </div>
         </div>
 
         {/* RIGHT SIDE */}
-        <WeeklyProgress values={weeklyValues} />
+        <WeeklyProgress courses={courses} />
       </div>
     </section>
   );
@@ -354,6 +543,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 16,
   },
 
+  refreshingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    background: "#10B981",
+    animation: "pulse 2s infinite",
+    marginLeft: 4,
+  },
+
   title: {
     fontSize: 48,
     fontWeight: 800,
@@ -371,6 +569,23 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.6,
     margin: 0,
     maxWidth: 560,
+  },
+
+  refreshButton: {
+    marginTop: 8,
+    padding: "10px 20px",
+    background: "rgba(79,70,229,0.15)",
+    color: "#A5B4FC",
+    border: "1px solid rgba(79,70,229,0.3)",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "flex-start",
   },
 
   pathsContainer: {
@@ -394,8 +609,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   pathIcon: {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: 16,
     display: "flex",
     justifyContent: "center",
@@ -406,12 +621,25 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
   },
 
-  pathNumber: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: 700,
-    position: "relative",
-    zIndex: 1,
+  courseImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    borderRadius: 16,
+  },
+
+  completedBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    width: 24,
+    height: 24,
+    borderRadius: "50%",
+    background: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
   },
 
   pathContent: {
@@ -422,18 +650,47 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
   },
 
+  pathHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
   pathTitle: {
     margin: 0,
     fontSize: 18,
     color: "#F1F5F9",
     fontWeight: 600,
     letterSpacing: "-0.01em",
+    flex: 1,
+  },
+
+  statusBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "4px 10px",
+    borderRadius: 6,
+    fontSize: 12,
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+  },
+
+  instructorName: {
+    margin: 0,
+    fontSize: 13,
+    color: "#94A3B8",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
   },
 
   pathMetaContainer: {
     display: "flex",
     alignItems: "center",
     gap: 8,
+    flexWrap: "wrap",
   },
 
   pathBadge: {
@@ -445,14 +702,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
   },
 
-  pathDivider: {
-    color: "#475569",
-  },
-
-  pathStatus: {
-    fontSize: 13,
+  pathMeta: {
+    fontSize: 12,
     color: "#94A3B8",
     fontWeight: 500,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  pathDivider: {
+    color: "#475569",
+    fontSize: 12,
   },
 
   progressBarContainer: {
@@ -545,6 +806,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: "#F9FAFB",
     letterSpacing: "-0.01em",
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
   },
 
   progressSubtitle: {
@@ -554,37 +818,68 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.5,
   },
 
-  statsChip: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    background: "rgba(79,70,229,0.15)",
-    padding: "8px 16px",
-    borderRadius: 12,
-    border: "1px solid rgba(79,70,229,0.3)",
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 12,
   },
 
-  statsNumber: {
+  statCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    background: "rgba(79,70,229,0.08)",
+    padding: 12,
+    borderRadius: 12,
+    border: "1px solid rgba(79,70,229,0.15)",
+  },
+
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    background: "rgba(79,70,229,0.15)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+
+  statValue: {
     fontSize: 20,
     fontWeight: 700,
-    color: "#A5B4FC",
+    color: "#F9FAFB",
     lineHeight: 1,
   },
 
-  statsLabel: {
-    fontSize: 10,
+  statLabel: {
+    fontSize: 11,
     color: "#94A3B8",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: 2,
   },
 
+  weeklySection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  },
+
+  weeklySectionTitle: {
+    margin: 0,
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#CBD5E1",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
   progressBars: {
     display: "flex",
     alignItems: "flex-end",
     gap: 12,
-    height: 200,
-    marginTop: 8,
+    height: 160,
   },
 
   progressColumn: {
@@ -722,13 +1017,29 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
 
+  exploreButton: {
+    marginTop: 12,
+    padding: "12px 24px",
+    background: "linear-gradient(135deg, #4F46E5, #7C3AED)",
+    color: "white",
+    border: "none",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    boxShadow: "0 4px 12px rgba(79,70,229,0.3)",
+  },
+
   emptyProgressMessage: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: 12,
     padding: 24,
-    marginTop: 16,
     background: "rgba(79,70,229,0.08)",
     borderRadius: 16,
     border: "1px solid rgba(165,180,252,0.15)",
@@ -758,6 +1069,37 @@ styleSheet.textContent = `
   @keyframes shimmer {
     0% { left: -100%; }
     100% { left: 100%; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  button[style*="refreshButton"]:hover {
+    background: rgba(79,70,229,0.25) !important;
+    transform: translateY(-1px);
+  }
+
+  button[style*="exploreButton"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79,70,229,0.4) !important;
+  }
+
+  button[style*="retryButton"]:hover {
+    background: rgba(239,68,68,0.3) !important;
+  }
+
+  @media (max-width: 1024px) {
+    div[style*="wrapper"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    div[style*="statsGrid"] {
+      grid-template-columns: 1fr !important;
+    }
   }
 `;
 document.head.appendChild(styleSheet);
