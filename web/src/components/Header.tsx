@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiShoppingCart, HiUser, HiMenu, HiBookOpen, HiLogout, HiCog } from "react-icons/hi";
+import { HiShoppingCart, HiUser, HiMenu, HiBookOpen, HiLogout, HiCog, HiX, HiSearch } from "react-icons/hi";
 import { getCurrentUser, clearCurrentUser } from "../utils/auth";
 import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
 
@@ -10,6 +10,7 @@ interface Course {
   description?: string;
   price?: number;
   imageUrl?: string;
+  category?: string;
 }
 
 interface HeaderProps {
@@ -29,11 +30,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [courseSearch, setCourseSearch] = useState("");
 
   useEffect(() => {
     initializeHeader();
 
-    // Add scroll listener
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
@@ -43,26 +44,19 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
 
   const initializeHeader = async () => {
     try {
-      // Check if user is logged in
       const user = getCurrentUser();
       
       if (user && user.userId) {
         console.log("✅ User logged in:", { userId: user.userId, name: user.fullName });
         setIsLoggedIn(true);
         setUserName(user.fullName || user.email || "User");
-        
-        // Load user's profile image if available
-        // Note: You'll need to fetch this from your user profile API
-        setProfileImage(null); // Set to actual profile image URL when available
-        
-        // Load enrolled courses
+        setProfileImage(null);
         await loadEnrolledCourses(user.userId);
       } else {
         console.log("ℹ️ No user logged in");
         setIsLoggedIn(false);
       }
 
-      // Load available courses from API
       await loadAvailableCourses();
     } catch (error) {
       console.error("❌ Error initializing header:", error);
@@ -97,7 +91,6 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     try {
       console.log("🔍 Loading available courses...");
       
-      // Fetch courses from your API
       const response = await fetch("http://localhost:5000/api/Course", {
         method: "GET",
         headers: {
@@ -115,7 +108,6 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
       setCourses(data);
     } catch (error) {
       console.error("❌ Error loading courses:", error);
-      // Fallback to empty array if API fails
       setCourses([]);
     }
   };
@@ -131,183 +123,267 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     navigate("/");
   };
 
+  // Group courses by category
+  const coursesByCategory = courses.reduce((acc, course) => {
+    const category = course.category || "Other";
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(course);
+    return acc;
+  }, {} as Record<string, Course[]>);
+
+  // Filter courses based on search
+  const filteredCourses = courses.filter(course =>
+    course.title.toLowerCase().includes(courseSearch.toLowerCase())
+  );
+
   return (
-    <header style={{
-      ...styles.container,
-      ...(isScrolled ? styles.containerScrolled : {}),
-    }}>
-      <div style={styles.content}>
-        {/* MODERN LOGO */}
-        <div style={styles.logoContainer} onClick={() => navigate("/")}>
-          <div style={styles.logoWrapper}>
-            <div style={styles.logoIconContainer}>
-              <svg style={styles.logoSvg} viewBox="0 0 40 40" fill="none">
-                <path
-                  d="M20 4L35 12V28L20 36L5 28V12L20 4Z"
-                  fill="url(#gradient1)"
-                  stroke="white"
-                  strokeWidth="1.5"
-                />
-                <circle cx="20" cy="20" r="6" fill="white" opacity="0.9" />
-                <defs>
-                  <linearGradient id="gradient1" x1="5" y1="4" x2="35" y2="36">
-                    <stop offset="0%" stopColor="#667eea" />
-                    <stop offset="100%" stopColor="#764ba2" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <div style={styles.logoTextContainer}>
-              <span style={styles.logoText}>
-                <span style={styles.logoSri}>Srinu</span>
-                <span style={styles.logoTech}>tech</span>
-                <span style={styles.logoGuru}>Guru</span>
-              </span>
-              <span style={styles.logoTagline}>Learn • Grow • Excel</span>
-            </div>
-          </div>
-        </div>
-
-        {/* DESKTOP NAVIGATION */}
-        <nav style={styles.desktopNav}>
-          {/* COURSES DROPDOWN */}
-          <div
-            style={styles.courseMenu}
-            onMouseEnter={() => setCoursesOpen(true)}
-            onMouseLeave={() => setTimeout(() => setCoursesOpen(false), 100)}
-          >
-            <button style={styles.navButton}>
-              <span>Courses</span>
-              <svg 
-                width="16" 
-                height="16" 
-                viewBox="0 0 16 16" 
-                fill="currentColor"
-                style={{
-                  transform: coursesOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s',
-                }}
-              >
-                <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
-              </svg>
-            </button>
-
-            {coursesOpen && (
-              <div style={styles.dropdown}>
-                <div style={styles.dropdownHeader}>
-                  <h3 style={styles.dropdownTitle}>Available Courses</h3>
-                  <p style={styles.dropdownSubtitle}>{courses.length} courses available</p>
-                </div>
-                <div style={styles.dropdownContent}>
-                  {courses.length > 0 ? (
-                    courses.slice(0, 6).map((course) => (
-                      <div
-                        key={course.id}
-                        style={styles.dropdownItem}
-                        onClick={() => {
-                          navigate(`/course/${course.id}`);
-                          setCoursesOpen(false);
-                        }}
-                      >
-                        <div style={styles.courseIcon}>📚</div>
-                        <div style={styles.courseItemContent}>
-                          <span style={styles.courseItemTitle}>{course.title}</span>
-                          {course.price !== undefined && (
-                            <span style={styles.courseItemPrice}>
-                              ${course.price.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div style={styles.emptyState}>
-                      <p style={styles.emptyText}>No courses available</p>
-                    </div>
-                  )}
-                  {courses.length > 6 && (
-                    <div style={styles.viewAllContainer}>
-                      <button
-                        style={styles.viewAllButton}
-                        onClick={() => {
-                          navigate("/");
-                          setCoursesOpen(false);
-                        }}
-                      >
-                        View All Courses →
-                      </button>
-                    </div>
-                  )}
-                </div>
+    <>
+      <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
+        <div className="header-content">
+          {/* Logo */}
+          <div className="logo-container" onClick={() => navigate("/")}>
+            <div className="logo-wrapper">
+              <div className="logo-icon">
+                <svg viewBox="0 0 40 40" fill="none">
+                  <path
+                    d="M20 4L35 12V28L20 36L5 28V12L20 4Z"
+                    fill="url(#gradient1)"
+                    stroke="white"
+                    strokeWidth="1.5"
+                  />
+                  <circle cx="20" cy="20" r="6" fill="white" opacity="0.9" />
+                  <defs>
+                    <linearGradient id="gradient1" x1="5" y1="4" x2="35" y2="36">
+                      <stop offset="0%" stopColor="#667eea" />
+                      <stop offset="100%" stopColor="#764ba2" />
+                    </linearGradient>
+                  </defs>
+                </svg>
               </div>
-            )}
+              <div className="logo-text-container">
+                <span className="logo-text">
+                  <span className="logo-sri">Srinu</span>
+                  <span className="logo-tech">tech</span>
+                  <span className="logo-guru">Guru</span>
+                </span>
+                <span className="logo-tagline">Learn • Grow • Excel</span>
+              </div>
+            </div>
           </div>
 
-          {/* MY LEARNING DROPDOWN */}
-          {isLoggedIn && (
+          {/* Desktop Navigation */}
+          <nav className="desktop-nav">
+            {/* Courses Dropdown */}
             <div
-              style={styles.courseMenu}
-              onMouseEnter={() => setMyLearningOpen(true)}
-              onMouseLeave={() => setTimeout(() => setMyLearningOpen(false), 100)}
+              className="nav-dropdown"
+              onMouseEnter={() => setCoursesOpen(true)}
+              onMouseLeave={() => setCoursesOpen(false)}
             >
-              <button style={styles.navButton}>
-                <HiBookOpen size={18} />
-                <span>My Learning</span>
+              <button className="nav-button">
+                <span>Courses</span>
                 <svg 
                   width="16" 
                   height="16" 
                   viewBox="0 0 16 16" 
                   fill="currentColor"
-                  style={{
-                    transform: myLearningOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s',
-                  }}
+                  className={`dropdown-arrow ${coursesOpen ? 'open' : ''}`}
                 >
                   <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
                 </svg>
               </button>
 
-              {myLearningOpen && (
-                <div style={styles.dropdown}>
-                  <div style={styles.dropdownHeader}>
-                    <h3 style={styles.dropdownTitle}>My Enrolled Courses</h3>
-                    <p style={styles.dropdownSubtitle}>
-                      {enrolledCourses.length} {enrolledCourses.length === 1 ? 'course' : 'courses'}
-                    </p>
+              {coursesOpen && (
+                <div className="dropdown-mega">
+                  <div className="dropdown-search">
+                    <HiSearch className="search-icon" />
+                    <input
+                      type="text"
+                      placeholder="Search courses..."
+                      value={courseSearch}
+                      onChange={(e) => setCourseSearch(e.target.value)}
+                      className="search-input"
+                    />
                   </div>
-                  <div style={styles.dropdownContent}>
-                    {loading ? (
-                      <div style={styles.loadingState}>
-                        <div style={styles.spinner}></div>
-                        <p style={styles.loadingText}>Loading courses...</p>
+
+                  {courseSearch ? (
+                    // Search Results View
+                    <div className="dropdown-section">
+                      <h3 className="section-title">Search Results ({filteredCourses.length})</h3>
+                      <div className="courses-list">
+                        {filteredCourses.length > 0 ? (
+                          filteredCourses.slice(0, 8).map((course) => (
+                            <div
+                              key={course.id}
+                              className="course-item"
+                              onClick={() => {
+                                navigate(`/course/${course.id}`);
+                                setCoursesOpen(false);
+                                setCourseSearch("");
+                              }}
+                            >
+                              <div className="course-image">
+                                {course.imageUrl ? (
+                                  <img src={course.imageUrl} alt={course.title} />
+                                ) : (
+                                  <div className="course-placeholder">📚</div>
+                                )}
+                              </div>
+                              <div className="course-info">
+                                <div className="course-title">{course.title}</div>
+                                <div className="course-meta">
+                                  {course.category && (
+                                    <span className="course-category">{course.category}</span>
+                                  )}
+                                  {course.price !== undefined && (
+                                    <span className="course-price">₹{course.price.toFixed(2)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="empty-state">
+                            <p>No courses found matching "{courseSearch}"</p>
+                          </div>
+                        )}
                       </div>
-                    ) : enrolledCourses.length > 0 ? (
-                      <>
-                        {enrolledCourses.slice(0, 5).map((enrollment) => (
-                          <div
-                            key={enrollment.id}
-                            style={styles.dropdownItem}
+                    </div>
+                  ) : (
+                    // Category View
+                    <div className="dropdown-categories">
+                      {Object.keys(coursesByCategory).length > 0 ? (
+                        Object.entries(coursesByCategory).map(([category, categoryCourses]) => (
+                          <div key={category} className="category-section">
+                            <h3 className="category-title">
+                              {category} <span className="category-count">({categoryCourses.length})</span>
+                            </h3>
+                            <div className="courses-list">
+                              {categoryCourses.slice(0, 4).map((course) => (
+                                <div
+                                  key={course.id}
+                                  className="course-item"
+                                  onClick={() => {
+                                    navigate(`/course/${course.id}`);
+                                    setCoursesOpen(false);
+                                  }}
+                                >
+                                  <div className="course-image">
+                                    {course.imageUrl ? (
+                                      <img src={course.imageUrl} alt={course.title} />
+                                    ) : (
+                                      <div className="course-placeholder">📚</div>
+                                    )}
+                                  </div>
+                                  <div className="course-info">
+                                    <div className="course-title">{course.title}</div>
+                                    {course.price !== undefined && (
+                                      <div className="course-price">₹{course.price.toFixed(2)}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {categoryCourses.length > 4 && (
+                              <button
+                                className="view-more-btn"
+                                onClick={() => {
+                                  navigate(`/?category=${category}`);
+                                  setCoursesOpen(false);
+                                }}
+                              >
+                                View all {category} courses →
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="empty-state">
+                          <p>No courses available at the moment</p>
+                        </div>
+                      )}
+                      
+                      {courses.length > 0 && (
+                        <div className="dropdown-footer">
+                          <button
+                            className="view-all-courses-btn"
                             onClick={() => {
-                              navigate(`/course/${enrollment.course.id}`);
-                              setMyLearningOpen(false);
+                              navigate("/");
+                              setCoursesOpen(false);
                             }}
                           >
-                            <div style={styles.enrolledIcon}>✓</div>
-                            <div style={styles.enrollmentInfo}>
-                              <span style={styles.enrollmentTitle}>{enrollment.course.title}</span>
-                              <span style={styles.enrollmentDate}>
-                                Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric'
-                                })}
-                              </span>
+                            View All {courses.length} Courses →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* My Learning Dropdown */}
+            {isLoggedIn && (
+              <div
+                className="nav-dropdown"
+                onMouseEnter={() => setMyLearningOpen(true)}
+                onMouseLeave={() => setMyLearningOpen(false)}
+              >
+                <button className="nav-button">
+                  <HiBookOpen size={18} />
+                  <span>My Learning</span>
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 16 16" 
+                    fill="currentColor"
+                    className={`dropdown-arrow ${myLearningOpen ? 'open' : ''}`}
+                  >
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  </svg>
+                </button>
+
+                {myLearningOpen && (
+                  <div className="dropdown-menu">
+                    <div className="dropdown-header">
+                      <h3 className="dropdown-title">My Enrolled Courses</h3>
+                      <p className="dropdown-subtitle">
+                        {enrolledCourses.length} {enrolledCourses.length === 1 ? 'course' : 'courses'}
+                      </p>
+                    </div>
+                    <div className="dropdown-content">
+                      {loading ? (
+                        <div className="loading-state">
+                          <div className="spinner"></div>
+                          <p>Loading courses...</p>
+                        </div>
+                      ) : enrolledCourses.length > 0 ? (
+                        <>
+                          {enrolledCourses.slice(0, 5).map((enrollment) => (
+                            <div
+                              key={enrollment.id}
+                              className="enrollment-item"
+                              onClick={() => {
+                                navigate(`/course/${enrollment.course.id}`);
+                                setMyLearningOpen(false);
+                              }}
+                            >
+                              <div className="enrolled-badge">✓</div>
+                              <div className="enrollment-info">
+                                <div className="enrollment-title">{enrollment.course.title}</div>
+                                <div className="enrollment-date">
+                                  Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                        <div style={styles.viewAllContainer}>
+                          ))}
                           <button
-                            style={styles.viewAllButton}
+                            className="view-all-btn"
                             onClick={() => {
                               navigate("/my-learning");
                               setMyLearningOpen(false);
@@ -315,874 +391,1126 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                           >
                             View All My Courses →
                           </button>
-                        </div>
-                      </>
-                    ) : (
-                      <div style={styles.emptyState}>
-                        <p style={styles.emptyText}>No enrolled courses yet</p>
-                        <button
-                          style={styles.browseCourses}
-                          onClick={() => {
-                            navigate("/");
-                            setMyLearningOpen(false);
-                          }}
-                        >
-                          Browse Courses
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <button style={styles.navButton} onClick={() => navigate("/about")}>
-            About
-          </button>
-          <button style={styles.navButton} onClick={() => navigate("/contact")}>
-            Contact
-          </button>
-        </nav>
-
-        {/* RIGHT ACTIONS */}
-        <div style={styles.rightActions}>
-
-          {/* Cart */}
-          <button 
-            style={styles.iconButton}
-            onClick={() => navigate("/cart")}
-            title="Shopping Cart"
-          >
-            <div style={styles.cartContainer}>
-              <HiShoppingCart size={22} />
-              {cartCount > 0 && (
-                <div style={styles.cartBadge}>
-                  {cartCount > 9 ? "9+" : cartCount}
-                </div>
-              )}
-            </div>
-          </button>
-
-          {/* Profile / Login */}
-          {isLoggedIn ? (
-            <div 
-              style={styles.profileDropdown}
-              onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setTimeout(() => setProfileMenuOpen(false), 100)}
-            >
-              <button 
-                style={styles.profileButton}
-                title="Profile"
-              >
-                {profileImage ? (
-                  <img src={profileImage} alt={userName} style={styles.profileImage} />
-                ) : (
-                  <div style={styles.profilePlaceholder}>
-                    {userName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </button>
-
-              {/* Profile Dropdown Menu */}
-              {profileMenuOpen && (
-                <div style={styles.profileDropdownMenu}>
-                  <div style={styles.profileDropdownHeader}>
-                    <div style={styles.profileDropdownAvatar}>
-                      {profileImage ? (
-                        <img src={profileImage} alt={userName} style={styles.profileDropdownImage} />
+                        </>
                       ) : (
-                        <div style={styles.profileDropdownPlaceholder}>
-                          {userName.charAt(0).toUpperCase()}
+                        <div className="empty-state">
+                          <p>No enrolled courses yet</p>
+                          <button
+                            className="browse-btn"
+                            onClick={() => {
+                              navigate("/");
+                              setMyLearningOpen(false);
+                            }}
+                          >
+                            Browse Courses
+                          </button>
                         </div>
                       )}
                     </div>
-                    <div style={styles.profileDropdownInfo}>
-                      <div style={styles.profileDropdownName}>{userName}</div>
-                      <div style={styles.profileDropdownEmail}>View Profile</div>
-                    </div>
                   </div>
+                )}
+              </div>
+            )}
 
-                  <div style={styles.profileDropdownDivider}></div>
+            <button className="nav-button" onClick={() => navigate("/about")}>
+              About
+            </button>
+            <button className="nav-button" onClick={() => navigate("/contact")}>
+              Contact
+            </button>
+          </nav>
 
-                  <div style={styles.profileDropdownItems}>
-                    <button
-                      style={styles.profileDropdownItem}
-                      onClick={() => {
-                        navigate("/profile");
-                        setProfileMenuOpen(false);
-                      }}
-                    >
-                      <HiUser size={18} />
-                      <span>My Profile</span>
-                    </button>
-
-                    <button
-                      style={styles.profileDropdownItem}
-                      onClick={() => {
-                        navigate("/my-learning");
-                        setProfileMenuOpen(false);
-                      }}
-                    >
-                      <HiBookOpen size={18} />
-                      <span>My Learning ({enrolledCourses.length})</span>
-                    </button>
-
-                    <button
-                      style={styles.profileDropdownItem}
-                      onClick={() => {
-                        navigate("/settings");
-                        setProfileMenuOpen(false);
-                      }}
-                    >
-                      <HiCog size={18} />
-                      <span>Settings</span>
-                    </button>
-                  </div>
-
-                  <div style={styles.profileDropdownDivider}></div>
-
-                  <button
-                    style={styles.profileDropdownItemLogout}
-                    onClick={handleLogout}
-                  >
-                    <HiLogout size={18} />
-                    <span>Logout</span>
-                  </button>
-                </div>
+          {/* Right Actions */}
+          <div className="right-actions">
+            {/* Cart */}
+            <button 
+              className="icon-button"
+              onClick={() => navigate("/cart")}
+              title="Shopping Cart"
+            >
+              <HiShoppingCart size={22} />
+              {cartCount > 0 && (
+                <span className="cart-badge">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
               )}
-            </div>
-          ) : (
-            <>
-              {/* Divider */}
-              <div style={styles.divider}></div>
+            </button>
 
-              {/* Login Button */}
-              <button 
-                style={styles.loginButton} 
-                onClick={() => navigate("/login")}
+            {/* Profile / Login */}
+            {isLoggedIn ? (
+              <div 
+                className="profile-dropdown"
+                onMouseEnter={() => setProfileMenuOpen(true)}
+                onMouseLeave={() => setProfileMenuOpen(false)}
               >
-                Log in
-              </button>
+                <button className="profile-button">
+                  {profileImage ? (
+                    <img src={profileImage} alt={userName} />
+                  ) : (
+                    <div className="profile-avatar">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </button>
 
-              {/* Sign Up Button */}
-              <button 
-                style={styles.signupButton} 
-                onClick={() => navigate("/login")}
-              >
-                Sign Up
-              </button>
-            </>
-          )}
+                {profileMenuOpen && (
+                  <div className="profile-menu">
+                    <div className="profile-menu-header">
+                      <div className="profile-menu-avatar">
+                        {profileImage ? (
+                          <img src={profileImage} alt={userName} />
+                        ) : (
+                          <div className="profile-avatar">
+                            {userName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="profile-menu-info">
+                        <div className="profile-name">{userName}</div>
+                        <div className="profile-link">View Profile</div>
+                      </div>
+                    </div>
 
-          {/* Mobile Menu Toggle */}
-          <button 
-            style={styles.mobileMenuButton}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
-          </button>
+                    <div className="menu-divider"></div>
+
+                    <div className="menu-items">
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          navigate("/profile");
+                          setProfileMenuOpen(false);
+                        }}
+                      >
+                        <HiUser size={18} />
+                        <span>My Profile</span>
+                      </button>
+
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          navigate("/my-learning");
+                          setProfileMenuOpen(false);
+                        }}
+                      >
+                        <HiBookOpen size={18} />
+                        <span>My Learning ({enrolledCourses.length})</span>
+                      </button>
+
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          navigate("/settings");
+                          setProfileMenuOpen(false);
+                        }}
+                      >
+                        <HiCog size={18} />
+                        <span>Settings</span>
+                      </button>
+                    </div>
+
+                    <div className="menu-divider"></div>
+
+                    <button className="menu-item logout" onClick={handleLogout}>
+                      <HiLogout size={18} />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="auth-divider"></div>
+                <button className="login-btn" onClick={() => navigate("/login")}>
+                  Log in
+                </button>
+                <button className="signup-btn" onClick={() => navigate("/login")}>
+                  Sign Up
+                </button>
+              </>
+            )}
+
+            {/* Mobile Menu Toggle */}
+            <button 
+              className="mobile-menu-toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* MOBILE MENU */}
-      {mobileMenuOpen && (
-        <div style={styles.mobileMenu}>
-          <button 
-            style={styles.mobileMenuItem}
-            onClick={() => {
-              navigate("/");
-              setMobileMenuOpen(false);
-            }}
-          >
-            Browse Courses
-          </button>
-          {isLoggedIn && (
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="mobile-menu">
             <button 
-              style={styles.mobileMenuItem}
+              className="mobile-menu-item"
               onClick={() => {
-                navigate("/my-learning");
+                navigate("/");
                 setMobileMenuOpen(false);
               }}
             >
-              My Learning ({enrolledCourses.length})
+              Browse Courses
             </button>
-          )}
-          <button 
-            style={styles.mobileMenuItem}
-            onClick={() => {
-              navigate("/about");
-              setMobileMenuOpen(false);
-            }}
-          >
-            About
-          </button>
-          <button 
-            style={styles.mobileMenuItem}
-            onClick={() => {
-              navigate("/contact");
-              setMobileMenuOpen(false);
-            }}
-          >
-            Contact
-          </button>
-          {isLoggedIn && (
-            <button 
-              style={styles.mobileMenuItem}
-              onClick={() => {
-                navigate("/profile");
-                setMobileMenuOpen(false);
-              }}
-            >
-              Profile
-            </button>
-          )}
-          <div style={styles.mobileDivider}></div>
-          {isLoggedIn ? (
-            <button 
-              style={styles.mobileMenuItemAccent}
-              onClick={() => {
-                handleLogout();
-                setMobileMenuOpen(false);
-              }}
-            >
-              Logout
-            </button>
-          ) : (
-            <>
+            {isLoggedIn && (
               <button 
-                style={styles.mobileMenuItemPrimary}
+                className="mobile-menu-item"
                 onClick={() => {
-                  navigate("/login");
+                  navigate("/my-learning");
                   setMobileMenuOpen(false);
                 }}
               >
-                Log in
+                My Learning ({enrolledCourses.length})
               </button>
+            )}
+            <button 
+              className="mobile-menu-item"
+              onClick={() => {
+                navigate("/about");
+                setMobileMenuOpen(false);
+              }}
+            >
+              About
+            </button>
+            <button 
+              className="mobile-menu-item"
+              onClick={() => {
+                navigate("/contact");
+                setMobileMenuOpen(false);
+              }}
+            >
+              Contact
+            </button>
+            {isLoggedIn && (
               <button 
-                style={styles.mobileMenuItemAccent}
+                className="mobile-menu-item"
                 onClick={() => {
-                  navigate("/login");
+                  navigate("/profile");
                   setMobileMenuOpen(false);
                 }}
               >
-                Join for Free
+                Profile
               </button>
-            </>
-          )}
-        </div>
-      )}
-    </header>
+            )}
+            <div className="mobile-divider"></div>
+            {isLoggedIn ? (
+              <button 
+                className="mobile-menu-item accent"
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <button 
+                  className="mobile-menu-item primary"
+                  onClick={() => {
+                    navigate("/login");
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Log in
+                </button>
+                <button 
+                  className="mobile-menu-item accent"
+                  onClick={() => {
+                    navigate("/login");
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Join for Free
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </header>
+
+      <style>{`
+        /* Header Base Styles */
+        .header {
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(10px);
+          padding: 16px 32px;
+          border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          transition: all 0.3s ease;
+        }
+
+        .header.scrolled {
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+          border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+        }
+
+        .header-content {
+          display: flex;
+          align-items: center;
+          gap: 32px;
+          max-width: 1600px;
+          margin: 0 auto;
+        }
+
+        /* Logo Styles */
+        .logo-container {
+          cursor: pointer;
+          transition: transform 0.3s ease;
+        }
+
+        .logo-container:hover {
+          transform: scale(1.02);
+        }
+
+        .logo-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .logo-icon {
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 14px;
+          background: white;
+          box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
+          transition: all 0.3s ease;
+        }
+
+        .logo-icon svg {
+          width: 32px;
+          height: 32px;
+        }
+
+        .logo-text-container {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .logo-text {
+          font-size: 22px;
+          font-weight: 800;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+        }
+
+        .logo-sri {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .logo-tech {
+          color: #1f2937;
+        }
+
+        .logo-guru {
+          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .logo-tagline {
+          font-size: 9px;
+          font-weight: 600;
+          color: #9ca3af;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+
+        /* Desktop Navigation */
+        .desktop-nav {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+        }
+
+        .nav-dropdown {
+          position: relative;
+        }
+
+        .nav-button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 10px 16px;
+          background: transparent;
+          border: none;
+          border-radius: 10px;
+          font-size: 15px;
+          font-weight: 600;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .nav-button:hover {
+          background: rgba(102, 126, 234, 0.08);
+          color: #667eea;
+        }
+
+        .dropdown-arrow {
+          transition: transform 0.2s ease;
+        }
+
+        .dropdown-arrow.open {
+          transform: rotate(180deg);
+        }
+
+        /* Mega Dropdown for Courses */
+        .dropdown-mega {
+          position: absolute;
+          top: calc(100% + 12px);
+          left: 0;
+          background: white;
+          min-width: 800px;
+          max-width: 900px;
+          max-height: 600px;
+          border-radius: 20px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+          overflow: hidden;
+          z-index: 2000;
+          animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Search in Dropdown */
+        .dropdown-search {
+          padding: 20px 24px;
+          border-bottom: 1px solid #e5e7eb;
+          position: relative;
+          background: #f9fafb;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 36px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #9ca3af;
+          pointer-events: none;
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 12px 16px 12px 40px;
+          border: 2px solid #e5e7eb;
+          border-radius: 12px;
+          font-size: 15px;
+          outline: none;
+          transition: all 0.2s;
+        }
+
+        .search-input:focus {
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Categories Layout */
+        .dropdown-categories {
+          padding: 24px;
+          max-height: 500px;
+          overflow-y: auto;
+          display: grid;
+          gap: 32px;
+        }
+
+        .category-section {
+          border-bottom: 1px solid #f3f4f6;
+          padding-bottom: 24px;
+        }
+
+        .category-section:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
+        .category-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #111827;
+          margin: 0 0 16px 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .category-count {
+          font-size: 13px;
+          color: #6b7280;
+          font-weight: 500;
+        }
+
+        /* Course List */
+        .courses-list {
+          display: grid;
+          gap: 12px;
+        }
+
+        .course-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .course-item:hover {
+          background: #f9fafb;
+        }
+
+        .course-image {
+          width: 60px;
+          height: 60px;
+          border-radius: 10px;
+          overflow: hidden;
+          flex-shrink: 0;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .course-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .course-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .course-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .course-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #111827;
+          margin-bottom: 4px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .course-meta {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+        }
+
+        .course-category {
+          color: #6b7280;
+          padding: 2px 8px;
+          background: #f3f4f6;
+          border-radius: 4px;
+        }
+
+        .course-price {
+          color: #667eea;
+          font-weight: 600;
+        }
+
+        .view-more-btn {
+          margin-top: 12px;
+          padding: 8px 16px;
+          background: transparent;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #667eea;
+          cursor: pointer;
+          transition: all 0.2s;
+          width: 100%;
+        }
+
+        .view-more-btn:hover {
+          background: rgba(102, 126, 234, 0.08);
+          border-color: #667eea;
+        }
+
+        .dropdown-footer {
+          padding: 16px 24px;
+          background: #f9fafb;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .view-all-courses-btn {
+          width: 100%;
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .view-all-courses-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Regular Dropdown Menu */
+        .dropdown-menu {
+          position: absolute;
+          top: calc(100% + 12px);
+          left: 0;
+          background: white;
+          min-width: 320px;
+          max-width: 400px;
+          border-radius: 16px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+          overflow: hidden;
+          z-index: 2000;
+          animation: slideDown 0.2s ease-out;
+        }
+
+        .dropdown-header {
+          padding: 20px 24px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+
+        .dropdown-title {
+          font-size: 18px;
+          font-weight: 700;
+          margin: 0 0 4px 0;
+        }
+
+        .dropdown-subtitle {
+          font-size: 13px;
+          opacity: 0.9;
+          margin: 0;
+        }
+
+        .dropdown-content {
+          max-height: 400px;
+          overflow-y: auto;
+        }
+
+        .enrollment-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 24px;
+          border-bottom: 1px solid #f3f4f6;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .enrollment-item:hover {
+          background: #f9fafb;
+        }
+
+        .enrolled-badge {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: #10b981;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: 700;
+          flex-shrink: 0;
+        }
+
+        .enrollment-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .enrollment-title {
+          font-size: 15px;
+          font-weight: 600;
+          color: #111827;
+          margin-bottom: 4px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .enrollment-date {
+          font-size: 12px;
+          color: #6b7280;
+        }
+
+        .view-all-btn {
+          width: 100%;
+          padding: 14px 24px;
+          background: transparent;
+          border: none;
+          border-top: 1px solid #e5e7eb;
+          font-size: 14px;
+          font-weight: 600;
+          color: #667eea;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: center;
+        }
+
+        .view-all-btn:hover {
+          background: rgba(102, 126, 234, 0.08);
+        }
+
+        .loading-state,
+        .empty-state {
+          padding: 32px 24px;
+          text-align: center;
+        }
+
+        .spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid rgba(102, 126, 234, 0.2);
+          border-top-color: #667eea;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .empty-state p {
+          font-size: 14px;
+          color: #6b7280;
+          margin: 0 0 16px 0;
+        }
+
+        .browse-btn {
+          padding: 10px 20px;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .browse-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Right Actions */
+        .right-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .icon-button {
+          position: relative;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: transparent;
+          border: 2px solid #e5e7eb;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          color: #374151;
+        }
+
+        .icon-button:hover {
+          background: rgba(102, 126, 234, 0.08);
+          border-color: #667eea;
+          color: #667eea;
+        }
+
+        .cart-badge {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: white;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 3px 6px;
+          border-radius: 10px;
+          min-width: 20px;
+          text-align: center;
+          box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+        }
+
+        .auth-divider {
+          width: 1px;
+          height: 32px;
+          background: #e5e7eb;
+          margin: 0 4px;
+        }
+
+        .login-btn {
+          padding: 10px 20px;
+          background: white;
+          border: 2px solid #e5e7eb;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 600;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .login-btn:hover {
+          background: #f9fafb;
+          border-color: #667eea;
+          color: #667eea;
+        }
+
+        .signup-btn {
+          padding: 10px 20px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border: none;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 600;
+          color: white;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .signup-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Profile Dropdown */
+        .profile-dropdown {
+          position: relative;
+        }
+
+        .profile-button {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 2px solid #e5e7eb;
+          background: transparent;
+          cursor: pointer;
+          overflow: hidden;
+          transition: all 0.2s ease;
+          padding: 0;
+        }
+
+        .profile-button:hover {
+          border-color: #667eea;
+          transform: scale(1.05);
+        }
+
+        .profile-button img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .profile-avatar {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          color: white;
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .profile-menu {
+          position: absolute;
+          top: calc(100% + 12px);
+          right: 0;
+          background: white;
+          min-width: 280px;
+          border-radius: 16px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+          overflow: hidden;
+          z-index: 2000;
+          animation: slideDown 0.2s ease-out;
+        }
+
+        .profile-menu-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 20px 24px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          cursor: pointer;
+        }
+
+        .profile-menu-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 3px solid rgba(255, 255, 255, 0.3);
+          flex-shrink: 0;
+        }
+
+        .profile-menu-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .profile-menu-info {
+          flex: 1;
+        }
+
+        .profile-name {
+          font-size: 16px;
+          font-weight: 700;
+          color: white;
+          margin-bottom: 2px;
+        }
+
+        .profile-link {
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.8);
+          font-weight: 500;
+        }
+
+        .menu-divider {
+          height: 1px;
+          background: #e5e7eb;
+        }
+
+        .menu-items {
+          padding: 8px;
+        }
+
+        .menu-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 12px 16px;
+          background: transparent;
+          border: none;
+          border-radius: 10px;
+          font-size: 15px;
+          font-weight: 600;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-align: left;
+        }
+
+        .menu-item:hover {
+          background: rgba(102, 126, 234, 0.08);
+          color: #667eea;
+        }
+
+        .menu-item.logout {
+          padding: 16px 24px;
+          color: #ef4444;
+          border-radius: 0;
+        }
+
+        .menu-item.logout:hover {
+          background: rgba(239, 68, 68, 0.08);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-toggle {
+          display: none;
+          width: 44px;
+          height: 44px;
+          background: transparent;
+          border: 2px solid #e5e7eb;
+          border-radius: 12px;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #374151;
+          transition: all 0.2s;
+        }
+
+        .mobile-menu-toggle:hover {
+          background: rgba(102, 126, 234, 0.08);
+          border-color: #667eea;
+          color: #667eea;
+        }
+
+        .mobile-menu {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          padding: 20px;
+          border-top: 1px solid #e5e7eb;
+          margin-top: 16px;
+          animation: slideDown 0.2s ease-out;
+        }
+
+        .mobile-menu-item {
+          padding: 14px 20px;
+          background: transparent;
+          border: none;
+          border-radius: 10px;
+          font-size: 16px;
+          font-weight: 600;
+          color: #374151;
+          cursor: pointer;
+          text-align: left;
+          transition: all 0.2s;
+        }
+
+        .mobile-menu-item:hover {
+          background: rgba(102, 126, 234, 0.08);
+          color: #667eea;
+        }
+
+        .mobile-divider {
+          height: 1px;
+          background: #e5e7eb;
+          margin: 8px 0;
+        }
+
+        .mobile-menu-item.primary {
+          background: white;
+          border: 2px solid #e5e7eb;
+          text-align: center;
+        }
+
+        .mobile-menu-item.accent {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          text-align: center;
+        }
+
+        .mobile-menu-item.accent:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+          .dropdown-mega {
+            min-width: 600px;
+          }
+        }
+
+        @media (max-width: 1024px) {
+          .desktop-nav {
+            display: none;
+          }
+
+          .logo-tagline {
+            display: none;
+          }
+
+          .mobile-menu-toggle {
+            display: flex;
+          }
+
+          .auth-divider {
+            display: none;
+          }
+
+          .login-btn,
+          .signup-btn {
+            display: none;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .header {
+            padding: 12px 16px;
+          }
+
+          .header-content {
+            gap: 16px;
+          }
+
+          .logo-icon {
+            width: 40px;
+            height: 40px;
+          }
+
+          .logo-icon svg {
+            width: 28px;
+            height: 28px;
+          }
+
+          .logo-text {
+            font-size: 18px;
+          }
+
+          .dropdown-mega {
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 90vw;
+            max-width: 95vw;
+          }
+
+          .dropdown-categories {
+            padding: 16px;
+          }
+
+          .course-item {
+            padding: 10px;
+          }
+
+          .course-image {
+            width: 50px;
+            height: 50px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .icon-button {
+            width: 40px;
+            height: 40px;
+          }
+
+          .profile-button {
+            width: 40px;
+            height: 40px;
+          }
+        }
+      `}</style>
+    </>
   );
 };
 
-/* ================= STYLES ================= */
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    backgroundColor: "rgba(255, 255, 255, 0.98)",
-    backdropFilter: "blur(10px)",
-    padding: "16px 32px",
-    borderBottom: "1px solid rgba(229, 231, 235, 0.5)",
-    position: "sticky",
-    top: 0,
-    zIndex: 1000,
-    transition: "all 0.3s ease",
-  },
-  containerScrolled: {
-    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-    borderBottom: "1px solid rgba(229, 231, 235, 0.8)",
-  },
-  content: {
-    display: "flex",
-    alignItems: "center",
-    gap: "32px",
-    maxWidth: "1600px",
-    margin: "0 auto",
-  },
-
-  // Modern Logo
-  logoContainer: {
-    cursor: "pointer",
-    transition: "transform 0.3s ease",
-  },
-  logoWrapper: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  logoIconContainer: {
-    width: "48px",
-    height: "48px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "14px",
-    background: "white",
-    boxShadow: "0 4px 16px rgba(102, 126, 234, 0.25)",
-    transition: "all 0.3s ease",
-  },
-  logoSvg: {
-    width: "32px",
-    height: "32px",
-  },
-  logoTextContainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-  },
-  logoText: {
-    fontSize: "22px",
-    fontWeight: 800,
-    lineHeight: 1,
-    display: "flex",
-    alignItems: "center",
-  },
-  logoSri: {
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    backgroundClip: "text",
-  },
-  logoTech: {
-    color: "#1f2937",
-  },
-  logoGuru: {
-    background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    backgroundClip: "text",
-  },
-  logoTagline: {
-    fontSize: "9px",
-    fontWeight: 600,
-    color: "#9ca3af",
-    letterSpacing: "1px",
-    textTransform: "uppercase",
-  },
-
-  // Desktop Navigation
-  desktopNav: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  navButton: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    padding: "10px 16px",
-    background: "transparent",
-    border: "none",
-    borderRadius: "10px",
-    fontSize: "15px",
-    fontWeight: 600,
-    color: "#374151",
-    cursor: "pointer",
-    transition: "all 0.2s",
-  },
-
-  // Courses Dropdown
-  courseMenu: {
-    position: "relative",
-  },
-  dropdown: {
-    position: "absolute",
-    top: "calc(100% + 12px)",
-    left: 0,
-    background: "white",
-    minWidth: "320px",
-    maxWidth: "400px",
-    borderRadius: "16px",
-    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
-    overflow: "hidden",
-    zIndex: 2000,
-    animation: "slideDown 0.2s ease-out",
-  },
-  dropdownHeader: {
-    padding: "20px 24px",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    color: "white",
-  },
-  dropdownTitle: {
-    fontSize: "18px",
-    fontWeight: 700,
-    margin: 0,
-    marginBottom: "4px",
-  },
-  dropdownSubtitle: {
-    fontSize: "13px",
-    opacity: 0.9,
-    margin: 0,
-  },
-  dropdownContent: {
-    maxHeight: "400px",
-    overflowY: "auto" as const,
-  },
-  dropdownItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "14px 24px",
-    borderBottom: "1px solid #f3f4f6",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    fontSize: "15px",
-    color: "#374151",
-  },
-  courseIcon: {
-    fontSize: "20px",
-  },
-  enrollmentInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  enrollmentTitle: {
-    fontSize: "15px",
-    fontWeight: 600,
-    color: "#111827",
-  },
-  enrollmentDate: {
-    fontSize: "12px",
-    color: "#6b7280",
-  },
-  emptyState: {
-    padding: "32px 24px",
-    textAlign: "center",
-  },
-  emptyText: {
-    fontSize: "14px",
-    color: "#6b7280",
-    marginBottom: "16px",
-  },
-  browseCourses: {
-    padding: "10px 20px",
-    background: "linear-gradient(135deg, #667eea, #764ba2)",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-
-  // Search
-  searchWrapper: {
-    flex: 1,
-    position: "relative",
-    maxWidth: "500px",
-  },
-  searchIcon: {
-    position: "absolute",
-    top: "50%",
-    left: "16px",
-    transform: "translateY(-50%)",
-    color: "#9ca3af",
-    pointerEvents: "none",
-  },
-  searchInput: {
-    width: "100%",
-    padding: "12px 48px 12px 48px",
-    borderRadius: "12px",
-    border: "2px solid #e5e7eb",
-    fontSize: "15px",
-    outline: "none",
-    transition: "all 0.2s",
-    backgroundColor: "#f9fafb",
-  },
-  clearButton: {
-    position: "absolute",
-    top: "50%",
-    right: "16px",
-    transform: "translateY(-50%)",
-    background: "#e5e7eb",
-    border: "none",
-    borderRadius: "50%",
-    width: "24px",
-    height: "24px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    color: "#6b7280",
-    transition: "all 0.2s",
-  },
-
-  // Right Actions
-  rightActions: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  iconButton: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "12px",
-    background: "transparent",
-    border: "2px solid #e5e7eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    color: "#374151",
-    position: "relative",
-  },
-  cartContainer: {
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cartBadge: {
-    position: "absolute",
-    top: "-8px",
-    right: "-8px",
-    background: "linear-gradient(135deg, #ef4444, #dc2626)",
-    color: "white",
-    fontSize: "11px",
-    fontWeight: 700,
-    padding: "3px 6px",
-    borderRadius: "10px",
-    minWidth: "20px",
-    textAlign: "center",
-    boxShadow: "0 2px 8px rgba(239, 68, 68, 0.4)",
-  },
-  divider: {
-    width: "1px",
-    height: "32px",
-    background: "#e5e7eb",
-    margin: "0 4px",
-  },
-  loginButton: {
-    padding: "10px 20px",
-    background: "white",
-    border: "2px solid #e5e7eb",
-    borderRadius: "12px",
-    fontSize: "15px",
-    fontWeight: 600,
-    color: "#374151",
-    cursor: "pointer",
-    transition: "all 0.2s",
-  },
-  signupButton: {
-    padding: "10px 20px",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    border: "none",
-    borderRadius: "12px",
-    fontSize: "15px",
-    fontWeight: 600,
-    color: "white",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-  },
-
-  // Profile Dropdown
-  profileDropdown: {
-    position: "relative",
-  },
-  profileButton: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "50%",
-    border: "2px solid #e5e7eb",
-    background: "transparent",
-    cursor: "pointer",
-    overflow: "hidden",
-    transition: "all 0.2s",
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  profilePlaceholder: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #667eea, #764ba2)",
-    color: "white",
-    fontSize: "18px",
-    fontWeight: "bold",
-  },
-
-  // Profile Dropdown Menu
-  profileDropdownMenu: {
-    position: "absolute",
-    top: "calc(100% + 12px)",
-    right: 0,
-    background: "white",
-    minWidth: "280px",
-    borderRadius: "16px",
-    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
-    overflow: "hidden",
-    zIndex: 2000,
-    animation: "slideDown 0.2s ease-out",
-  },
-  profileDropdownHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "20px 24px",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    cursor: "pointer",
-  },
-  profileDropdownAvatar: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "50%",
-    overflow: "hidden",
-    border: "3px solid rgba(255, 255, 255, 0.3)",
-    flexShrink: 0,
-  },
-  profileDropdownImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  profileDropdownPlaceholder: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "rgba(255, 255, 255, 0.3)",
-    color: "white",
-    fontSize: "20px",
-    fontWeight: "bold",
-  },
-  profileDropdownInfo: {
-    flex: 1,
-  },
-  profileDropdownName: {
-    fontSize: "16px",
-    fontWeight: 700,
-    color: "white",
-    marginBottom: "2px",
-  },
-  profileDropdownEmail: {
-    fontSize: "13px",
-    color: "rgba(255, 255, 255, 0.8)",
-    fontWeight: 500,
-  },
-  profileDropdownDivider: {
-    height: "1px",
-    background: "#e5e7eb",
-  },
-  profileDropdownItems: {
-    padding: "8px",
-  },
-  profileDropdownItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    width: "100%",
-    padding: "12px 16px",
-    background: "transparent",
-    border: "none",
-    borderRadius: "10px",
-    fontSize: "15px",
-    fontWeight: 600,
-    color: "#374151",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    textAlign: "left",
-  },
-  profileDropdownItemLogout: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    width: "100%",
-    padding: "16px 24px",
-    background: "transparent",
-    border: "none",
-    fontSize: "15px",
-    fontWeight: 600,
-    color: "#ef4444",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    textAlign: "left",
-  },
-
-  // Mobile Menu
-  mobileMenuButton: {
-    display: "none",
-    width: "44px",
-    height: "44px",
-    background: "transparent",
-    border: "2px solid #e5e7eb",
-    borderRadius: "12px",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    color: "#374151",
-  },
-  mobileMenu: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    padding: "20px",
-    borderTop: "1px solid #e5e7eb",
-    marginTop: "16px",
-  },
-  mobileMenuItem: {
-    padding: "14px 20px",
-    background: "transparent",
-    border: "none",
-    borderRadius: "10px",
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#374151",
-    cursor: "pointer",
-    textAlign: "left",
-    transition: "all 0.2s",
-  },
-  mobileDivider: {
-    height: "1px",
-    background: "#e5e7eb",
-    margin: "8px 0",
-  },
-  mobileMenuItemPrimary: {
-    padding: "14px 20px",
-    background: "white",
-    border: "2px solid #e5e7eb",
-    borderRadius: "10px",
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#374151",
-    cursor: "pointer",
-    textAlign: "center",
-    transition: "all 0.2s",
-  },
-  mobileMenuItemAccent: {
-    padding: "14px 20px",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    border: "none",
-    borderRadius: "10px",
-    fontSize: "16px",
-    fontWeight: 700,
-    color: "white",
-    cursor: "pointer",
-    textAlign: "center",
-    transition: "all 0.2s",
-  },
-};
-
-// Add CSS for animations and hover effects
-const styleSheet = document.createElement("style");
-styleSheet.textContent = `
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  button {
-    background: #667eea;
-    color: white;
-    transition: background 0.2s ease;
-  }
-
-  button:active {
-    opacity: 0.95;
-  }
-  
-  [style*="logoContainer"] [style*="logoIconContainer"] {
-    transform: scale(1);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  }
-  
-  [style*="navButton"] {
-    background: rgba(102, 126, 234, 0.08);
-    color: #333;
-  }
-  
-  [style*="dropdownItem"] {
-    background: #f5f5f5;
-  }
-  
-  [style*="iconButton"] {
-    background: rgba(102, 126, 234, 0.08);
-    border-color: #667eea;
-    color: #667eea;
-  }
-  
-  [style*="profileDropdownItem"] {
-    background: rgba(102, 126, 234, 0.08);
-    color: #333;
-  }
-  
-  [style*="profileDropdownItemLogout"] {
-    background: rgba(239, 68, 68, 0.08);
-  }
-  
-  input:focus {
-    border-color: #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-  }
-
-  /* Tooltip Styling */
-  [title] {
-    position: relative;
-  }
-
-  [title]:hover::before {
-    content: attr(title);
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    color: #1a202c;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    pointer-events: none;
-  }
-
-  [title]:hover::after {
-    content: '';
-    position: absolute;
-    bottom: 120%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: white;
-    z-index: 1000;
-    pointer-events: none;
-  }
-
-  @media (max-width: 1024px) {
-    [style*="desktopNav"] {
-      display: none !important;
-    }
-    
-    [style*="searchWrapper"] {
-      display: none !important;
-    }
-    
-    [style*="mobileMenuButton"] {
-      display: flex !important;
-    }
-    
-    [style*="logoTagline"] {
-      display: none !important;
-    }
-  }
-`;
-document.head.appendChild(styleSheet);
-
-export default Header;  
+export default Header;
