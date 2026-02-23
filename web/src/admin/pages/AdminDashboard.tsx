@@ -9,8 +9,9 @@ import {
   HiStar,
   HiRefresh
 } from 'react-icons/hi';
+import { API_ADMIN_BASE_URL } from '../../config/api';
 
-const API_URL = 'http://localhost:5000/api/Admin';
+const API_URL = API_ADMIN_BASE_URL;
 
 interface DashboardStats {
   totalUsers: number;

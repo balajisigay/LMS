@@ -3,8 +3,9 @@ import {
   HiArrowLeft, HiPencil, HiTrash, HiPlus, HiCheckCircle,
   HiExclamationCircle, HiVideoCamera, HiSave
 } from 'react-icons/hi';
+import { API_ADMIN_BASE_URL, API_BASE_URL } from '../../config/api';
 
-const API_URL = 'http://localhost:5000/api/Admin/courses';
+const API_URL = API_ADMIN_BASE_URL + '/courses';
 
 interface CourseDetail {
   id: number;
@@ -104,7 +105,7 @@ const AdminCourseDetailPage: React.FC = () => {
 
   const handleUpdateCourse = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/Courses/${courseId}`, {
+      const response = await fetch(`${API_BASE_URL}/Courses/${courseId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -525,3 +526,4 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 export default AdminCourseDetailPage;
+

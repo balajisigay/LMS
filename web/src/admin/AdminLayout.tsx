@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
+  HiArrowLeft,
   HiHome,
   HiUsers,
   HiAcademicCap,
@@ -32,6 +33,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       localStorage.removeItem('adminUser');
       navigate('/login');
     }
+  };
+
+  const showBackButton = location.pathname !== '/admin';
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/admin');
   };
 
   return (
@@ -74,12 +86,24 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <main style={styles.main}>
         {/* Header */}
         <header style={styles.header}>
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={styles.menuButton}
-          >
-            {sidebarOpen ? <HiX size={24} /> : <HiMenu size={24} />}
-          </button>
+          <div style={styles.headerLeft}>
+            {showBackButton && (
+              <button
+                onClick={handleGoBack}
+                style={styles.backButton}
+                title="Go Back"
+                aria-label="Go Back"
+              >
+                <HiArrowLeft size={20} />
+              </button>
+            )}
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              style={styles.menuButton}
+            >
+              {sidebarOpen ? <HiX size={24} /> : <HiMenu size={24} />}
+            </button>
+          </div>
           <div style={styles.headerRight}>
             <div style={styles.adminProfile}>
               <div style={styles.adminAvatar}>A</div>
@@ -201,6 +225,23 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'sticky',
     top: 0,
     zIndex: 10,
+  },
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  backButton: {
+    width: '44px',
+    height: '44px',
+    borderRadius: '10px',
+    border: 'none',
+    background: '#f3f4f6',
+    color: '#1f2937',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
   },
   menuButton: {
     width: '44px',

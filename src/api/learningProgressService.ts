@@ -1,25 +1,27 @@
 import axios from "axios";
-
-const BASE_URL = "http://localhost:5000/api/CourseProgress";
+import { COURSE_PROGRESS_API } from "./endpoints";
 
 export interface CourseProgress {
   courseId: number;
   title: string;
+  watchedDurationSeconds?: number;
+  totalDurationSeconds?: number;
   progress: number;
 }
 
 export const getLearningProgress = async (
   userId: string
 ): Promise<CourseProgress[]> => {
-  const res = await axios.get(`${BASE_URL}/${userId}`);
+  const res = await axios.get(`${COURSE_PROGRESS_API}/${userId}`);
   return res.data;
 };
 
 export const updateProgress = async (
   userId: string,
-  courseId: number
+  courseId: number,
+  watchedSeconds?: number
 ) => {
-  return axios.post(`${BASE_URL}/update`, null, {
-    params: { userId, courseId },
+  return axios.post(`${COURSE_PROGRESS_API}/update`, null, {
+    params: { userId, courseId, watchedSeconds },
   });
 };

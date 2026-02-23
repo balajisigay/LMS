@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using LmsApi.Data;
 using LmsApi.DTOs;
 using LmsApi.Models;
+using System.Text.RegularExpressions;
 
 namespace LmsApi.Controllers;
 
@@ -17,18 +18,12 @@ public class CourseProgressController : ControllerBase
         _context = context;
     }
 
-    // 🔹 GET user progress (used by LearningPaths)
+    // GET user progress
     [HttpGet("{userId}")]
     public async Task<IActionResult> GetUserProgress(string userId)
     {
         try
         {
-            // First, get all course progresses for this user
-            var userProgresses = await _context.CourseProgresses
-                .Where(p => p.UserId == userId)
-                .ToListAsync();
-
-            // Then join with courses to get titles
             var progress = await _context.CourseProgresses
                 .Where(p => p.UserId == userId)
                 .Join(
@@ -39,11 +34,9 @@ public class CourseProgressController : ControllerBase
                     {
                         CourseId = c.Id,
                         Title = c.Title,
-                        Progress = p.TotalLectures == 0
-                            ? 0
-                            : (int)Math.Round(
-                                (double)p.CompletedLectures / p.TotalLectures * 100
-                            )
+                        WatchedDurationSeconds = p.CompletedLectures,
+                        TotalDurationSeconds = p.TotalLectures,
+                        Progress = CalculateProgressPercentage(p.CompletedLectures, p.TotalLectures)
                     }
                 )
                 .ToListAsync();
@@ -56,38 +49,44 @@ public class CourseProgressController : ControllerBase
         }
     }
 
-    // 🔹 UPDATE progress when lecture completed
+    // UPDATE progress using watched time
     [HttpPost("update")]
-    public async Task<IActionResult> UpdateProgress(string userId, int courseId)
+    public async Task<IActionResult> UpdateProgress([FromQuery] string userId, [FromQuery] int courseId, [FromQuery] int? watchedSeconds = null)
     {
         try
         {
-            // Get total lectures for this course
-            var totalLectures = await _context.CourseSections
+            var lectureDurations = await _context.CourseSections
                 .Where(s => s.CourseId == courseId)
                 .SelectMany(s => s.Lectures)
-                .CountAsync();
+                .Select(l => l.Duration)
+                .ToListAsync();
 
-            if (totalLectures == 0)
+            var totalDurationSeconds = lectureDurations.Sum(ParseDurationToSeconds);
+            if (totalDurationSeconds <= 0)
             {
-                return BadRequest(new { message = "Course has no lectures" });
+                return BadRequest(new { message = "Course has no valid lecture durations" });
             }
 
-            // Find existing progress record
+            var incrementSeconds = watchedSeconds.GetValueOrDefault();
+            if (incrementSeconds <= 0)
+            {
+                var avgLectureSeconds = lectureDurations.Count == 0
+                    ? 300
+                    : Math.Max((int)Math.Round((double)totalDurationSeconds / lectureDurations.Count), 60);
+                incrementSeconds = avgLectureSeconds;
+            }
+
             var progress = await _context.CourseProgresses
-                .FirstOrDefaultAsync(p =>
-                    p.UserId == userId && p.CourseId == courseId
-                );
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.CourseId == courseId);
 
             if (progress == null)
             {
-                // Create new progress record
                 progress = new CourseProgress
                 {
                     UserId = userId,
                     CourseId = courseId,
-                    TotalLectures = totalLectures,
-                    CompletedLectures = 1,
+                    TotalLectures = totalDurationSeconds,
+                    CompletedLectures = Math.Min(incrementSeconds, totalDurationSeconds),
                     UpdatedAt = DateTime.UtcNow
                 };
 
@@ -95,30 +94,20 @@ public class CourseProgressController : ControllerBase
             }
             else
             {
-                // Update existing progress
-                progress.CompletedLectures = Math.Min(
-                    progress.CompletedLectures + 1,
-                    totalLectures
-                );
-
-                progress.TotalLectures = totalLectures;
+                progress.TotalLectures = totalDurationSeconds;
+                progress.CompletedLectures = Math.Min(progress.CompletedLectures + incrementSeconds, totalDurationSeconds);
                 progress.UpdatedAt = DateTime.UtcNow;
             }
 
             await _context.SaveChangesAsync();
 
-            // Calculate percentage
-            var percentage = (int)Math.Round(
-                (double)progress.CompletedLectures / progress.TotalLectures * 100
-            );
-
             return Ok(new
             {
                 userId = progress.UserId,
                 courseId = progress.CourseId,
-                completedLectures = progress.CompletedLectures,
-                totalLectures = progress.TotalLectures,
-                progress = percentage,
+                watchedDurationSeconds = progress.CompletedLectures,
+                totalDurationSeconds = progress.TotalLectures,
+                progress = CalculateProgressPercentage(progress.CompletedLectures, progress.TotalLectures),
                 updatedAt = progress.UpdatedAt
             });
         }
@@ -128,16 +117,14 @@ public class CourseProgressController : ControllerBase
         }
     }
 
-    // 🔹 RESET progress for a course (useful for testing)
+    // RESET progress
     [HttpDelete("{userId}/{courseId}")]
     public async Task<IActionResult> ResetProgress(string userId, int courseId)
     {
         try
         {
             var progress = await _context.CourseProgresses
-                .FirstOrDefaultAsync(p =>
-                    p.UserId == userId && p.CourseId == courseId
-                );
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.CourseId == courseId);
 
             if (progress == null)
             {
@@ -155,43 +142,34 @@ public class CourseProgressController : ControllerBase
         }
     }
 
-    // 🔹 GET detailed progress for a specific course
+    // GET detailed progress for a specific course
     [HttpGet("{userId}/course/{courseId}")]
     public async Task<IActionResult> GetCourseProgress(string userId, int courseId)
     {
         try
         {
             var progress = await _context.CourseProgresses
-                .FirstOrDefaultAsync(p =>
-                    p.UserId == userId && p.CourseId == courseId
-                );
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.CourseId == courseId);
 
             if (progress == null)
             {
-                // Return 0 progress if no record exists
                 return Ok(new
                 {
                     userId,
                     courseId,
-                    completedLectures = 0,
-                    totalLectures = 0,
+                    watchedDurationSeconds = 0,
+                    totalDurationSeconds = 0,
                     progress = 0
                 });
             }
-
-            var percentage = progress.TotalLectures == 0
-                ? 0
-                : (int)Math.Round(
-                    (double)progress.CompletedLectures / progress.TotalLectures * 100
-                );
 
             return Ok(new
             {
                 userId = progress.UserId,
                 courseId = progress.CourseId,
-                completedLectures = progress.CompletedLectures,
-                totalLectures = progress.TotalLectures,
-                progress = percentage,
+                watchedDurationSeconds = progress.CompletedLectures,
+                totalDurationSeconds = progress.TotalLectures,
+                progress = CalculateProgressPercentage(progress.CompletedLectures, progress.TotalLectures),
                 updatedAt = progress.UpdatedAt
             });
         }
@@ -199,5 +177,62 @@ public class CourseProgressController : ControllerBase
         {
             return StatusCode(500, new { message = "Failed to load course progress", error = ex.Message });
         }
+    }
+
+    private static int CalculateProgressPercentage(int watchedSeconds, int totalDurationSeconds)
+    {
+        if (totalDurationSeconds <= 0)
+        {
+            return 0;
+        }
+
+        return (int)Math.Round((double)watchedSeconds / totalDurationSeconds * 100);
+    }
+
+    private static int ParseDurationToSeconds(string? duration)
+    {
+        if (string.IsNullOrWhiteSpace(duration))
+        {
+            return 0;
+        }
+
+        var value = duration.Trim().ToLowerInvariant();
+
+        // Format: hh:mm:ss or mm:ss
+        if (value.Contains(':'))
+        {
+            var parts = value.Split(':', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 2 && int.TryParse(parts[0], out var mm) && int.TryParse(parts[1], out var ss))
+            {
+                return mm * 60 + ss;
+            }
+
+            if (parts.Length == 3 && int.TryParse(parts[0], out var hh) && int.TryParse(parts[1], out var m) && int.TryParse(parts[2], out var s))
+            {
+                return hh * 3600 + m * 60 + s;
+            }
+        }
+
+        var hourMatch = Regex.Match(value, @"(\d+)\s*h");
+        var minuteMatch = Regex.Match(value, @"(\d+)\s*m");
+        var secondMatch = Regex.Match(value, @"(\d+)\s*s");
+
+        var hours = hourMatch.Success ? int.Parse(hourMatch.Groups[1].Value) : 0;
+        var minutes = minuteMatch.Success ? int.Parse(minuteMatch.Groups[1].Value) : 0;
+        var seconds = secondMatch.Success ? int.Parse(secondMatch.Groups[1].Value) : 0;
+
+        var total = hours * 3600 + minutes * 60 + seconds;
+        if (total > 0)
+        {
+            return total;
+        }
+
+        // Plain number fallback assumes minutes
+        if (int.TryParse(value, out var plainMinutes))
+        {
+            return plainMinutes * 60;
+        }
+
+        return 0;
     }
 }

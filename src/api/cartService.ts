@@ -2,11 +2,25 @@
 import axios from "axios";
 import { CART_API } from "./endpoints";
 
+export const CART_UPDATED_EVENT = "cart-updated";
+
+const notifyCartUpdated = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
+  }
+};
+
 export const getCart = (userId: string) =>
   axios.get(`${CART_API.GET}/${userId}`);
 
-export const addToCart = (userId: string, courseId: number) =>
-  axios.post(CART_API.ADD, { userId, courseId });
+export const addToCart = async (userId: string, courseId: number) => {
+  const response = await axios.post(CART_API.ADD, { userId, courseId });
+  notifyCartUpdated();
+  return response;
+};
 
-export const removeCartItem = (cartId: number) =>
-  axios.delete(`${CART_API.REMOVE}/${cartId}`);
+export const removeCartItem = async (cartId: number) => {
+  const response = await axios.delete(`${CART_API.REMOVE}/${cartId}`);
+  notifyCartUpdated();
+  return response;
+};

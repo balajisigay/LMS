@@ -20,14 +20,12 @@ import {
 } from "react-icons/hi";
 import { FaLinkedin, FaTwitter } from "react-icons/fa";
 import { requireAuth, getUserId } from "../utils/auth";
-import { BASE_URL } from "../../../src/api/endpoints";
-
-const API_ORIGIN = BASE_URL.replace(/\/api$/, "");
+import { API_ORIGIN } from "../config/api";
 
 const getApiErrorMessage = (err: any, fallback: string): string => {
   const message = err?.message || "";
   if (message.toLowerCase().includes("failed to fetch")) {
-    return "Unable to connect to server. Please make sure API is running on http://localhost:5000.";
+    return `Unable to connect to server. Please make sure API is running on ${API_ORIGIN}.`;
   }
   return message || fallback;
 };
@@ -938,4 +936,7 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 export default ProfilePage;
+
+
+
 

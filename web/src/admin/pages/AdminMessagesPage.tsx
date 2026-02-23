@@ -8,8 +8,9 @@ import {
   HiReply,
   HiX
 } from 'react-icons/hi';
+import { API_BASE_URL } from '../../config/api';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = API_BASE_URL;
 
 interface ContactMessage {
   id: number;

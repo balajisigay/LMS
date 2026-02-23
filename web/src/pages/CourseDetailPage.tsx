@@ -8,6 +8,7 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { updateProgress } from "../../../src/api/learningProgressService";
 import { getCurrentUser, requireAuth } from "../utils/auth";
+import { checkEnrollment } from "../../../src/api/enrollmentService";
 
 export const CourseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,7 @@ export const CourseDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]));
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
     if (id) loadCourse(id);
@@ -30,6 +32,14 @@ export const CourseDetailPage: React.FC = () => {
       setCourse(data);
       const firstVideo = data.courseSections?.[0]?.lectures?.[0]?.videoUrl;
       if (firstVideo) setSelectedVideo(firstVideo);
+
+      const user = getCurrentUser();
+      if (user?.userId) {
+        const enrolled = await checkEnrollment(String(user.userId), data.id);
+        setIsEnrolled(enrolled);
+      } else {
+        setIsEnrolled(false);
+      }
     } catch (e: any) {
       setError(e?.message ?? "Failed to load course");
     } finally {
@@ -43,16 +53,51 @@ export const CourseDetailPage: React.FC = () => {
     setExpandedSections(s);
   };
 
-  const handleLectureClick = async (url: string) => {
+  const parseDurationToSeconds = (duration?: string): number => {
+  if (!duration) return 0;
+  const value = duration.trim().toLowerCase();
+
+  if (value.includes(":")) {
+    const parts = value.split(":").map((p) => Number(p));
+    if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+      return parts[0] * 60 + parts[1];
+    }
+    if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+  }
+
+  const hourMatch = value.match(/(\d+)\s*h/);
+  const minuteMatch = value.match(/(\d+)\s*m/);
+  const secondMatch = value.match(/(\d+)\s*s/);
+
+  const hours = hourMatch ? Number(hourMatch[1]) : 0;
+  const minutes = minuteMatch ? Number(minuteMatch[1]) : 0;
+  const seconds = secondMatch ? Number(secondMatch[1]) : 0;
+
+  const total = hours * 3600 + minutes * 60 + seconds;
+  if (total > 0) return total;
+
+  const plainMinutes = Number(value);
+  if (Number.isFinite(plainMinutes) && plainMinutes > 0) {
+    return plainMinutes * 60;
+  }
+
+  return 0;
+};
+
+  const handleLectureClick = async (url: string, duration?: string) => {
     setSelectedVideo(url);
     window.scrollTo({ top: 0, behavior: "smooth" });
     try {
       const user = getCurrentUser();
       if (!user || !course) return;
-      await updateProgress(String(user.userId), course.id);
+
+      const watchedSeconds = parseDurationToSeconds(duration);
+      await updateProgress(String(user.userId), course.id, watchedSeconds > 0 ? watchedSeconds : undefined);
       window.dispatchEvent(new CustomEvent("progress-updated"));
     } catch (err) {
-      console.error("❌ Failed to update progress", err);
+      console.error("Failed to update progress", err);
     }
   };
 
@@ -60,6 +105,10 @@ export const CourseDetailPage: React.FC = () => {
     if (!course) return;
     try {
       const user = requireAuth(navigate);
+      if (isEnrolled) {
+        alert("You already purchased this course.");
+        return;
+      }
       await addToCart(user.userId, course.id);
       navigate("/cart");
     } catch (err) { console.error(err); }
@@ -127,11 +176,11 @@ export const CourseDetailPage: React.FC = () => {
                         <div 
                           key={j} 
                           style={styles.lectureRow(lec.videoUrl === selectedVideo)}
-                          onClick={() => handleLectureClick(lec.videoUrl)}
+                          onClick={() => handleLectureClick(lec.videoUrl, lec.duration)}
                         >
                           <span style={styles.playIcon}>⏵</span>
                           <span style={styles.lectureTitle}>{lec.title}</span>
-                          <span style={styles.lectureDuration}>05:00</span>
+                          <span style={styles.lectureDuration}>{lec.duration || "00:00"}</span>
                         </div>
                       ))}
                     </div>
@@ -277,3 +326,4 @@ const styles: any = {
   guaranteeText: { textAlign: 'center', fontSize: '12px', color: '#6b7280', marginTop: '16px' },
   includesList: { marginTop: '24px', fontSize: '14px', color: '#4b5563', lineHeight: '2' },
 };
+

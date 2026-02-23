@@ -1,11 +1,14 @@
-﻿import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Course } from "../types/course";
 import { addToCart } from "../../../src/api/cartService";
 import { getUserId } from "../utils/getUserId";
+import { getCurrentUser } from "../utils/auth";
+import { getEnrollments } from "../../../src/api/enrollmentService";
 
 // --- Types ---
 interface CategoryCardProps {
   course: Course;
+  isPurchased?: boolean;
   onPress?: (id: number) => void;
   onAddToCart?: (id: number) => void;
 }
@@ -323,7 +326,7 @@ const cssStyles = `
 
 // --- Components ---
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ course, onPress, onAddToCart }) => {
+const CategoryCard: React.FC<CategoryCardProps> = ({ course, isPurchased = false, onPress, onAddToCart }) => {
   const [adding, setAdding] = useState(false);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
@@ -351,26 +354,28 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ course, onPress, onAddToCar
         <h4 className="card-title">{course.title}</h4>
 
         <div className="rating-row">
-          <span className="star">★</span>
+          <span className="star">*</span>
           <span className="rating-num">{course.rating.toFixed(1)}</span>
           <span className="review-count">({course.reviewCount.toLocaleString()})</span>
         </div>
 
         <div className="card-footer">
           <div>
-            <div className="price">₹{course.price.toFixed(0)}</div>
+            <div className="price">Rs {course.price.toFixed(0)}</div>
             {course.originalPrice > course.price && (
-              <span className="original-price">₹{course.originalPrice.toFixed(0)}</span>
+              <span className="original-price">Rs {course.originalPrice.toFixed(0)}</span>
             )}
           </div>
           
           <button 
             className="cart-btn" 
             onClick={handleAddToCart} 
-            disabled={adding}
+            disabled={adding || isPurchased}
           >
-            {adding ? (
-              <>✓ Added</>
+            {isPurchased ? (
+              <>Purchased</>
+            ) : adding ? (
+              <>Added</>
             ) : (
               <>
                 <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -396,6 +401,7 @@ export const Categories: React.FC<CategoriesProps> = ({
 }) => {
   const [activeCategory, setActiveCategory] = useState("All Courses");
   const [cartSuccess, setCartSuccess] = useState("");
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<number>>(new Set());
 
   const categories = useMemo(() => [
     "All Courses", "Development", "Design", "Marketing", "IT & Software", "Personal Growth", "Business", "Photography"
@@ -406,12 +412,38 @@ export const Categories: React.FC<CategoriesProps> = ({
     return courses.filter(c => c.category?.toLowerCase() === activeCategory.toLowerCase());
   }, [courses, activeCategory]);
 
+
+  useEffect(() => {
+    const loadEnrolledCourses = async () => {
+      try {
+        const user = getCurrentUser();
+        if (!user?.userId) {
+          setEnrolledCourseIds(new Set());
+          return;
+        }
+
+        const enrollments = await getEnrollments(String(user.userId));
+        setEnrolledCourseIds(new Set(enrollments.map((enrollment) => enrollment.course.id)));
+      } catch (error) {
+        console.error("Failed to load enrollments:", error);
+        setEnrolledCourseIds(new Set());
+      }
+    };
+
+    void loadEnrolledCourses();
+  }, []);
   const handleCategorySelect = (category: string) => {
     setActiveCategory(category);
     onCategoryPress?.(category);
   };
 
   const handleAddToCart = async (courseId: number) => {
+    if (enrolledCourseIds.has(courseId)) {
+      setCartSuccess("You already purchased this course.");
+      setTimeout(() => setCartSuccess(""), 3000);
+      return;
+    }
+
     try {
       const userId = getUserId();
       await addToCart(userId, courseId);
@@ -420,6 +452,9 @@ export const Categories: React.FC<CategoriesProps> = ({
     } catch (err: any) {
       if (err.response?.status === 400) {
         setCartSuccess("Course is already in your cart!");
+        setTimeout(() => setCartSuccess(""), 3000);
+      } else {
+        setCartSuccess("Please login to add courses to cart.");
         setTimeout(() => setCartSuccess(""), 3000);
       }
     }
@@ -439,7 +474,7 @@ export const Categories: React.FC<CategoriesProps> = ({
             <h2 className="header-title">Explore Courses</h2>
             <p className="header-subtitle">Discover new skills to ignite your potential</p>
           </div>
-          <a href="#" className="view-all-btn">View All Categories →</a>
+          <a href="#" className="view-all-btn">View All Categories {"->"}</a>
         </div>
 
         {/* Main Layout */}
@@ -456,7 +491,7 @@ export const Categories: React.FC<CategoriesProps> = ({
                   onClick={() => handleCategorySelect(cat)}
                 >
                   <span>{cat}</span>
-                  {activeCategory === cat && <span style={{fontSize: '1.2rem'}}>•</span>}
+                  {activeCategory === cat && <span style={{fontSize: '1.2rem'}}>*</span>}
                 </div>
               ))}
             </div>
@@ -466,7 +501,7 @@ export const Categories: React.FC<CategoriesProps> = ({
           <div className="content-area">
             {error ? (
               <div className="state-card">
-                <div style={{ fontSize: '40px', marginBottom: '16px' }}>⚠️</div>
+                <div style={{ fontSize: '40px', marginBottom: '16px' }}>!</div>
                 <h3 style={{ color: '#ef4444', margin: '0 0 16px 0' }}>{error}</h3>
                 <button className="view-all-btn" onClick={onRetry} style={{ background: '#ef4444', borderColor: '#ef4444' }}>
                   Try Again
@@ -487,6 +522,7 @@ export const Categories: React.FC<CategoriesProps> = ({
                   <CategoryCard
                     key={course.id}
                     course={course}
+                    isPurchased={enrolledCourseIds.has(course.id)}
                     onPress={onCoursePress}
                     onAddToCart={handleAddToCart}
                   />
@@ -501,3 +537,5 @@ export const Categories: React.FC<CategoriesProps> = ({
 };
 
 export default Categories;
+
+

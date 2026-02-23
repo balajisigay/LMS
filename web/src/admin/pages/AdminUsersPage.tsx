@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { HiSearch, HiTrash, HiPencil, HiChevronLeft, HiChevronRight } from 'react-icons/hi';
+import { API_BASE_URL, apiOriginUrl } from '../../config/api';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = API_BASE_URL;
 
 interface User {
   id: number;
@@ -143,7 +144,7 @@ const AdminUsersPage: React.FC = () => {
                       <div style={styles.avatar}>
                         {user.profileImageUrl ? (
                           <img 
-                            src={`http://localhost:5000${user.profileImageUrl}`} 
+                            src={apiOriginUrl(user.profileImageUrl)} 
                             alt={user.fullName}
                             style={styles.avatarImage}
                           />
@@ -542,3 +543,4 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 export default AdminUsersPage;
+

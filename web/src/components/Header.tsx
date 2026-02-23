@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { HiShoppingCart, HiUser, HiMenu, HiBookOpen, HiLogout, HiCog, HiX, HiSearch } from "react-icons/hi";
+import { useLocation, useNavigate } from "react-router-dom";
+import { HiShoppingCart, HiUser, HiMenu, HiBookOpen, HiLogout, HiCog, HiX, HiSearch, HiArrowLeft } from "react-icons/hi";
 import { getCurrentUser, clearCurrentUser } from "../utils/auth";
 import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
+import { getCart, CART_UPDATED_EVENT } from "../../../src/api/cartService";
 import { getAllCourses } from "../services/courseService";
 
 interface Course {
@@ -18,8 +19,9 @@ interface HeaderProps {
   cartCount?: number;
 }
 
-export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
+export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesOpen, setCoursesOpen] = useState(false);
   const [myLearningOpen, setMyLearningOpen] = useState(false);
@@ -32,6 +34,8 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(false);
   const [courseSearch, setCourseSearch] = useState("");
+  const [internalCartCount, setInternalCartCount] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useEffect(() => {
     initializeHeader();
@@ -39,9 +43,29 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
+
+    const handleCartUpdated = () => {
+      if (currentUserId) {
+        void loadCartCount(currentUserId);
+      }
+    };
+
+    const handleFocus = () => {
+      if (currentUserId) {
+        void loadCartCount(currentUserId);
+      }
+    };
+
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated as EventListener);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated as EventListener);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [currentUserId]);
 
   const initializeHeader = async () => {
     try {
@@ -50,12 +74,18 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
       if (user && user.userId) {
         console.log("✅ User logged in:", { userId: user.userId, name: user.fullName });
         setIsLoggedIn(true);
+        setCurrentUserId(user.userId);
         setUserName(user.fullName || user.email || "User");
         setProfileImage(null);
-        await loadEnrolledCourses(user.userId);
+        await Promise.all([
+          loadEnrolledCourses(user.userId),
+          loadCartCount(user.userId),
+        ]);
       } else {
         console.log("ℹ️ No user logged in");
         setIsLoggedIn(false);
+        setCurrentUserId(null);
+        setInternalCartCount(0);
       }
 
       await loadAvailableCourses();
@@ -102,16 +132,30 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     }
   };
 
+  const loadCartCount = async (userId: number) => {
+    try {
+      const response = await getCart(String(userId));
+      setInternalCartCount(Array.isArray(response.data) ? response.data.length : 0);
+    } catch (error) {
+      console.error("❌ Error loading cart count:", error);
+      setInternalCartCount(0);
+    }
+  };
+
   const handleLogout = () => {
     console.log("👋 Logging out user");
     clearCurrentUser();
     setIsLoggedIn(false);
     setProfileImage(null);
     setUserName("");
+    setCurrentUserId(null);
+    setInternalCartCount(0);
     setEnrolledCourses([]);
     setProfileMenuOpen(false);
     navigate("/");
   };
+
+  const resolvedCartCount = typeof cartCount === "number" ? cartCount : internalCartCount;
 
   // Group courses by category
   const coursesByCategory = courses.reduce((acc, course) => {
@@ -128,10 +172,32 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     course.title.toLowerCase().includes(courseSearch.toLowerCase())
   );
 
+  const showBackButton = location.pathname !== "/";
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/");
+  };
+
   return (
     <>
       <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
         <div className="header-content">
+          {showBackButton && (
+            <button
+              className="back-button"
+              onClick={handleGoBack}
+              title="Go Back"
+              aria-label="Go Back"
+            >
+              <HiArrowLeft size={20} />
+            </button>
+          )}
+
           {/* Logo */}
           <div className="logo-container" onClick={() => navigate("/")}>
             <div className="logo-wrapper">
@@ -399,9 +465,9 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
               title="Shopping Cart"
             >
               <HiShoppingCart size={22} />
-              {cartCount > 0 && (
+              {resolvedCartCount > 0 && (
                 <span className="cart-badge">
-                  {cartCount > 9 ? "9+" : cartCount}
+                  {resolvedCartCount > 9 ? "9+" : resolvedCartCount}
                 </span>
               )}
             </button>
@@ -622,6 +688,27 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
           gap: 32px;
           max-width: 1600px;
           margin: 0 auto;
+        }
+
+        .back-button {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: transparent;
+          border: 2px solid #e5e7eb;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .back-button:hover {
+          background: rgba(102, 126, 234, 0.08);
+          border-color: #667eea;
+          color: #667eea;
         }
 
         /* Logo Styles */
@@ -1468,6 +1555,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
         }
 
         @media (max-width: 480px) {
+          .back-button {
+            width: 40px;
+            height: 40px;
+          }
+
           .icon-button {
             width: 40px;
             height: 40px;

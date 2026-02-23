@@ -3,8 +3,9 @@ import {
   HiPlus, HiTrash, HiPencil, HiSave, HiX, HiCheckCircle, HiExclamationCircle,
   HiChevronDown, HiChevronUp, HiVideoCamera, HiAcademicCap, HiUpload
 } from 'react-icons/hi';
+import { API_BASE_URL } from '../../config/api';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = API_BASE_URL;
 
 interface Instructor {
   id: number;

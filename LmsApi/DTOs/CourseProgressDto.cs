@@ -4,6 +4,8 @@ namespace LmsApi.DTOs
     {
         public int CourseId { get; set; }
         public string Title { get; set; } = string.Empty;
-        public int Progress { get; set; } // percentage
+        public int WatchedDurationSeconds { get; set; }
+        public int TotalDurationSeconds { get; set; }
+        public int Progress { get; set; }
     }
 }

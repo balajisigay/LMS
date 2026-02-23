@@ -1,5 +1,5 @@
 // src/api/userService.ts
-import { USER_API } from "./endpoints";
+import { API_ORIGIN, USER_API } from "./endpoints";
 
 export interface UserProfile {
   id: number;
@@ -43,7 +43,7 @@ async function parseResponse(response: Response) {
 
 function toNetworkErrorMessage(error: unknown): string {
   if (error instanceof TypeError) {
-    return "Cannot connect to API server at http://localhost:5000. Please start backend and try again.";
+    return `Cannot connect to API server at ${API_ORIGIN}. Please start backend and try again.`;
   }
   if (error instanceof Error && error.message) {
     return error.message;
@@ -141,3 +141,4 @@ export async function deleteProfilePhoto(
 
   return data;
 }
+

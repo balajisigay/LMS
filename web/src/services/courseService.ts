@@ -1,8 +1,8 @@
 // src/services/courseService.ts
-const API_BASE = "http://localhost:5000";
+import { apiUrl } from "../config/api";
 
 export async function getAllCourses(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/api/courses`, {
+  const res = await fetch(apiUrl('/courses'), {
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
@@ -13,7 +13,7 @@ export async function getAllCourses(): Promise<any[]> {
 }
 
 export async function getCourseById(id: number | string): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/courses/${id}`, {
+  const res = await fetch(apiUrl(`/courses/${id}`), {
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
@@ -37,7 +37,7 @@ export async function createCourse(courseData: {
   includes: string[];
   companies: string[];
 }): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/courses`, {
+  const res = await fetch(apiUrl('/courses'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(courseData),
@@ -50,7 +50,7 @@ export async function createCourse(courseData: {
 }
 
 export async function updateCourse(id: number, courseData: any): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/courses/${id}`, {
+  const res = await fetch(apiUrl(`/courses/${id}`), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(courseData),
@@ -63,7 +63,7 @@ export async function updateCourse(id: number, courseData: any): Promise<any> {
 }
 
 export async function deleteCourse(id: number): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/courses/${id}`, {
+  const res = await fetch(apiUrl(`/courses/${id}`), {
     method: "DELETE",
   });
   if (!res.ok) {
