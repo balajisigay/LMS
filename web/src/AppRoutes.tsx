@@ -24,7 +24,8 @@ export const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/course/:id" element={<CourseDetailPage />} />
-        <Route path="/login" element={<LoginPage />} />   {/* REQUIRED */}
+        <Route path="/login" element={<LandingPage />} />
+        <Route path="/auth" element={<LoginPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my-learning" element={<MyLearningPage />} />

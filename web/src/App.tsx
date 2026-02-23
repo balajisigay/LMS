@@ -43,7 +43,8 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/course/:courseId" element={<CourseDetailPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<LandingPage />} />
+          <Route path="/auth" element={<LoginPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin/*" element={<AdminRouter />} />

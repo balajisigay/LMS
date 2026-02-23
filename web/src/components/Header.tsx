@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { HiShoppingCart, HiUser, HiMenu, HiBookOpen, HiLogout, HiCog, HiX, HiSearch } from "react-icons/hi";
 import { getCurrentUser, clearCurrentUser } from "../utils/auth";
 import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
+import { getAllCourses } from "../services/courseService";
 
 interface Course {
   id: number;
@@ -91,18 +92,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     try {
       console.log("🔍 Loading available courses...");
       
-      const response = await fetch("http://localhost:5000/api/Course", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch courses");
-      }
-
-      const data = await response.json();
+      const data = await getAllCourses();
       console.log("✅ Loaded courses:", data.length);
       
       setCourses(data);
@@ -213,15 +203,10 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                       <h3 className="section-title">Search Results ({filteredCourses.length})</h3>
                       <div className="courses-list">
                         {filteredCourses.length > 0 ? (
-                          filteredCourses.slice(0, 8).map((course) => (
+                          filteredCourses.map((course) => (
                             <div
                               key={course.id}
                               className="course-item"
-                              onClick={() => {
-                                navigate(`/course/${course.id}`);
-                                setCoursesOpen(false);
-                                setCourseSearch("");
-                              }}
                             >
                               <div className="course-image">
                                 {course.imageUrl ? (
@@ -260,14 +245,10 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                               {category} <span className="category-count">({categoryCourses.length})</span>
                             </h3>
                             <div className="courses-list">
-                              {categoryCourses.slice(0, 4).map((course) => (
+                              {categoryCourses.map((course) => (
                                 <div
                                   key={course.id}
                                   className="course-item"
-                                  onClick={() => {
-                                    navigate(`/course/${course.id}`);
-                                    setCoursesOpen(false);
-                                  }}
                                 >
                                   <div className="course-image">
                                     {course.imageUrl ? (
@@ -285,17 +266,6 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                                 </div>
                               ))}
                             </div>
-                            {categoryCourses.length > 4 && (
-                              <button
-                                className="view-more-btn"
-                                onClick={() => {
-                                  navigate(`/?category=${category}`);
-                                  setCoursesOpen(false);
-                                }}
-                              >
-                                View all {category} courses →
-                              </button>
-                            )}
                           </div>
                         ))
                       ) : (
@@ -520,10 +490,10 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             ) : (
               <>
                 <div className="auth-divider"></div>
-                <button className="login-btn" onClick={() => navigate("/login")}>
+                <button className="login-btn" onClick={() => navigate("/auth")}>
                   Log in
                 </button>
-                <button className="signup-btn" onClick={() => navigate("/login")}>
+                <button className="signup-btn" onClick={() => navigate("/auth")}>
                   Sign Up
                 </button>
               </>
@@ -607,7 +577,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                 <button 
                   className="mobile-menu-item primary"
                   onClick={() => {
-                    navigate("/login");
+                    navigate("/auth");
                     setMobileMenuOpen(false);
                   }}
                 >
@@ -616,7 +586,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
                 <button 
                   className="mobile-menu-item accent"
                   onClick={() => {
-                    navigate("/login");
+                    navigate("/auth");
                     setMobileMenuOpen(false);
                   }}
                 >
@@ -873,7 +843,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
           gap: 12px;
           padding: 12px;
           border-radius: 12px;
-          cursor: pointer;
+          cursor: default;
           transition: all 0.2s ease;
         }
 
@@ -1514,3 +1484,5 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
 };
 
 export default Header;
+
+

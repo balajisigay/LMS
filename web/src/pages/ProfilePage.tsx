@@ -20,12 +20,24 @@ import {
 } from "react-icons/hi";
 import { FaLinkedin, FaTwitter } from "react-icons/fa";
 import { requireAuth, getUserId } from "../utils/auth";
+import { BASE_URL } from "../../../src/api/endpoints";
+
+const API_ORIGIN = BASE_URL.replace(/\/api$/, "");
+
+const getApiErrorMessage = (err: any, fallback: string): string => {
+  const message = err?.message || "";
+  if (message.toLowerCase().includes("failed to fetch")) {
+    return "Unable to connect to server. Please make sure API is running on http://localhost:5000.";
+  }
+  return message || fallback;
+};
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -89,7 +101,13 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!formData.fullName.trim()) {
+      setError("Full name is required");
+      return;
+    }
+
     try {
+      setSaving(true);
       setError("");
       setSuccess("");
       
@@ -108,7 +126,9 @@ const ProfilePage: React.FC = () => {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
       console.error("❌ Error saving profile:", err);
-      setError(err.message || "Failed to update profile");
+      setError(getApiErrorMessage(err, "Failed to update profile"));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -140,9 +160,10 @@ const ProfilePage: React.FC = () => {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
       console.error("❌ Error uploading photo:", err);
-      setError(err.message || "Failed to upload photo");
+      setError(getApiErrorMessage(err, "Failed to upload photo"));
     } finally {
       setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -162,7 +183,7 @@ const ProfilePage: React.FC = () => {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
       console.error("❌ Error deleting photo:", err);
-      setError(err.message || "Failed to delete photo");
+      setError(getApiErrorMessage(err, "Failed to delete photo"));
     }
   };
 
@@ -218,7 +239,7 @@ const ProfilePage: React.FC = () => {
                 <div style={styles.avatar}>
                   {profile.profileImageUrl ? (
                     <img
-                      src={`http://localhost:5000${profile.profileImageUrl}`}
+                      src={`${API_ORIGIN}${profile.profileImageUrl}`}
                       alt={profile.fullName}
                       style={styles.avatarImage}
                     />
@@ -232,7 +253,7 @@ const ProfilePage: React.FC = () => {
                 {/* Camera Overlay */}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
+                  disabled={uploading || saving}
                   style={styles.cameraButton}
                 >
                   <HiCamera size={20} />
@@ -251,21 +272,25 @@ const ProfilePage: React.FC = () => {
               <div style={styles.actionButtons}>
                 {!editing ? (
                   <>
-                    <button onClick={() => setEditing(true)} style={styles.editButton}>
+                    <button onClick={() => setEditing(true)} style={styles.editButton} disabled={uploading || saving}>
                       <HiPencil size={16} />
                       <span>Edit Profile</span>
                     </button>
                     {profile.profileImageUrl && (
-                      <button onClick={handleDeletePhoto} style={styles.deletePhotoButton}>
+                      <button onClick={handleDeletePhoto} style={styles.deletePhotoButton} disabled={uploading || saving}>
                         <HiTrash size={16} />
                       </button>
                     )}
                   </>
                 ) : (
                   <>
-                    <button onClick={handleSave} style={styles.saveButton}>
+                    <button
+                      onClick={handleSave}
+                      style={saving ? { ...styles.saveButton, opacity: 0.7, cursor: "not-allowed" } : styles.saveButton}
+                      disabled={saving}
+                    >
                       <HiCheck size={16} />
-                      <span>Save Changes</span>
+                      <span>{saving ? "Saving..." : "Save Changes"}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -273,6 +298,7 @@ const ProfilePage: React.FC = () => {
                         loadProfile();
                       }}
                       style={styles.cancelButton}
+                      disabled={saving}
                     >
                       <HiX size={16} />
                       <span>Cancel</span>
@@ -912,3 +938,4 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 export default ProfilePage;
+

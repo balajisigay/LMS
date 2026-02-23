@@ -26,7 +26,6 @@ export interface UpdateProfileData {
   twitter?: string;
 }
 
-// Helper function to parse responses (like authService.ts)
 async function parseResponse(response: Response) {
   const contentType = response.headers.get("content-type") || "";
   const raw = await response.text();
@@ -42,16 +41,31 @@ async function parseResponse(response: Response) {
   return { message: raw };
 }
 
+function toNetworkErrorMessage(error: unknown): string {
+  if (error instanceof TypeError) {
+    return "Cannot connect to API server at http://localhost:5000. Please start backend and try again.";
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return "Network request failed";
+}
+
 // Get user profile
 export async function getUserProfile(userId: number): Promise<UserProfile> {
-  const response = await fetch(USER_API.GET_PROFILE(userId));
-  
+  let response: Response;
+  try {
+    response = await fetch(USER_API.GET_PROFILE(userId));
+  } catch (error) {
+    throw new Error(toNetworkErrorMessage(error));
+  }
+
   const data = await parseResponse(response);
-  
+
   if (!response.ok) {
     throw new Error(data.message || "Failed to fetch profile");
   }
-  
+
   return data;
 }
 
@@ -60,12 +74,16 @@ export async function updateUserProfile(
   userId: number,
   data: UpdateProfileData
 ): Promise<{ message: string }> {
-  const response = await fetch(USER_API.UPDATE_PROFILE(userId), {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(USER_API.UPDATE_PROFILE(userId), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    throw new Error(toNetworkErrorMessage(error));
+  }
 
   const result = await parseResponse(response);
 
@@ -80,15 +98,18 @@ export async function uploadProfilePhoto(
   userId: number,
   file: File
 ): Promise<{ message: string; imageUrl: string }> {
-
   const formData = new FormData();
-  formData.append("profileImage", file); // ✅ FIXED
+  formData.append("profileImage", file);
 
-  const response = await fetch(USER_API.UPLOAD_PHOTO(userId), {
-    method: "POST",
-    body: formData,
-    credentials: "include", // ✅ important if auth/session used
-  });
+  let response: Response;
+  try {
+    response = await fetch(USER_API.UPLOAD_PHOTO(userId), {
+      method: "POST",
+      body: formData,
+    });
+  } catch (error) {
+    throw new Error(toNetworkErrorMessage(error));
+  }
 
   const data = await parseResponse(response);
 
@@ -99,14 +120,18 @@ export async function uploadProfilePhoto(
   return data;
 }
 
-
 // Delete profile photo
 export async function deleteProfilePhoto(
   userId: number
 ): Promise<{ message: string }> {
-  const response = await fetch(USER_API.DELETE_PHOTO(userId), {
-    method: "DELETE",
-  });
+  let response: Response;
+  try {
+    response = await fetch(USER_API.DELETE_PHOTO(userId), {
+      method: "DELETE",
+    });
+  } catch (error) {
+    throw new Error(toNetworkErrorMessage(error));
+  }
 
   const data = await parseResponse(response);
 
