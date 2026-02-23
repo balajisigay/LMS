@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj": {}
+    "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj": {
+    "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj",
+        "projectUniqueName": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj",
         "projectName": "LmsApi",
-        "projectPath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj",
+        "projectPath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj",
         "packagesPath": "C:\\Users\\Neumeric\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\obj\\",
+        "outputPath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Neumeric\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -86,7 +86,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
