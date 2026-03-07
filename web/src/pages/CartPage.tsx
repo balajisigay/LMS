@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCart, removeCartItem } from "../../../src/api/cartService";
 import { createOrder, verifyPayment } from "../../../src/api/paymentService";
-import { HiTrash, HiShoppingCart, HiCheck, HiX, HiArrowLeft, HiCreditCard } from "react-icons/hi";
+import { HiTrash, HiShoppingCart, HiCheck, HiX, HiCreditCard } from "react-icons/hi";
 import { getUserId } from "../utils/getUserId";
 
 declare global {
@@ -115,9 +115,9 @@ export const CartPage: React.FC = () => {
       <div style={styles.contentWrapper}>
         {/* Header Section */}
         <header style={styles.header}>
-          <button onClick={() => navigate("/courses")} style={styles.backBtn}>
+          {/* <button onClick={() => navigate("/courses")} style={styles.backBtn}>
             <HiArrowLeft /> Continue Shopping
-          </button>
+          </button> */}
           <h1 style={styles.mainTitle}>Shopping Cart</h1>
           <p style={styles.countText}>{items.length} Courses in Cart</p>
         </header>
