@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   HiPlus, HiTrash, HiPencil, HiSave, HiX, HiCheckCircle, HiExclamationCircle,
-  HiChevronDown, HiChevronUp, HiVideoCamera, HiAcademicCap, HiUpload
+  HiChevronDown, HiChevronUp, HiVideoCamera, HiAcademicCap
 } from 'react-icons/hi';
 import { API_BASE_URL } from '../../config/api';
 

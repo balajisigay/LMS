@@ -7,7 +7,12 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+        "predeploy": "npm run build",
+            "deploy": "gh-pages -d dist"
+
+
+    
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.82.1",
@@ -39,4 +44,5 @@
   "engines": {
     "node": ">=20"
   }
+  
 }

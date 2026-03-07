@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { HiShoppingCart, HiUser, HiMenu, HiBookOpen, HiLogout, HiCog, HiX, HiSearch, HiArrowLeft } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
+import {
+  HiShoppingCart,
+  HiUser,
+  HiMenu,
+  HiBookOpen,
+  HiLogout,
+  HiX,
+  HiSearch,
+  HiChevronDown,
+  HiAcademicCap,
+  HiArrowRight,
+} from "react-icons/hi";
 import { getCurrentUser, clearCurrentUser } from "../utils/auth";
 import { getEnrollments, Enrollment } from "../../../src/api/enrollmentService";
 import { getCart, CART_UPDATED_EVENT } from "../../../src/api/cartService";
@@ -21,132 +32,79 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [coursesOpen, setCoursesOpen] = useState(false);
-  const [myLearningOpen, setMyLearningOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [enrolledCourses, setEnrolledCourses] = useState<Enrollment[]>([]);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [courseSearch, setCourseSearch] = useState("");
-  const [internalCartCount, setInternalCartCount] = useState(0);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
+  const [courses, setCourses]                   = useState<Course[]>([]);
+  const [coursesOpen, setCoursesOpen]           = useState(false);
+  const [myLearningOpen, setMyLearningOpen]     = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen]   = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen]     = useState(false);
+  const [isScrolled, setIsScrolled]             = useState(false);
+  const [enrolledCourses, setEnrolledCourses]   = useState<Enrollment[]>([]);
+  const [isLoggedIn, setIsLoggedIn]             = useState(false);
+  const [userName, setUserName]                 = useState("");
+  const [loading, setLoading]                   = useState(false);
+  const [courseSearch, setCourseSearch]         = useState("");
+  const [internalCartCount, setInternalCartCount] = useState(0);
+  const [currentUserId, setCurrentUserId]       = useState<number | null>(null);
+
+  /* ── init ── */
   useEffect(() => {
     initializeHeader();
 
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+    const onScroll  = () => setIsScrolled(window.scrollY > 8);
+    const onCart    = () => { if (currentUserId) void loadCartCount(currentUserId); };
+    const onFocus   = () => { if (currentUserId) void loadCartCount(currentUserId); };
 
-    const handleCartUpdated = () => {
-      if (currentUserId) {
-        void loadCartCount(currentUserId);
-      }
-    };
-
-    const handleFocus = () => {
-      if (currentUserId) {
-        void loadCartCount(currentUserId);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated as EventListener);
-    window.addEventListener("focus", handleFocus);
-
+    window.addEventListener("scroll", onScroll);
+    window.addEventListener(CART_UPDATED_EVENT, onCart as EventListener);
+    window.addEventListener("focus", onFocus);
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated as EventListener);
-      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener(CART_UPDATED_EVENT, onCart as EventListener);
+      window.removeEventListener("focus", onFocus);
     };
   }, [currentUserId]);
 
   const initializeHeader = async () => {
     try {
       const user = getCurrentUser();
-      
-      if (user && user.userId) {
-        console.log("✅ User logged in:", { userId: user.userId, name: user.fullName });
+      if (user?.userId) {
         setIsLoggedIn(true);
         setCurrentUserId(user.userId);
         setUserName(user.fullName || user.email || "User");
-        setProfileImage(null);
-        await Promise.all([
-          loadEnrolledCourses(user.userId),
-          loadCartCount(user.userId),
-        ]);
+        await Promise.all([loadEnrolledCourses(user.userId), loadCartCount(user.userId)]);
       } else {
-        console.log("ℹ️ No user logged in");
         setIsLoggedIn(false);
         setCurrentUserId(null);
         setInternalCartCount(0);
       }
-
       await loadAvailableCourses();
-    } catch (error) {
-      console.error("❌ Error initializing header:", error);
-    }
+    } catch (e) { console.error("Header init error:", e); }
   };
 
   const loadEnrolledCourses = async (userId: number) => {
     try {
       setLoading(true);
-      console.log("📚 Loading enrolled courses for userId:", userId);
-      
-      const enrollments = await getEnrollments(userId);
-      console.log("✅ Loaded enrollments:", enrollments.length);
-      
-      if (enrollments.length > 0) {
-        console.log("📖 Sample enrollment:", {
-          courseTitle: enrollments[0].course.title,
-          enrolledAt: enrollments[0].enrolledAt
-        });
-      }
-      
-      setEnrolledCourses(enrollments);
-    } catch (error) {
-      console.error("❌ Error loading enrolled courses:", error);
-      setEnrolledCourses([]);
-    } finally {
-      setLoading(false);
-    }
+      setEnrolledCourses(await getEnrollments(String(userId)));
+    } catch { setEnrolledCourses([]); }
+    finally { setLoading(false); }
   };
 
   const loadAvailableCourses = async () => {
-    try {
-      console.log("🔍 Loading available courses...");
-      
-      const data = await getAllCourses();
-      console.log("✅ Loaded courses:", data.length);
-      
-      setCourses(data);
-    } catch (error) {
-      console.error("❌ Error loading courses:", error);
-      setCourses([]);
-    }
+    try { setCourses(await getAllCourses()); }
+    catch { setCourses([]); }
   };
 
   const loadCartCount = async (userId: number) => {
     try {
-      const response = await getCart(String(userId));
-      setInternalCartCount(Array.isArray(response.data) ? response.data.length : 0);
-    } catch (error) {
-      console.error("❌ Error loading cart count:", error);
-      setInternalCartCount(0);
-    }
+      const r = await getCart(String(userId));
+      setInternalCartCount(Array.isArray(r.data) ? r.data.length : 0);
+    } catch { setInternalCartCount(0); }
   };
 
   const handleLogout = () => {
-    console.log("👋 Logging out user");
     clearCurrentUser();
     setIsLoggedIn(false);
-    setProfileImage(null);
     setUserName("");
     setCurrentUserId(null);
     setInternalCartCount(0);
@@ -155,291 +113,130 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
     navigate("/");
   };
 
+  /* derived */
   const resolvedCartCount = typeof cartCount === "number" ? cartCount : internalCartCount;
-
-  // Group courses by category
-  const coursesByCategory = courses.reduce((acc, course) => {
-    const category = course.category || "Other";
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(course);
+  const coursesByCategory = courses.reduce<Record<string, Course[]>>((acc, c) => {
+    const cat = c.category || "Other";
+    (acc[cat] = acc[cat] || []).push(c);
     return acc;
-  }, {} as Record<string, Course[]>);
-
-  // Filter courses based on search
-  const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(courseSearch.toLowerCase())
-  );
-
-  const showBackButton = location.pathname !== "/";
-
-  const handleGoBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-
-    navigate("/");
-  };
+  }, {});
+  const filteredCourses = courseSearch
+    ? courses.filter(c => c.title.toLowerCase().includes(courseSearch.toLowerCase()))
+    : [];
+  const initials = userName.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
     <>
-      <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
-        <div className="header-content">
-          {showBackButton && (
-            <button
-              className="back-button"
-              onClick={handleGoBack}
-              title="Go Back"
-              aria-label="Go Back"
-            >
-              <HiArrowLeft size={20} />
-            </button>
-          )}
+      <header className={`hd-root${isScrolled ? " hd-root--scrolled" : ""}`}>
+        <div className="hd-inner">
 
-          {/* Logo */}
-          <div className="logo-container" onClick={() => navigate("/")}>
-            <div className="logo-wrapper">
-              <div className="logo-icon">
-                <svg viewBox="0 0 40 40" fill="none">
-                  <path
-                    d="M20 4L35 12V28L20 36L5 28V12L20 4Z"
-                    fill="url(#gradient1)"
-                    stroke="white"
-                    strokeWidth="1.5"
-                  />
-                  <circle cx="20" cy="20" r="6" fill="white" opacity="0.9" />
-                  <defs>
-                    <linearGradient id="gradient1" x1="5" y1="4" x2="35" y2="36">
-                      <stop offset="0%" stopColor="#667eea" />
-                      <stop offset="100%" stopColor="#764ba2" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <div className="logo-text-container">
-                <span className="logo-text">
-                  <span className="logo-sri">Srinu</span>
-                  <span className="logo-tech">tech</span>
-                  <span className="logo-guru">Guru</span>
-                </span>
-                <span className="logo-tagline">Learn • Grow • Excel</span>
-              </div>
+          {/* Back button */}
+          {/* ── LOGO ── */}
+          <div className="hd-logo" onClick={() => navigate("/")}>
+            <span className="hd-logo-icon">⚡</span>
+            <div className="hd-logo-text">
+              <span className="hd-logo-brand">Srinu tech</span>
+              <span className="hd-logo-tag">Guru</span>
             </div>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="desktop-nav">
-            {/* Courses Dropdown */}
-            <div
-              className="nav-dropdown"
-              onMouseEnter={() => setCoursesOpen(true)}
-              onMouseLeave={() => setCoursesOpen(false)}
-            >
-              <button className="nav-button">
-                <span>Courses</span>
-                <svg 
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 16 16" 
-                  fill="currentColor"
-                  className={`dropdown-arrow ${coursesOpen ? 'open' : ''}`}
-                >
-                  <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
-                </svg>
+          {/* ── DESKTOP NAV ── */}
+          <nav className="hd-nav">
+
+            {/* Courses mega-dropdown */}
+            <div className="hd-dd-wrap" onMouseEnter={() => setCoursesOpen(true)} onMouseLeave={() => { setCoursesOpen(false); setCourseSearch(""); }}>
+              <button className={`hd-nav-btn${coursesOpen ? " hd-nav-btn--open" : ""}`}>
+                Courses <HiChevronDown size={14} className={`hd-chevron${coursesOpen ? " hd-chevron--up" : ""}`} />
               </button>
 
               {coursesOpen && (
-                <div className="dropdown-mega">
-                  <div className="dropdown-search">
-                    <HiSearch className="search-icon" />
+                <div className="hd-mega">
+                  {/* Search */}
+                  <div className="hd-mega-search">
+                    <HiSearch size={15} className="hd-search-icon" />
                     <input
                       type="text"
-                      placeholder="Search courses..."
+                      placeholder="Search courses…"
                       value={courseSearch}
-                      onChange={(e) => setCourseSearch(e.target.value)}
-                      className="search-input"
+                      onChange={e => setCourseSearch(e.target.value)}
+                      className="hd-search-input"
+                      autoFocus
                     />
                   </div>
 
-                  {courseSearch ? (
-                    // Search Results View
-                    <div className="dropdown-section">
-                      <h3 className="section-title">Search Results ({filteredCourses.length})</h3>
-                      <div className="courses-list">
-                        {filteredCourses.length > 0 ? (
-                          filteredCourses.map((course) => (
-                            <div
-                              key={course.id}
-                              className="course-item"
-                            >
-                              <div className="course-image">
-                                {course.imageUrl ? (
-                                  <img src={course.imageUrl} alt={course.title} />
-                                ) : (
-                                  <div className="course-placeholder">📚</div>
-                                )}
-                              </div>
-                              <div className="course-info">
-                                <div className="course-title">{course.title}</div>
-                                <div className="course-meta">
-                                  {course.category && (
-                                    <span className="course-category">{course.category}</span>
-                                  )}
-                                  {course.price !== undefined && (
-                                    <span className="course-price">₹{course.price.toFixed(2)}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="empty-state">
-                            <p>No courses found matching "{courseSearch}"</p>
-                          </div>
+                  <div className="hd-mega-body">
+                    {courseSearch ? (
+                      /* Search results */
+                      <div className="hd-mega-col">
+                        <p className="hd-col-label">Results ({filteredCourses.length})</p>
+                        {filteredCourses.length > 0 ? filteredCourses.map(c => (
+                          <CourseRow key={c.id} course={c} onClick={() => { navigate(`/course/${c.id}`); setCoursesOpen(false); }} />
+                        )) : (
+                          <p className="hd-empty">No courses match "{courseSearch}"</p>
                         )}
                       </div>
-                    </div>
-                  ) : (
-                    // Category View
-                    <div className="dropdown-categories">
-                      {Object.keys(coursesByCategory).length > 0 ? (
-                        Object.entries(coursesByCategory).map(([category, categoryCourses]) => (
-                          <div key={category} className="category-section">
-                            <h3 className="category-title">
-                              {category} <span className="category-count">({categoryCourses.length})</span>
-                            </h3>
-                            <div className="courses-list">
-                              {categoryCourses.map((course) => (
-                                <div
-                                  key={course.id}
-                                  className="course-item"
-                                >
-                                  <div className="course-image">
-                                    {course.imageUrl ? (
-                                      <img src={course.imageUrl} alt={course.title} />
-                                    ) : (
-                                      <div className="course-placeholder">📚</div>
-                                    )}
-                                  </div>
-                                  <div className="course-info">
-                                    <div className="course-title">{course.title}</div>
-                                    {course.price !== undefined && (
-                                      <div className="course-price">₹{course.price.toFixed(2)}</div>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                    ) : (
+                      /* Category columns */
+                      <>
+                        {Object.entries(coursesByCategory).map(([cat, list]) => (
+                          <div key={cat} className="hd-mega-col">
+                            <p className="hd-col-label">{cat} <span className="hd-col-count">{list.length}</span></p>
+                            {list.slice(0, 4).map(c => (
+                              <CourseRow key={c.id} course={c} onClick={() => { navigate(`/course/${c.id}`); setCoursesOpen(false); }} />
+                            ))}
                           </div>
-                        ))
-                      ) : (
-                        <div className="empty-state">
-                          <p>No courses available at the moment</p>
-                        </div>
-                      )}
-                      
-                      {courses.length > 0 && (
-                        <div className="dropdown-footer">
-                          <button
-                            className="view-all-courses-btn"
-                            onClick={() => {
-                              navigate("/");
-                              setCoursesOpen(false);
-                            }}
-                          >
-                            View All {courses.length} Courses →
-                          </button>
-                        </div>
-                      )}
+                        ))}
+                      </>
+                    )}
+                  </div>
+
+                  {courses.length > 0 && !courseSearch && (
+                    <div className="hd-mega-footer">
+                      <button className="hd-mega-cta" onClick={() => { navigate("/"); setCoursesOpen(false); }}>
+                        View all {courses.length} courses <HiArrowRight size={14} />
+                      </button>
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* My Learning Dropdown */}
+            {/* My Learning dropdown */}
             {isLoggedIn && (
-              <div
-                className="nav-dropdown"
-                onMouseEnter={() => setMyLearningOpen(true)}
-                onMouseLeave={() => setMyLearningOpen(false)}
-              >
-                <button className="nav-button">
-                  <HiBookOpen size={18} />
-                  <span>My Learning</span>
-                  <svg 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 16 16" 
-                    fill="currentColor"
-                    className={`dropdown-arrow ${myLearningOpen ? 'open' : ''}`}
-                  >
-                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
-                  </svg>
+              <div className="hd-dd-wrap" onMouseEnter={() => setMyLearningOpen(true)} onMouseLeave={() => setMyLearningOpen(false)}>
+                <button className={`hd-nav-btn${myLearningOpen ? " hd-nav-btn--open" : ""}`}>
+                  <HiBookOpen size={15} /> My Learning <HiChevronDown size={14} className={`hd-chevron${myLearningOpen ? " hd-chevron--up" : ""}`} />
                 </button>
 
                 {myLearningOpen && (
-                  <div className="dropdown-menu">
-                    <div className="dropdown-header">
-                      <h3 className="dropdown-title">My Enrolled Courses</h3>
-                      <p className="dropdown-subtitle">
-                        {enrolledCourses.length} {enrolledCourses.length === 1 ? 'course' : 'courses'}
-                      </p>
+                  <div className="hd-dropdown">
+                    <div className="hd-dd-header">
+                      <p className="hd-dd-title">My Enrolled Courses</p>
+                      <span className="hd-dd-count">{enrolledCourses.length}</span>
                     </div>
-                    <div className="dropdown-content">
+                    <div className="hd-dd-body">
                       {loading ? (
-                        <div className="loading-state">
-                          <div className="spinner"></div>
-                          <p>Loading courses...</p>
-                        </div>
+                        <div className="hd-dd-loading"><span className="hd-spinner" /> Loading…</div>
                       ) : enrolledCourses.length > 0 ? (
                         <>
-                          {enrolledCourses.slice(0, 5).map((enrollment) => (
-                            <div
-                              key={enrollment.id}
-                              className="enrollment-item"
-                              onClick={() => {
-                                navigate(`/course/${enrollment.course.id}`);
-                                setMyLearningOpen(false);
-                              }}
-                            >
-                              <div className="enrolled-badge">✓</div>
-                              <div className="enrollment-info">
-                                <div className="enrollment-title">{enrollment.course.title}</div>
-                                <div className="enrollment-date">
-                                  Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}
-                                </div>
+                          {enrolledCourses.slice(0, 5).map(e => (
+                            <button key={e.id} className="hd-enrollment-row" onClick={() => { navigate(`/course/${e.course.id}`); setMyLearningOpen(false); }}>
+                              <span className="hd-enroll-check">✓</span>
+                              <div className="hd-enroll-info">
+                                <p className="hd-enroll-title">{e.course.title}</p>
+                                <p className="hd-enroll-date">Enrolled {new Date(e.enrolledAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
                               </div>
-                            </div>
+                            </button>
                           ))}
-                          <button
-                            className="view-all-btn"
-                            onClick={() => {
-                              navigate("/my-learning");
-                              setMyLearningOpen(false);
-                            }}
-                          >
-                            View All My Courses →
+                          <button className="hd-dd-footer-btn" onClick={() => { navigate("/my-learning"); setMyLearningOpen(false); }}>
+                            View all my courses <HiArrowRight size={13} />
                           </button>
                         </>
                       ) : (
-                        <div className="empty-state">
+                        <div className="hd-dd-empty">
+                          <HiAcademicCap size={28} />
                           <p>No enrolled courses yet</p>
-                          <button
-                            className="browse-btn"
-                            onClick={() => {
-                              navigate("/");
-                              setMyLearningOpen(false);
-                            }}
-                          >
-                            Browse Courses
-                          </button>
+                          <button className="hd-dd-browse" onClick={() => { navigate("/"); setMyLearningOpen(false); }}>Browse Courses</button>
                         </div>
                       )}
                     </div>
@@ -448,1133 +245,833 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
               </div>
             )}
 
-            <button className="nav-button" onClick={() => navigate("/about")}>
-              About
-            </button>
-            <button className="nav-button" onClick={() => navigate("/contact")}>
-              Contact
-            </button>
+            <button className="hd-nav-btn" onClick={() => navigate("/about")}>About</button>
+            <button className="hd-nav-btn" onClick={() => navigate("/contact")}>Contact</button>
           </nav>
 
-          {/* Right Actions */}
-          <div className="right-actions">
+          {/* ── RIGHT ACTIONS ── */}
+          <div className="hd-actions">
+
             {/* Cart */}
-            <button 
-              className="icon-button"
-              onClick={() => navigate("/cart")}
-              title="Shopping Cart"
-            >
-              <HiShoppingCart size={22} />
+            <button className="hd-icon-btn" onClick={() => navigate("/cart")} title="Cart">
+              <HiShoppingCart size={19} />
               {resolvedCartCount > 0 && (
-                <span className="cart-badge">
-                  {resolvedCartCount > 9 ? "9+" : resolvedCartCount}
-                </span>
+                <span className="hd-cart-badge">{resolvedCartCount > 9 ? "9+" : resolvedCartCount}</span>
               )}
             </button>
 
-            {/* Profile / Login */}
             {isLoggedIn ? (
-              <div 
-                className="profile-dropdown"
-                onMouseEnter={() => setProfileMenuOpen(true)}
-                onMouseLeave={() => setProfileMenuOpen(false)}
-              >
-                <button className="profile-button">
-                  {profileImage ? (
-                    <img src={profileImage} alt={userName} />
-                  ) : (
-                    <div className="profile-avatar">
-                      {userName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+              /* Profile dropdown */
+              <div className="hd-dd-wrap" onMouseEnter={() => setProfileMenuOpen(true)} onMouseLeave={() => setProfileMenuOpen(false)}>
+                <button className="hd-avatar-btn">
+                  <span className="hd-avatar">{initials}</span>
                 </button>
 
                 {profileMenuOpen && (
-                  <div className="profile-menu">
-                    <div className="profile-menu-header">
-                      <div className="profile-menu-avatar">
-                        {profileImage ? (
-                          <img src={profileImage} alt={userName} />
-                        ) : (
-                          <div className="profile-avatar">
-                            {userName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div className="profile-menu-info">
-                        <div className="profile-name">{userName}</div>
-                        <div className="profile-link">View Profile</div>
+                  <div className="hd-profile-menu">
+                    {/* Header */}
+                    <div className="hd-pm-header" onClick={() => { navigate("/profile"); setProfileMenuOpen(false); }}>
+                      <span className="hd-pm-avatar">{initials}</span>
+                      <div>
+                        <p className="hd-pm-name">{userName}</p>
+                        <p className="hd-pm-link">View profile <HiArrowRight size={11} /></p>
                       </div>
                     </div>
 
-                    <div className="menu-divider"></div>
+                    <div className="hd-pm-divider" />
 
-                    <div className="menu-items">
-                      <button
-                        className="menu-item"
-                        onClick={() => {
-                          navigate("/profile");
-                          setProfileMenuOpen(false);
-                        }}
-                      >
-                        <HiUser size={18} />
-                        <span>My Profile</span>
-                      </button>
-
-                      <button
-                        className="menu-item"
-                        onClick={() => {
-                          navigate("/my-learning");
-                          setProfileMenuOpen(false);
-                        }}
-                      >
-                        <HiBookOpen size={18} />
-                        <span>My Learning ({enrolledCourses.length})</span>
-                      </button>
-
-                      <button
-                        className="menu-item"
-                        onClick={() => {
-                          navigate("/settings");
-                          setProfileMenuOpen(false);
-                        }}
-                      >
-                        <HiCog size={18} />
-                        <span>Settings</span>
-                      </button>
+                    <div className="hd-pm-items">
+                      {[
+                        { icon: <HiUser size={15} />, label: "My Profile", path: "/profile" },
+                        { icon: <HiBookOpen size={15} />, label: `My Learning (${enrolledCourses.length})`, path: "/my-learning" },
+                        // { icon: <HiCog size={15} />, label: "Settings", path: "/settings" },
+                      ].map(item => (
+                        <button key={item.path} className="hd-pm-item" onClick={() => { navigate(item.path); setProfileMenuOpen(false); }}>
+                          {item.icon} {item.label}
+                        </button>
+                      ))}
                     </div>
 
-                    <div className="menu-divider"></div>
+                    <div className="hd-pm-divider" />
 
-                    <button className="menu-item logout" onClick={handleLogout}>
-                      <HiLogout size={18} />
-                      <span>Logout</span>
+                    <button className="hd-pm-item hd-pm-item--danger" onClick={handleLogout}>
+                      <HiLogout size={15} /> Logout
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <>
-                <div className="auth-divider"></div>
-                <button className="login-btn" onClick={() => navigate("/auth")}>
-                  Log in
-                </button>
-                <button className="signup-btn" onClick={() => navigate("/auth")}>
-                  Sign Up
-                </button>
-              </>
+              <div className="hd-auth-btns">
+                <button className="hd-login-btn" onClick={() => navigate("/auth")}>Log in</button>
+                <button className="hd-signup-btn" onClick={() => navigate("/auth")}>Sign Up</button>
+              </div>
             )}
 
-            {/* Mobile Menu Toggle */}
-            <button 
-              className="mobile-menu-toggle"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <HiX size={24} /> : <HiMenu size={24} />}
+            {/* Mobile toggle */}
+            <button className="hd-mobile-toggle" onClick={() => setMobileMenuOpen(v => !v)}>
+              {mobileMenuOpen ? <HiX size={20} /> : <HiMenu size={20} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* ── MOBILE MENU ── */}
         {mobileMenuOpen && (
-          <div className="mobile-menu">
-            <button 
-              className="mobile-menu-item"
-              onClick={() => {
-                navigate("/");
-                setMobileMenuOpen(false);
-              }}
-            >
-              Browse Courses
-            </button>
-            {isLoggedIn && (
-              <button 
-                className="mobile-menu-item"
-                onClick={() => {
-                  navigate("/my-learning");
-                  setMobileMenuOpen(false);
-                }}
-              >
-                My Learning ({enrolledCourses.length})
+          <div className="hd-mobile-menu">
+            {[
+              { label: "Browse Courses", path: "/" },
+              ...(isLoggedIn ? [{ label: `My Learning (${enrolledCourses.length})`, path: "/my-learning" }] : []),
+              { label: "About", path: "/about" },
+              { label: "Contact", path: "/contact" },
+              ...(isLoggedIn ? [{ label: "Profile", path: "/profile" }] : []),
+            ].map(item => (
+              <button key={item.path} className="hd-mobile-item" onClick={() => { navigate(item.path); setMobileMenuOpen(false); }}>
+                {item.label}
               </button>
-            )}
-            <button 
-              className="mobile-menu-item"
-              onClick={() => {
-                navigate("/about");
-                setMobileMenuOpen(false);
-              }}
-            >
-              About
-            </button>
-            <button 
-              className="mobile-menu-item"
-              onClick={() => {
-                navigate("/contact");
-                setMobileMenuOpen(false);
-              }}
-            >
-              Contact
-            </button>
-            {isLoggedIn && (
-              <button 
-                className="mobile-menu-item"
-                onClick={() => {
-                  navigate("/profile");
-                  setMobileMenuOpen(false);
-                }}
-              >
-                Profile
-              </button>
-            )}
-            <div className="mobile-divider"></div>
+            ))}
+
+            <div className="hd-mobile-divider" />
+
             {isLoggedIn ? (
-              <button 
-                className="mobile-menu-item accent"
-                onClick={() => {
-                  handleLogout();
-                  setMobileMenuOpen(false);
-                }}
-              >
-                Logout
+              <button className="hd-mobile-item hd-mobile-item--danger" onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>
+                <HiLogout size={15} /> Logout
               </button>
             ) : (
-              <>
-                <button 
-                  className="mobile-menu-item primary"
-                  onClick={() => {
-                    navigate("/auth");
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  Log in
-                </button>
-                <button 
-                  className="mobile-menu-item accent"
-                  onClick={() => {
-                    navigate("/auth");
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  Join for Free
-                </button>
-              </>
+              <div className="hd-mobile-auth">
+                <button className="hd-mobile-login" onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }}>Log in</button>
+                <button className="hd-mobile-signup" onClick={() => { navigate("/auth"); setMobileMenuOpen(false); }}>Sign Up Free</button>
+              </div>
             )}
           </div>
         )}
       </header>
 
       <style>{`
-        /* Header Base Styles */
-        .header {
-          background: rgba(255, 255, 255, 0.98);
-          backdrop-filter: blur(10px);
-          padding: 16px 32px;
-          border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+        /* ── TOKENS ── */
+        :root {
+          --hd-ink:        #0e0f13;
+          --hd-ink-soft:   #3d4154;
+          --hd-ink-muted:  #8b90a8;
+          --hd-surface:    #ffffff;
+          --hd-surface-2:  #f6f6fb;
+          --hd-border:     #e3e3ed;
+          --hd-accent:     #1a56db;
+          --hd-accent-s:   #eef2fd;
+          --hd-gold:       #c9a84c;
+          --hd-green:      #16a34a;
+          --hd-green-s:    #f0fdf4;
+          --hd-error:      #be185d;
+          --hd-font-d:     'Playfair Display', Georgia, serif;
+          --hd-font-b:     'DM Sans', 'Helvetica Neue', sans-serif;
+          --hd-shadow:     0 1px 3px rgba(14,15,19,.06), 0 4px 16px rgba(14,15,19,.06);
+          --hd-shadow-lg:  0 8px 32px rgba(14,15,19,.12), 0 2px 8px rgba(14,15,19,.06);
+          --hd-t:          .18s cubic-bezier(.4,0,.2,1);
+          --hd-r:          10px;
+        }
+
+        /* ── ROOT ── */
+        .hd-root {
           position: sticky;
           top: 0;
           z-index: 1000;
-          transition: all 0.3s ease;
+          background: rgba(255,255,255,.97);
+          backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--hd-border);
+          font-family: var(--hd-font-b);
+          -webkit-font-smoothing: antialiased;
+          transition: box-shadow var(--hd-t), border-color var(--hd-t);
         }
 
-        .header.scrolled {
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-          border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+        .hd-root--scrolled {
+          box-shadow: var(--hd-shadow);
+          border-color: rgba(227,227,237,.9);
         }
 
-        .header-content {
+        .hd-inner {
           display: flex;
           align-items: center;
-          gap: 32px;
-          max-width: 1600px;
+          gap: 28px;
+          max-width: 1400px;
           margin: 0 auto;
+          padding: 0 28px;
+          height: 64px;
         }
 
-        .back-button {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
+        /* ── BACK BUTTON ── */
+        .hd-back {
+          width: 36px; height: 36px;
+          display: flex; align-items: center; justify-content: center;
+          border: 1px solid var(--hd-border);
+          border-radius: var(--hd-r);
           background: transparent;
-          border: 2px solid #e5e7eb;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #374151;
+          color: var(--hd-ink-muted);
           cursor: pointer;
-          transition: all 0.2s ease;
           flex-shrink: 0;
+          transition: color var(--hd-t), border-color var(--hd-t), background var(--hd-t);
         }
+        .hd-back:hover { color: var(--hd-ink); border-color: var(--hd-ink-soft); background: var(--hd-surface-2); }
 
-        .back-button:hover {
-          background: rgba(102, 126, 234, 0.08);
-          border-color: #667eea;
-          color: #667eea;
-        }
-
-        /* Logo Styles */
-        .logo-container {
+        /* ── LOGO ── */
+        .hd-logo {
+          display: flex;
+          align-items: center;
+          gap: 9px;
           cursor: pointer;
-          transition: transform 0.3s ease;
+          flex-shrink: 0;
+          text-decoration: none;
         }
 
-        .logo-container:hover {
-          transform: scale(1.02);
+        .hd-logo-icon {
+          font-size: 20px;
+          filter: drop-shadow(0 0 6px rgba(201,168,76,.5));
+          line-height: 1;
         }
 
-        .logo-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .logo-icon {
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 14px;
-          background: white;
-          box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
-          transition: all 0.3s ease;
-        }
-
-        .logo-icon svg {
-          width: 32px;
-          height: 32px;
-        }
-
-        .logo-text-container {
+        .hd-logo-text {
           display: flex;
           flex-direction: column;
-          gap: 2px;
-        }
-
-        .logo-text {
-          font-size: 22px;
-          font-weight: 800;
           line-height: 1;
-          display: flex;
-          align-items: center;
         }
 
-        .logo-sri {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+        .hd-logo-brand {
+          font-family: var(--hd-font-d);
+          font-size: 17px;
+          font-weight: 800;
+          color: var(--hd-ink);
+          letter-spacing: -0.01em;
         }
 
-        .logo-tech {
-          color: #1f2937;
-        }
-
-        .logo-guru {
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .logo-tagline {
+        .hd-logo-tag {
           font-size: 9px;
-          font-weight: 600;
-          color: #9ca3af;
-          letter-spacing: 1px;
+          font-weight: 700;
+          letter-spacing: .1em;
           text-transform: uppercase;
+          color: var(--hd-gold);
+          margin-top: 1px;
         }
 
-        /* Desktop Navigation */
-        .desktop-nav {
+        /* ── DESKTOP NAV ── */
+        .hd-nav {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 2px;
           flex: 1;
         }
 
-        .nav-dropdown {
-          position: relative;
+        .hd-dd-wrap { position: relative; }
+
+        .hd-nav-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 8px 13px;
+          background: transparent;
+          border: none;
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 13.5px;
+          font-weight: 600;
+          color: var(--hd-ink-soft);
+          cursor: pointer;
+          transition: background var(--hd-t), color var(--hd-t);
+          white-space: nowrap;
+        }
+        .hd-nav-btn:hover,
+        .hd-nav-btn--open { background: var(--hd-surface-2); color: var(--hd-ink); }
+
+        .hd-chevron { transition: transform var(--hd-t); }
+        .hd-chevron--up { transform: rotate(180deg); }
+
+        /* ── MEGA DROPDOWN ── */
+        .hd-mega {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 0;
+          background: var(--hd-surface);
+          border: 1px solid var(--hd-border);
+          border-radius: 16px;
+          box-shadow: var(--hd-shadow-lg);
+          width: min(860px, calc(100vw - 24px));
+          min-width: 0;
+          max-width: 860px;
+          max-height: calc(100vh - 120px);
+          z-index: 2000;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          animation: hd-drop .18s ease both;
         }
 
-        .nav-button {
+        @keyframes hd-drop {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .hd-mega-search {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 18px;
+          border-bottom: 1px solid var(--hd-border);
+          background: var(--hd-surface-2);
+        }
+
+        .hd-search-icon { color: var(--hd-ink-muted); flex-shrink: 0; }
+
+        .hd-search-input {
+          flex: 1;
+          border: none;
+          background: transparent;
+          font-family: var(--hd-font-b);
+          font-size: 13.5px;
+          color: var(--hd-ink);
+          outline: none;
+        }
+        .hd-search-input::placeholder { color: var(--hd-ink-muted); }
+
+        .hd-mega-body {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 0;
+          max-height: none;
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          padding: 20px;
+          gap: 24px;
+        }
+
+        .hd-mega-col { display: flex; flex-direction: column; gap: 4px; }
+
+        .hd-col-label {
+          font-size: 10.5px;
+          font-weight: 700;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          color: var(--hd-ink-muted);
+          margin: 0 0 8px;
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 10px 16px;
-          background: transparent;
-          border: none;
-          border-radius: 10px;
-          font-size: 15px;
+        }
+
+        .hd-col-count {
+          background: var(--hd-surface-2);
+          border: 1px solid var(--hd-border);
+          border-radius: 99px;
+          font-size: 10px;
+          padding: 1px 7px;
           font-weight: 600;
-          color: #374151;
-          cursor: pointer;
-          transition: all 0.2s ease;
+          color: var(--hd-ink-muted);
         }
 
-        .nav-button:hover {
-          background: rgba(102, 126, 234, 0.08);
-          color: #667eea;
-        }
-
-        .dropdown-arrow {
-          transition: transform 0.2s ease;
-        }
-
-        .dropdown-arrow.open {
-          transform: rotate(180deg);
-        }
-
-        /* Mega Dropdown for Courses */
-        .dropdown-mega {
-          position: absolute;
-          top: calc(100% + 12px);
-          left: 0;
-          background: white;
-          min-width: 800px;
-          max-width: 900px;
-          max-height: 600px;
-          border-radius: 20px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-          overflow: hidden;
-          z-index: 2000;
-          animation: slideDown 0.2s ease-out;
-        }
-
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        /* Search in Dropdown */
-        .dropdown-search {
-          padding: 20px 24px;
-          border-bottom: 1px solid #e5e7eb;
-          position: relative;
-          background: #f9fafb;
-        }
-
-        .search-icon {
-          position: absolute;
-          left: 36px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #9ca3af;
-          pointer-events: none;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 12px 16px 12px 40px;
-          border: 2px solid #e5e7eb;
-          border-radius: 12px;
-          font-size: 15px;
-          outline: none;
-          transition: all 0.2s;
-        }
-
-        .search-input:focus {
-          border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        /* Categories Layout */
-        .dropdown-categories {
-          padding: 24px;
-          max-height: 500px;
-          overflow-y: auto;
-          display: grid;
-          gap: 32px;
-        }
-
-        .category-section {
-          border-bottom: 1px solid #f3f4f6;
-          padding-bottom: 24px;
-        }
-
-        .category-section:last-child {
-          border-bottom: none;
-          padding-bottom: 0;
-        }
-
-        .category-title {
-          font-size: 16px;
-          font-weight: 700;
-          color: #111827;
-          margin: 0 0 16px 0;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .category-count {
+        .hd-empty {
           font-size: 13px;
-          color: #6b7280;
-          font-weight: 500;
+          color: var(--hd-ink-muted);
+          padding: 12px 0;
+          font-style: italic;
         }
 
-        /* Course List */
-        .courses-list {
-          display: grid;
-          gap: 12px;
+        .hd-mega-footer {
+          border-top: 1px solid var(--hd-border);
+          padding: 12px 20px;
+          background: var(--hd-surface-2);
         }
 
-        .course-item {
+        .hd-mega-cta {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 9px 18px;
+          background: var(--hd-ink);
+          color: #fff;
+          border: none;
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background var(--hd-t), transform var(--hd-t);
+        }
+        .hd-mega-cta:hover { background: var(--hd-ink-soft); transform: translateY(-1px); }
+
+        /* ── COURSE ROW ── */
+        .hd-course-row {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px;
-          border-radius: 12px;
-          cursor: default;
-          transition: all 0.2s ease;
+          gap: 10px;
+          padding: 8px;
+          border-radius: var(--hd-r);
+          cursor: pointer;
+          border: none;
+          background: transparent;
+          width: 100%;
+          text-align: left;
+          transition: background var(--hd-t);
         }
+        .hd-course-row:hover { background: var(--hd-surface-2); }
 
-        .course-item:hover {
-          background: #f9fafb;
-        }
-
-        .course-image {
-          width: 60px;
-          height: 60px;
-          border-radius: 10px;
+        .hd-course-thumb {
+          width: 36px; height: 36px;
+          border-radius: 8px;
+          background: var(--hd-surface-2);
+          border: 1px solid var(--hd-border);
           overflow: hidden;
           flex-shrink: 0;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-        }
-
-        .course-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .course-placeholder {
-          width: 100%;
-          height: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 24px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
+          font-size: 16px;
         }
+        .hd-course-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-        .course-info {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .course-title {
-          font-size: 14px;
+        .hd-course-info { flex: 1; min-width: 0; }
+        .hd-course-name {
+          font-size: 13px;
           font-weight: 600;
-          color: #111827;
-          margin-bottom: 4px;
+          color: var(--hd-ink);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          display: block;
+        }
+        .hd-course-price { font-size: 11.5px; color: var(--hd-accent); font-weight: 600; margin-top: 1px; display: block; }
+
+        /* ── STANDARD DROPDOWN ── */
+        .hd-dropdown {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 0;
+          background: var(--hd-surface);
+          border: 1px solid var(--hd-border);
+          border-radius: 16px;
+          box-shadow: var(--hd-shadow-lg);
+          min-width: 320px;
+          max-width: 380px;
+          z-index: 2000;
+          overflow: hidden;
+          animation: hd-drop .18s ease both;
         }
 
-        .course-meta {
+        .hd-dd-header {
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 12px;
+          justify-content: space-between;
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--hd-border);
+          background: var(--hd-surface-2);
         }
 
-        .course-category {
-          color: #6b7280;
-          padding: 2px 8px;
-          background: #f3f4f6;
-          border-radius: 4px;
-        }
-
-        .course-price {
-          color: #667eea;
-          font-weight: 600;
-        }
-
-        .view-more-btn {
-          margin-top: 12px;
-          padding: 8px 16px;
-          background: transparent;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
+        .hd-dd-title {
           font-size: 13px;
-          font-weight: 600;
-          color: #667eea;
-          cursor: pointer;
-          transition: all 0.2s;
-          width: 100%;
-        }
-
-        .view-more-btn:hover {
-          background: rgba(102, 126, 234, 0.08);
-          border-color: #667eea;
-        }
-
-        .dropdown-footer {
-          padding: 16px 24px;
-          background: #f9fafb;
-          border-top: 1px solid #e5e7eb;
-        }
-
-        .view-all-courses-btn {
-          width: 100%;
-          padding: 12px 24px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 15px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .view-all-courses-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Regular Dropdown Menu */
-        .dropdown-menu {
-          position: absolute;
-          top: calc(100% + 12px);
-          left: 0;
-          background: white;
-          min-width: 320px;
-          max-width: 400px;
-          border-radius: 16px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-          overflow: hidden;
-          z-index: 2000;
-          animation: slideDown 0.2s ease-out;
-        }
-
-        .dropdown-header {
-          padding: 20px 24px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-
-        .dropdown-title {
-          font-size: 18px;
           font-weight: 700;
-          margin: 0 0 4px 0;
-        }
-
-        .dropdown-subtitle {
-          font-size: 13px;
-          opacity: 0.9;
+          color: var(--hd-ink);
           margin: 0;
         }
 
-        .dropdown-content {
-          max-height: 400px;
-          overflow-y: auto;
+        .hd-dd-count {
+          font-size: 11px;
+          font-weight: 700;
+          padding: 2px 8px;
+          background: var(--hd-surface);
+          border: 1px solid var(--hd-border);
+          border-radius: 99px;
+          color: var(--hd-ink-muted);
         }
 
-        .enrollment-item {
+        .hd-dd-body { max-height: 360px; overflow-y: auto; }
+
+        .hd-dd-loading {
           display: flex;
           align-items: center;
+          gap: 10px;
+          padding: 20px;
+          font-size: 13px;
+          color: var(--hd-ink-muted);
+        }
+
+        .hd-enrollment-row {
+          display: flex;
+          align-items: flex-start;
           gap: 12px;
-          padding: 14px 24px;
-          border-bottom: 1px solid #f3f4f6;
+          width: 100%;
+          padding: 14px 20px;
+          border: none;
+          background: transparent;
+          border-bottom: 1px solid var(--hd-border);
           cursor: pointer;
-          transition: all 0.2s;
+          text-align: left;
+          transition: background var(--hd-t);
         }
+        .hd-enrollment-row:hover { background: var(--hd-surface-2); }
+        .hd-enrollment-row:last-of-type { border-bottom: none; }
 
-        .enrollment-item:hover {
-          background: #f9fafb;
-        }
-
-        .enrolled-badge {
-          width: 32px;
-          height: 32px;
+        .hd-enroll-check {
+          width: 22px; height: 22px;
           border-radius: 50%;
-          background: #10b981;
-          color: white;
+          background: var(--hd-green-s);
+          color: var(--hd-green);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 14px;
+          font-size: 11px;
           font-weight: 700;
           flex-shrink: 0;
+          margin-top: 1px;
         }
 
-        .enrollment-info {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .enrollment-title {
-          font-size: 15px;
+        .hd-enroll-info { flex: 1; min-width: 0; }
+        .hd-enroll-title {
+          font-size: 13px;
           font-weight: 600;
-          color: #111827;
-          margin-bottom: 4px;
+          color: var(--hd-ink);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          margin: 0 0 3px;
         }
+        .hd-enroll-date { font-size: 11.5px; color: var(--hd-ink-muted); margin: 0; }
 
-        .enrollment-date {
-          font-size: 12px;
-          color: #6b7280;
-        }
-
-        .view-all-btn {
-          width: 100%;
-          padding: 14px 24px;
-          background: transparent;
-          border: none;
-          border-top: 1px solid #e5e7eb;
-          font-size: 14px;
-          font-weight: 600;
-          color: #667eea;
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: center;
-        }
-
-        .view-all-btn:hover {
-          background: rgba(102, 126, 234, 0.08);
-        }
-
-        .loading-state,
-        .empty-state {
-          padding: 32px 24px;
-          text-align: center;
-        }
-
-        .spinner {
-          width: 32px;
-          height: 32px;
-          border: 3px solid rgba(102, 126, 234, 0.2);
-          border-top-color: #667eea;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-          margin: 0 auto 12px;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .empty-state p {
-          font-size: 14px;
-          color: #6b7280;
-          margin: 0 0 16px 0;
-        }
-
-        .browse-btn {
-          padding: 10px 20px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .browse-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Right Actions */
-        .right-actions {
+        .hd-dd-footer-btn {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 6px;
+          width: 100%;
+          padding: 13px 20px;
+          background: transparent;
+          border: none;
+          border-top: 1px solid var(--hd-border);
+          font-family: var(--hd-font-b);
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--hd-accent);
+          cursor: pointer;
+          transition: background var(--hd-t);
+        }
+        .hd-dd-footer-btn:hover { background: var(--hd-accent-s); }
+
+        .hd-dd-empty {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          padding: 32px 20px;
+          color: var(--hd-ink-muted);
+          font-size: 13px;
+        }
+        .hd-dd-empty p { margin: 0; }
+        .hd-dd-browse {
+          padding: 8px 16px;
+          background: var(--hd-ink);
+          color: #fff;
+          border: none;
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 12.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background var(--hd-t);
+        }
+        .hd-dd-browse:hover { background: var(--hd-ink-soft); }
+
+        /* ── RIGHT ACTIONS ── */
+        .hd-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-left: auto;
         }
 
-        .icon-button {
+        .hd-icon-btn {
           position: relative;
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          background: transparent;
-          border: 2px solid #e5e7eb;
+          width: 38px; height: 38px;
           display: flex;
           align-items: center;
           justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          color: #374151;
-        }
-
-        .icon-button:hover {
-          background: rgba(102, 126, 234, 0.08);
-          border-color: #667eea;
-          color: #667eea;
-        }
-
-        .cart-badge {
-          position: absolute;
-          top: -8px;
-          right: -8px;
-          background: linear-gradient(135deg, #ef4444, #dc2626);
-          color: white;
-          font-size: 11px;
-          font-weight: 700;
-          padding: 3px 6px;
-          border-radius: 10px;
-          min-width: 20px;
-          text-align: center;
-          box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-        }
-
-        .auth-divider {
-          width: 1px;
-          height: 32px;
-          background: #e5e7eb;
-          margin: 0 4px;
-        }
-
-        .login-btn {
-          padding: 10px 20px;
-          background: white;
-          border: 2px solid #e5e7eb;
-          border-radius: 12px;
-          font-size: 15px;
-          font-weight: 600;
-          color: #374151;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .login-btn:hover {
-          background: #f9fafb;
-          border-color: #667eea;
-          color: #667eea;
-        }
-
-        .signup-btn {
-          padding: 10px 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border: none;
-          border-radius: 12px;
-          font-size: 15px;
-          font-weight: 600;
-          color: white;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .signup-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Profile Dropdown */
-        .profile-dropdown {
-          position: relative;
-        }
-
-        .profile-button {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          border: 2px solid #e5e7eb;
+          border: 1px solid var(--hd-border);
+          border-radius: var(--hd-r);
           background: transparent;
+          color: var(--hd-ink-soft);
           cursor: pointer;
-          overflow: hidden;
-          transition: all 0.2s ease;
+          transition: color var(--hd-t), border-color var(--hd-t), background var(--hd-t);
+        }
+        .hd-icon-btn:hover { color: var(--hd-ink); border-color: var(--hd-ink-soft); background: var(--hd-surface-2); }
+
+        .hd-cart-badge {
+          position: absolute;
+          top: -6px; right: -6px;
+          background: var(--hd-error);
+          color: #fff;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 2px 5px;
+          border-radius: 99px;
+          min-width: 18px;
+          text-align: center;
+          line-height: 1.4;
+          border: 2px solid #fff;
+        }
+
+        .hd-auth-btns { display: flex; align-items: center; gap: 8px; }
+
+        .hd-login-btn {
+          padding: 8px 16px;
+          background: transparent;
+          border: 1px solid var(--hd-border);
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 13.5px;
+          font-weight: 600;
+          color: var(--hd-ink-soft);
+          cursor: pointer;
+          transition: color var(--hd-t), border-color var(--hd-t), background var(--hd-t);
+        }
+        .hd-login-btn:hover { color: var(--hd-ink); border-color: var(--hd-ink-soft); background: var(--hd-surface-2); }
+
+        .hd-signup-btn {
+          padding: 8px 16px;
+          background: var(--hd-ink);
+          color: #fff;
+          border: none;
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background var(--hd-t), transform var(--hd-t);
+          box-shadow: 0 1px 3px rgba(14,15,19,.2);
+        }
+        .hd-signup-btn:hover { background: var(--hd-ink-soft); transform: translateY(-1px); }
+
+        /* ── PROFILE ── */
+        .hd-avatar-btn {
+          width: 36px; height: 36px;
+          border-radius: 50%;
+          border: 1.5px solid var(--hd-border);
+          background: transparent;
           padding: 0;
+          cursor: pointer;
+          overflow: hidden;
+          transition: border-color var(--hd-t), transform var(--hd-t);
         }
+        .hd-avatar-btn:hover { border-color: var(--hd-gold); transform: scale(1.06); }
 
-        .profile-button:hover {
-          border-color: #667eea;
-          transform: scale(1.05);
-        }
-
-        .profile-button img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .profile-avatar {
-          width: 100%;
-          height: 100%;
+        .hd-avatar {
+          width: 100%; height: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          font-size: 18px;
+          background: var(--hd-ink);
+          color: #fff;
+          font-size: 13px;
           font-weight: 700;
+          font-family: var(--hd-font-d);
+          border-radius: 50%;
         }
 
-        .profile-menu {
+        .hd-profile-menu {
           position: absolute;
-          top: calc(100% + 12px);
+          top: calc(100% + 8px);
           right: 0;
-          background: white;
-          min-width: 280px;
+          background: var(--hd-surface);
+          border: 1px solid var(--hd-border);
           border-radius: 16px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-          overflow: hidden;
+          box-shadow: var(--hd-shadow-lg);
+          min-width: 260px;
           z-index: 2000;
-          animation: slideDown 0.2s ease-out;
+          overflow: hidden;
+          animation: hd-drop .18s ease both;
         }
 
-        .profile-menu-header {
+        .hd-pm-header {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 20px 24px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 16px 20px;
+          background: var(--hd-ink);
           cursor: pointer;
+          transition: background var(--hd-t);
         }
+        .hd-pm-header:hover { background: var(--hd-ink-soft); }
 
-        .profile-menu-avatar {
-          width: 48px;
-          height: 48px;
+        .hd-pm-avatar {
+          width: 38px; height: 38px;
           border-radius: 50%;
-          overflow: hidden;
-          border: 3px solid rgba(255, 255, 255, 0.3);
+          background: rgba(255,255,255,.12);
+          border: 1.5px solid rgba(255,255,255,.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: var(--hd-font-d);
+          font-size: 14px;
+          font-weight: 700;
+          color: #fff;
           flex-shrink: 0;
         }
 
-        .profile-menu-avatar img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .profile-menu-info {
-          flex: 1;
-        }
-
-        .profile-name {
-          font-size: 16px;
+        .hd-pm-name {
+          font-size: 13.5px;
           font-weight: 700;
-          color: white;
-          margin-bottom: 2px;
+          color: #fff;
+          margin: 0 0 3px;
         }
 
-        .profile-link {
-          font-size: 13px;
-          color: rgba(255, 255, 255, 0.8);
-          font-weight: 500;
-        }
-
-        .menu-divider {
-          height: 1px;
-          background: #e5e7eb;
-        }
-
-        .menu-items {
-          padding: 8px;
-        }
-
-        .menu-item {
+        .hd-pm-link {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 4px;
+          font-size: 11.5px;
+          color: rgba(255,255,255,.5);
+          margin: 0;
+        }
+
+        .hd-pm-divider { height: 1px; background: var(--hd-border); }
+
+        .hd-pm-items { padding: 6px; }
+
+        .hd-pm-item {
+          display: flex;
+          align-items: center;
+          gap: 9px;
           width: 100%;
-          padding: 12px 16px;
+          padding: 10px 14px;
           background: transparent;
           border: none;
-          border-radius: 10px;
-          font-size: 15px;
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 13.5px;
           font-weight: 600;
-          color: #374151;
+          color: var(--hd-ink-soft);
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: background var(--hd-t), color var(--hd-t);
           text-align: left;
         }
+        .hd-pm-item:hover { background: var(--hd-surface-2); color: var(--hd-ink); }
 
-        .menu-item:hover {
-          background: rgba(102, 126, 234, 0.08);
-          color: #667eea;
+        .hd-pm-item--danger {
+          margin: 4px 6px 6px;
+          width: calc(100% - 12px);
+          color: var(--hd-error);
         }
+        .hd-pm-item--danger:hover { background: rgba(190,24,93,.06); color: var(--hd-error); }
 
-        .menu-item.logout {
-          padding: 16px 24px;
-          color: #ef4444;
-          border-radius: 0;
+        /* ── SPINNER ── */
+        .hd-spinner {
+          display: inline-block;
+          width: 14px; height: 14px;
+          border: 2px solid var(--hd-border);
+          border-top-color: var(--hd-accent);
+          border-radius: 50%;
+          animation: hd-spin .7s linear infinite;
         }
+        @keyframes hd-spin { to { transform: rotate(360deg); } }
 
-        .menu-item.logout:hover {
-          background: rgba(239, 68, 68, 0.08);
-        }
-
-        /* Mobile Menu */
-        .mobile-menu-toggle {
+        /* ── MOBILE TOGGLE ── */
+        .hd-mobile-toggle {
           display: none;
-          width: 44px;
-          height: 44px;
-          background: transparent;
-          border: 2px solid #e5e7eb;
-          border-radius: 12px;
+          width: 36px; height: 36px;
           align-items: center;
           justify-content: center;
+          border: 1px solid var(--hd-border);
+          border-radius: var(--hd-r);
+          background: transparent;
+          color: var(--hd-ink-soft);
           cursor: pointer;
-          color: #374151;
-          transition: all 0.2s;
+          transition: color var(--hd-t), background var(--hd-t);
         }
+        .hd-mobile-toggle:hover { color: var(--hd-ink); background: var(--hd-surface-2); }
 
-        .mobile-menu-toggle:hover {
-          background: rgba(102, 126, 234, 0.08);
-          border-color: #667eea;
-          color: #667eea;
-        }
-
-        .mobile-menu {
+        /* ── MOBILE MENU ── */
+        .hd-mobile-menu {
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          padding: 20px;
-          border-top: 1px solid #e5e7eb;
-          margin-top: 16px;
-          animation: slideDown 0.2s ease-out;
+          gap: 2px;
+          padding: 12px 20px 20px;
+          border-top: 1px solid var(--hd-border);
+          animation: hd-drop .2s ease both;
         }
 
-        .mobile-menu-item {
-          padding: 14px 20px;
+        .hd-mobile-item {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 12px 14px;
           background: transparent;
           border: none;
-          border-radius: 10px;
-          font-size: 16px;
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 14px;
           font-weight: 600;
-          color: #374151;
+          color: var(--hd-ink-soft);
           cursor: pointer;
           text-align: left;
-          transition: all 0.2s;
+          transition: background var(--hd-t), color var(--hd-t);
+          width: 100%;
+        }
+        .hd-mobile-item:hover { background: var(--hd-surface-2); color: var(--hd-ink); }
+        .hd-mobile-item--danger { color: var(--hd-error); }
+        .hd-mobile-item--danger:hover { background: rgba(190,24,93,.06); }
+
+        .hd-mobile-divider { height: 1px; background: var(--hd-border); margin: 6px 0; }
+
+        .hd-mobile-auth { display: flex; gap: 10px; margin-top: 4px; }
+
+        .hd-mobile-login {
+          flex: 1;
+          padding: 11px;
+          background: transparent;
+          border: 1px solid var(--hd-border);
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--hd-ink-soft);
+          cursor: pointer;
         }
 
-        .mobile-menu-item:hover {
-          background: rgba(102, 126, 234, 0.08);
-          color: #667eea;
+        .hd-mobile-signup {
+          flex: 1;
+          padding: 11px;
+          background: var(--hd-ink);
+          color: #fff;
+          border: none;
+          border-radius: var(--hd-r);
+          font-family: var(--hd-font-b);
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
         }
 
-        .mobile-divider {
-          height: 1px;
-          background: #e5e7eb;
-          margin: 8px 0;
-        }
-
-        .mobile-menu-item.primary {
-          background: white;
-          border: 2px solid #e5e7eb;
-          text-align: center;
-        }
-
-        .mobile-menu-item.accent {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          text-align: center;
-        }
-
-        .mobile-menu-item.accent:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-          .dropdown-mega {
-            min-width: 600px;
-          }
-        }
-
+        /* ── RESPONSIVE ── */
         @media (max-width: 1024px) {
-          .desktop-nav {
-            display: none;
-          }
-
-          .logo-tagline {
-            display: none;
-          }
-
-          .mobile-menu-toggle {
-            display: flex;
-          }
-
-          .auth-divider {
-            display: none;
-          }
-
-          .login-btn,
-          .signup-btn {
-            display: none;
-          }
+          .hd-nav { display: none; }
+          .hd-mobile-toggle { display: flex; }
+          .hd-auth-btns { display: none; }
         }
 
-        @media (max-width: 768px) {
-          .header {
-            padding: 12px 16px;
-          }
-
-          .header-content {
-            gap: 16px;
-          }
-
-          .logo-icon {
-            width: 40px;
-            height: 40px;
-          }
-
-          .logo-icon svg {
-            width: 28px;
-            height: 28px;
-          }
-
-          .logo-text {
-            font-size: 18px;
-          }
-
-          .dropdown-mega {
-            left: 50%;
-            transform: translateX(-50%);
-            min-width: 90vw;
-            max-width: 95vw;
-          }
-
-          .dropdown-categories {
-            padding: 16px;
-          }
-
-          .course-item {
-            padding: 10px;
-          }
-
-          .course-image {
-            width: 50px;
-            height: 50px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .back-button {
-            width: 40px;
-            height: 40px;
-          }
-
-          .icon-button {
-            width: 40px;
-            height: 40px;
-          }
-
-          .profile-button {
-            width: 40px;
-            height: 40px;
-          }
+        @media (max-width: 600px) {
+          .hd-inner { padding: 0 16px; gap: 16px; }
+          .hd-logo-tag { display: none; }
         }
       `}</style>
     </>
   );
 };
 
+/* ─────────────────────────────────────────────
+   COURSE ROW (used in mega dropdown)
+───────────────────────────────────────────── */
+const CourseRow: React.FC<{ course: { id: number; title: string; imageUrl?: string; price?: number }; onClick: () => void }> = ({ course, onClick }) => (
+  <button className="hd-course-row" onClick={onClick}>
+    <span className="hd-course-thumb">
+      {course.imageUrl ? <img src={course.imageUrl} alt={course.title} /> : "📚"}
+    </span>
+    <span className="hd-course-info">
+      <span className="hd-course-name">{course.title}</span>
+      {course.price !== undefined && <span className="hd-course-price">₹{course.price.toFixed(2)}</span>}
+    </span>
+  </button>
+);
+
 export default Header;
-
-

@@ -80,7 +80,7 @@ export const CartPage: React.FC = () => {
         key,
         amount: firstItem.course.price * 100,
         currency: "INR",
-        name: "Lumina LMS",
+        name: "Srinu tech Guru LMS",
         description: `Enrollment: ${firstItem.course.title}`,
         order_id: orderId,
         handler: async (response: any) => {
@@ -146,7 +146,7 @@ export const CartPage: React.FC = () => {
                   <img src={item.course?.imageUrl} alt="" style={styles.courseImg} />
                   <div style={styles.itemDetails}>
                     <h3 style={styles.courseTitle}>{item.course?.title}</h3>
-                    <p style={styles.instructor}>By Lumina Instructor</p>
+                    <p style={styles.instructor}>By Srinu tech Guru Instructor</p>
                   </div>
                   <div style={styles.priceSection}>
                     <span style={styles.priceTag}>₹{item.course?.price}</span>

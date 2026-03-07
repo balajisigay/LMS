@@ -1,5 +1,4 @@
 import React from 'react';
-import { colors, spacing, fontSize, borderRadius } from '../styles/colors';
 import InstructorImage from "../assets/instructorimage.png";
 
 /**
@@ -69,7 +68,7 @@ export const InstructorSection: React.FC<InstructorSectionProps> = ({ onPress })
             
             {/* Subtitle/Description */}
             <p style={styles.modernSubtitle}>
-              Instructors from around the world teach millions of learners on Lumina. 
+              Instructors from around the world teach millions of learners on Srinu tech Guru. 
               We provide the tools and skills to teach what you love.
             </p>
             

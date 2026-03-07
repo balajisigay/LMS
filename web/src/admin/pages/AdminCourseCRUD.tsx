@@ -8,7 +8,6 @@ import {
   HiChevronRight,
   HiPlus,
   HiX,
-  HiUpload,
   HiCheckCircle,
   HiExclamationCircle
 } from 'react-icons/hi';

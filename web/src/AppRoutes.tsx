@@ -19,7 +19,7 @@ import { Chatbot } from "./components/Chatbot";
 
 export const AppRoutes: React.FC = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Chatbot />
       <Routes>
         <Route path="/" element={<LandingPage />} />

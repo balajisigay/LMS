@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   HiHome, HiUsers, HiAcademicCap, HiMail, HiCreditCard, HiUserGroup,
-  HiSearch, HiTrash, HiPencil, HiEye, HiChevronLeft, HiChevronRight,
+  HiSearch, HiTrash, HiPencil, HiChevronLeft, HiChevronRight,
   HiPlus, HiX, HiCheckCircle, HiExclamationCircle, HiMenu, HiLogout,
-  HiTrendingUp, HiClock, HiStar, HiRefresh, HiCurrencyRupee
+  HiRefresh, HiCurrencyRupee
 } from 'react-icons/hi';
 import { API_BASE_URL } from '../../config/api';
 
@@ -481,7 +481,6 @@ const CoursesTab: React.FC<{showNotification: (type: 'success' | 'error', messag
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [formData, setFormData] = useState<CourseFormData>({
     title: '', description: '', category: 'Development', price: 0,
     imageUrl: '', instructorId: 0, whatYouLearn: '', includes: '', companies: ''
@@ -528,7 +527,6 @@ const CoursesTab: React.FC<{showNotification: (type: 'success' | 'error', messag
 
   const handleEditCourse = (course: Course) => {
     setModalMode('edit');
-    setSelectedCourse(course);
     setFormData({
       title: course.title, description: course.description, category: course.category,
       price: course.price, imageUrl: course.imageUrl, instructorId: course.instructorId,

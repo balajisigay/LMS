@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  HiArrowLeft, HiPencil, HiTrash, HiPlus, HiCheckCircle,
+  HiPencil, HiTrash, HiPlus, HiCheckCircle,
   HiExclamationCircle, HiVideoCamera, HiSave
 } from 'react-icons/hi';
 import { API_ADMIN_BASE_URL, API_BASE_URL } from '../../config/api';

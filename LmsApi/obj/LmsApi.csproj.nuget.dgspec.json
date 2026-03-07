@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj": {}
+    "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj": {
+    "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj",
+        "projectUniqueName": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj",
         "projectName": "LmsApi",
-        "projectPath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj",
+        "projectPath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj",
         "packagesPath": "C:\\Users\\Neumeric\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\obj\\",
+        "outputPath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Neumeric\\AppData\\Roaming\\NuGet\\NuGet.Config"

@@ -947,3 +947,5 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#ef4444',
     },
 };
+
+export default AdminCourseContentManager;

@@ -33,7 +33,7 @@ export const MyLearningPage: React.FC = () => {
       
       // Fetch enrollments and progress in parallel
       const [enrollmentsData, progressData] = await Promise.all([
-        getEnrollments(user.userId),
+        getEnrollments(String(user.userId)),
         getLearningProgress(String(user.userId))
       ]);
       

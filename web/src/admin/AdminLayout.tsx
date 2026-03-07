@@ -111,10 +111,13 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'sticky',
     top: 0,
     height: '100vh',
+    overflow: 'hidden',        // ✅ FIX: clips content during collapse, prevents bleed
+    flexShrink: 0,             // ✅ FIX: sidebar won't shrink and expose parent bg
   },
   sidebarHeader: {
     padding: '24px',
     borderBottom: '1px solid rgba(255,255,255,0.1)',
+    background: '#1f2937',     // ✅ FIX: explicitly set, never inherits white
   },
   logo: {
     display: 'flex',
@@ -132,11 +135,14 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '20px',
     fontWeight: 'bold',
+    flexShrink: 0,             // ✅ FIX: icon never resizes during width animation
   },
   logoText: {
     fontSize: '18px',
     fontWeight: 700,
     color: 'white',
+    whiteSpace: 'nowrap',      // ✅ FIX: text won't wrap and push layout during animation
+    overflow: 'hidden',
   },
   nav: {
     flex: 1,
@@ -144,6 +150,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
+    background: '#1f2937',     // ✅ FIX: explicitly set on nav too
+    overflow: 'hidden',
   },
   navItem: {
     display: 'flex',
@@ -161,6 +169,8 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     width: '100%',
     textAlign: 'left',
+    whiteSpace: 'nowrap',      // ✅ FIX: prevents label wrapping during collapse
+    overflow: 'hidden',
   },
   navItemActive: {
     background: 'linear-gradient(135deg, #667eea, #764ba2)',
@@ -169,8 +179,11 @@ const styles: Record<string, React.CSSProperties> = {
   navIcon: {
     display: 'flex',
     alignItems: 'center',
+    flexShrink: 0,             // ✅ FIX: icon stays put during collapse animation
   },
-  navLabel: {},
+  navLabel: {
+    overflow: 'hidden',
+  },
   logoutButton: {
     margin: '16px',
     padding: '12px 16px',
@@ -185,11 +198,15 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '12px',
     justifyContent: 'center',
+    whiteSpace: 'nowrap',      // ✅ FIX: logout text won't wrap when sidebar narrows
+    overflow: 'hidden',
   },
   main: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
+    background: '#f3f4f6',     // ✅ FIX: explicit bg so it never flashes white
+    minWidth: 0,               // ✅ FIX: prevents flex overflow bleed onto sidebar
   },
   header: {
     background: 'white',
@@ -245,6 +262,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     overflow: 'auto',
     padding: '32px',
+    background: '#f3f4f6',     // ✅ FIX: locked to grey — never goes white
   },
 };
 

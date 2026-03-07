@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { getAboutInfo, AboutInfo } from "../../../src/api/aboutService";
-import { 
-  HiUserGroup, 
-  HiAcademicCap, 
-  HiChartBar, 
+import {
+  HiUserGroup,
+  HiAcademicCap,
+  HiChartBar,
   HiLightningBolt,
   HiSparkles,
   HiHeart,
@@ -18,14 +18,14 @@ import {
   HiClock,
   HiBeaker,
   HiCode,
-  HiArrowRight
+  HiArrowRight,
 } from "react-icons/hi";
 
 export const AboutPage: React.FC = () => {
   const navigate = useNavigate();
   const [about, setAbout] = useState<AboutInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'mission' | 'vision' | 'values'>('mission');
+  const [activeTab, setActiveTab] = useState<"mission" | "vision" | "values">("mission");
 
   useEffect(() => {
     getAboutInfo()
@@ -38,1334 +38,1098 @@ export const AboutPage: React.FC = () => {
     return (
       <>
         <Header />
-        <div style={styles.loadingContainer}>
-          <div style={styles.spinnerContainer}>
-            <div style={styles.spinner}></div>
-            <div style={styles.spinnerGlow}></div>
-          </div>
-          <p style={styles.loadingText}>Loading SrinutechGuru...</p>
-          <p style={styles.loadingSubtext}>Preparing your learning experience</p>
+        <div className="ab-loading">
+          <span className="ab-loader" />
+          <p className="ab-loading-title">Srinu tech Guru</p>
+          <p className="ab-loading-sub">Preparing your experience…</p>
         </div>
+        <AboutStyles />
       </>
     );
   }
 
   if (!about) return null;
 
+  const tabs = [
+    { id: "mission", label: "Mission", icon: <HiHeart size={16} /> },
+    { id: "vision",  label: "Vision",  icon: <HiSparkles size={16} /> },
+    { id: "values",  label: "Values",  icon: <HiCheckCircle size={16} /> },
+  ] as const;
+
+  const features = [
+    {
+      n: "01", icon: <HiCode size={24} />, title: "Industry-Relevant Curriculum",
+      text: "Learn cutting-edge technologies used by leading companies. Our curriculum is continuously updated to reflect current industry standards and best practices.",
+      tag: "Updated monthly", tagIcon: <HiCheckCircle size={13} />, tagColor: "var(--ab-green)",
+    },
+    {
+      n: "02", icon: <HiAcademicCap size={24} />, title: "World-Class Instructors",
+      text: "Learn from industry veterans with decades of combined experience. Our instructors are practitioners who bring real-world insight to every lesson.",
+      tag: "Expert mentors", tagIcon: <HiStar size={13} />, tagColor: "var(--ab-amber)",
+    },
+    {
+      n: "03", icon: <HiBeaker size={24} />, title: "Hands-On Projects",
+      text: "Build a portfolio of real-world projects. Every course includes practical assignments designed to simulate actual workplace scenarios.",
+      tag: "100+ projects", tagIcon: <HiLightningBolt size={13} />, tagColor: "var(--ab-rose)",
+    },
+    {
+      n: "04", icon: <HiUserGroup size={24} />, title: "Thriving Community",
+      text: "Join a global network of ambitious learners and professionals. Collaborate, share knowledge, and build connections that last beyond the courses.",
+      tag: "Active community", tagIcon: <HiUserGroup size={13} />, tagColor: "var(--ab-blue)",
+    },
+    {
+      n: "05", icon: <HiClock size={24} />, title: "Flexible Learning",
+      text: "Learn at your own pace with lifetime access to all course materials. Our flexible format fits seamlessly into any schedule.",
+      tag: "Learn anytime", tagIcon: <HiClock size={13} />, tagColor: "var(--ab-violet)",
+    },
+    {
+      n: "06", icon: <HiShieldCheck size={24} />, title: "Verified Certificates",
+      text: "Earn industry-recognised certificates upon completion. Showcase achievements on LinkedIn and your résumé to stand out to employers.",
+      tag: "Verified certificates", tagIcon: <HiShieldCheck size={13} />, tagColor: "var(--ab-green)",
+    },
+  ];
+
+  const testimonials = [
+    {
+      initials: "RK", name: "Rajesh Kumar", title: "Full Stack Developer",
+      text: "Srinu tech Guru transformed my career. The courses are incredibly well-structured and the instructors genuinely care about student success. Within 6 months I landed my dream job.",
+    },
+    {
+      initials: "PS", name: "Priya Sharma", title: "Data Analyst",
+      text: "The hands-on projects and real-world scenarios make all the difference. I feel confident applying what I've learned immediately at work. Best career investment I've made.",
+    },
+    {
+      initials: "AP", name: "Arun Patel", title: "Product Manager",
+      text: "Outstanding platform with exceptional content quality. The community support is incredible and the flexible format allowed me to upskill while working full-time.",
+    },
+  ];
+
+  const values = [
+    { icon: <HiShieldCheck size={20} />, title: "Integrity", text: "Honest, transparent, and ethical in all we do" },
+    { icon: <HiBeaker size={20} />,      title: "Innovation", text: "Constantly evolving and improving our platform" },
+    { icon: <HiHeart size={20} />,       title: "Excellence", text: "Delivering only the highest-quality content" },
+    { icon: <HiGlobeAlt size={20} />,    title: "Inclusivity", text: "Making education accessible to everyone" },
+  ];
+
   return (
     <>
       <Header />
 
-      {/* Hero Section with Premium Branding */}
-      <section style={styles.hero}>
-        <div style={styles.heroContent}>
-          {/* Animated Background Elements */}
-          <div className="bg-shape-1" style={styles.bgShape1}></div>
-          <div className="bg-shape-2" style={styles.bgShape2}></div>
-          <div className="bg-shape-3" style={styles.bgShape3}></div>
-          <div style={styles.gridPattern}></div>
+      {/* ══════════════════════════════════════
+          HERO
+      ══════════════════════════════════════ */}
+      <section className="ab-hero">
+        {/* Subtle grid texture */}
+        <div className="ab-hero-grid" />
 
-          {/* Premium Logo */}
-          <div style={styles.logoContainer}>
-            <div className="logo-wrapper" style={styles.logoIconContainer}>
-              <svg style={styles.logoSvg} viewBox="0 0 100 100" fill="none">
-                {/* Outer Hexagon */}
-                <path
-                  d="M50 5L90 27.5V72.5L50 95L10 72.5V27.5L50 5Z"
-                  fill="url(#gradient1)"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                {/* Inner Design */}
-                <circle cx="50" cy="50" r="18" fill="white" opacity="0.95" />
-                <path
-                  d="M50 35L60 45L50 55L40 45L50 35Z"
-                  fill="url(#gradient2)"
-                />
-                <circle cx="50" cy="50" r="8" fill="white" />
-                <circle cx="50" cy="50" r="4" fill="url(#gradient1)" />
-                
-                <defs>
-                  <linearGradient id="gradient1" x1="10" y1="5" x2="90" y2="95">
-                    <stop offset="0%" stopColor="#667eea" />
-                    <stop offset="50%" stopColor="#764ba2" />
-                    <stop offset="100%" stopColor="#f093fb" />
-                  </linearGradient>
-                  <linearGradient id="gradient2" x1="40" y1="35" x2="60" y2="55">
-                    <stop offset="0%" stopColor="#667eea" />
-                    <stop offset="100%" stopColor="#764ba2" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div style={styles.logoGlow}></div>
-            </div>
-          </div>
+        <div className="ab-hero-inner">
+          {/* Eyebrow */}
+          <p className="ab-eyebrow">Online Learning Platform</p>
 
-          {/* Brand Name with Advanced Typography */}
-          <h1 style={styles.brandName}>
-            <span style={styles.logoSrinu}>Srinu</span>
-            <span style={styles.logoTech}>tech</span>
-            <span style={styles.logoGuru}>Guru</span>
+          {/* Wordmark */}
+          <h1 className="ab-wordmark">
+            <span className="ab-w-white">Srinu tech Guru</span>
+            <span className="ab-w-gold"> Learning</span>
           </h1>
 
-          {/* Subtitle */}
-          <p style={styles.subtitle}>Where Learning Meets Excellence</p>
+          <p className="ab-hero-sub">Where Learning Meets Excellence</p>
+          <p className="ab-tagline">{about.tagline}</p>
 
-          {/* Tagline */}
-          <p style={styles.tagline}>{about.tagline}</p>
-          
-          {/* Feature Badges with Icons */}
-          <div style={styles.badges}>
-            <div className="badge-animated" style={styles.badge}>
-              <HiSparkles size={18} />
-              <span>Transform Skills</span>
-            </div>
-            <div className="badge-animated" style={{...styles.badge, animationDelay: '0.1s'}}>
-              <HiTrendingUp size={18} />
-              <span>Accelerate Growth</span>
-            </div>
-            <div className="badge-animated" style={{...styles.badge, animationDelay: '0.2s'}}>
-              <HiLightningBolt size={18} />
-              <span>Excel Career</span>
-            </div>
+          {/* Pill badges */}
+          <div className="ab-pill-row">
+            <span className="ab-pill"><HiSparkles size={14} /> Transform Skills</span>
+            <span className="ab-pill"><HiTrendingUp size={14} /> Accelerate Growth</span>
+            <span className="ab-pill"><HiLightningBolt size={14} /> Excel Career</span>
           </div>
 
-          {/* Trust Indicators */}
-          <div style={styles.trustBadges}>
-            <div style={styles.trustItem}>
-              <HiShieldCheck size={20} />
-              <span>Certified Programs</span>
-            </div>
-            <div style={styles.trustDivider}>•</div>
-            <div style={styles.trustItem}>
-              <HiGlobeAlt size={20} />
-              <span>Global Community</span>
-            </div>
-            <div style={styles.trustDivider}>•</div>
-            <div style={styles.trustItem}>
-              <HiStar size={20} />
-              <span>Top Rated Platform</span>
-            </div>
+          {/* Trust strip */}
+          <div className="ab-trust-strip">
+            <span className="ab-trust-item"><HiShieldCheck size={15} /> Certified Programs</span>
+            <span className="ab-trust-dot" />
+            <span className="ab-trust-item"><HiGlobeAlt size={15} /> Global Community</span>
+            <span className="ab-trust-dot" />
+            <span className="ab-trust-item"><HiStar size={15} /> Top Rated Platform</span>
           </div>
         </div>
+
+        {/* Decorative rings */}
+        <div className="ab-ring ab-ring-1" />
+        <div className="ab-ring ab-ring-2" />
       </section>
 
-      {/* Stats Cards with Enhanced Design */}
-      <section style={styles.statsSection}>
-        <div style={styles.statsContainer}>
-          <div className="stat-card-hover" style={styles.statCard}>
-            <div style={styles.statCardInner}>
-              <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #667eea, #764ba2)'}}>
-                <HiUserGroup size={36} />
+      {/* ══════════════════════════════════════
+          STATS  (overlap hero)
+      ══════════════════════════════════════ */}
+      <div className="ab-stats-wrap">
+        <div className="ab-stats-grid">
+          {[
+            { icon: <HiUserGroup size={28} />, num: `${about.stats.activeLearners.toLocaleString()}+`, label: "Active Learners",  desc: "Students worldwide", badge: "+15% this month", color: "var(--ab-accent)" },
+            { icon: <HiAcademicCap size={28} />, num: `${about.stats.courses}+`,   label: "Premium Courses",  desc: "Expert-crafted paths", badge: "100+ new this year", color: "var(--ab-rose)" },
+            { icon: <HiChartBar size={28} />,    num: `${about.stats.satisfaction}%`, label: "Satisfaction Rate", desc: "Highly rated by community", badge: "4.9 / 5 avg rating", color: "var(--ab-green)" },
+          ].map((s, i) => (
+            <div className="ab-stat-card" key={i}>
+              <div className="ab-stat-icon" style={{ background: s.color }}>
+                {s.icon}
               </div>
-              <div style={styles.statContent}>
-                <h2 style={styles.statNumber}>{about.stats.activeLearners.toLocaleString()}+</h2>
-                <p style={styles.statLabel}>Active Learners</p>
-                <p style={styles.statDesc}>Students worldwide trust our platform</p>
+              <div className="ab-stat-body">
+                <p className="ab-stat-num">{s.num}</p>
+                <p className="ab-stat-label">{s.label}</p>
+                <p className="ab-stat-desc">{s.desc}</p>
               </div>
-              <div style={styles.statBadge}>
-                <HiTrendingUp size={14} />
-                <span>+15% this month</span>
-              </div>
+              <span className="ab-stat-badge">{s.badge}</span>
             </div>
-          </div>
-
-          <div className="stat-card-hover" style={{...styles.statCard, animationDelay: '0.1s'}}>
-            <div style={styles.statCardInner}>
-              <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #f093fb, #f5576c)'}}>
-                <HiAcademicCap size={36} />
-              </div>
-              <div style={styles.statContent}>
-                <h2 style={styles.statNumber}>{about.stats.courses}+</h2>
-                <p style={styles.statLabel}>Premium Courses</p>
-                <p style={styles.statDesc}>Expert-crafted learning paths</p>
-              </div>
-              <div style={styles.statBadge}>
-                <HiCode size={14} />
-                <span>100+ new</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card-hover" style={{...styles.statCard, animationDelay: '0.2s'}}>
-            <div style={styles.statCardInner}>
-              <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #43e97b, #38f9d7)'}}>
-                <HiChartBar size={36} />
-              </div>
-              <div style={styles.statContent}>
-                <h2 style={styles.statNumber}>{about.stats.satisfaction}%</h2>
-                <p style={styles.statLabel}>Satisfaction Rate</p>
-                <p style={styles.statDesc}>Highly rated by our community</p>
-              </div>
-              <div style={styles.statBadge}>
-                <HiStar size={14} />
-                <span>4.9/5 rating</span>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* Mission, Vision, Values Tabs */}
-      <section style={styles.tabSection}>
-        <div style={styles.contentWrapper}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Who We Are</h2>
-            <p style={styles.sectionSubtitle}>
-              Discover the principles and purpose that drive SrinutechGuru
-            </p>
+      {/* ══════════════════════════════════════
+          MISSION / VISION / VALUES TABS
+      ══════════════════════════════════════ */}
+      <section className="ab-section ab-section--light">
+        <div className="ab-container">
+          <div className="ab-section-header">
+            <p className="ab-section-eyebrow">Who We Are</p>
+            <h2 className="ab-section-title">Purpose & Principles</h2>
+            <p className="ab-section-sub">Discover what drives Srinu tech Guru forward</p>
           </div>
 
-          <div style={styles.tabContainer}>
-            <div style={styles.tabButtons}>
+          {/* Tab bar */}
+          <div className="ab-tab-bar">
+            {tabs.map((t) => (
               <button
-                style={{
-                  ...styles.tabButton,
-                  ...(activeTab === 'mission' ? styles.tabButtonActive : {}),
-                }}
-                onClick={() => setActiveTab('mission')}
+                key={t.id}
+                className={`ab-tab${activeTab === t.id ? " ab-tab--active" : ""}`}
+                onClick={() => setActiveTab(t.id)}
               >
-                <HiHeart size={20} />
-                Our Mission
+                {t.icon}
+                {t.label}
               </button>
-              <button
-                style={{
-                  ...styles.tabButton,
-                  ...(activeTab === 'vision' ? styles.tabButtonActive : {}),
-                }}
-                onClick={() => setActiveTab('vision')}
-              >
-                <HiSparkles size={20} />
-                Our Vision
-              </button>
-              <button
-                style={{
-                  ...styles.tabButton,
-                  ...(activeTab === 'values' ? styles.tabButtonActive : {}),
-                }}
-                onClick={() => setActiveTab('values')}
-              >
-                <HiCheckCircle size={20} />
-                Our Values
-              </button>
-            </div>
+            ))}
+          </div>
 
-            <div style={styles.tabContent}>
-              {activeTab === 'mission' && (
-                <div className="fade-in" style={styles.tabPane}>
-                  <div style={styles.tabPaneIcon}>
-                    <HiHeart size={48} />
-                  </div>
-                  <h3 style={styles.tabPaneTitle}>Empowering Through Education</h3>
-                  <p style={styles.tabPaneText}>
-                    At SrinutechGuru, our mission is to democratize education by providing world-class learning experiences 
-                    that empower individuals to achieve their full potential. We believe that quality education should be 
-                    accessible to everyone, regardless of their background or location.
-                  </p>
-                  <p style={styles.tabPaneText}>
-                    We're committed to bridging the gap between academic knowledge and industry requirements, ensuring our 
-                    learners are equipped with practical, job-ready skills that make them stand out in today's competitive market.
-                  </p>
+          {/* Tab panel */}
+          <div className="ab-tab-panel">
+            {activeTab === "mission" && (
+              <div className="ab-tab-content ab-fade">
+                <div className="ab-tab-icon ab-tab-icon--rose"><HiHeart size={26} /></div>
+                <h3 className="ab-tab-title">Empowering Through Education</h3>
+                <p className="ab-tab-text">
+                  Our mission is to democratise education by providing world-class learning experiences that empower
+                  individuals to achieve their full potential. We believe quality education should be accessible to
+                  everyone, regardless of background or location.
+                </p>
+                <p className="ab-tab-text">
+                  We're committed to bridging the gap between academic knowledge and industry requirements, ensuring
+                  learners are equipped with practical, job-ready skills that make them stand out in today's market.
+                </p>
+              </div>
+            )}
+            {activeTab === "vision" && (
+              <div className="ab-tab-content ab-fade">
+                <div className="ab-tab-icon ab-tab-icon--amber"><HiSparkles size={26} /></div>
+                <h3 className="ab-tab-title">Building Tomorrow's Leaders</h3>
+                <p className="ab-tab-text">
+                  We envision a world where continuous learning is the norm, and every individual has the tools to
+                  transform their career and life. Srinu tech Guru aims to be the global leader in online education, recognised
+                  for innovative teaching methods and exceptional learning outcomes.
+                </p>
+                <p className="ab-tab-text">
+                  Our vision extends beyond courses — we're creating a thriving ecosystem of learners, educators, and
+                  industry professionals who collaborate, innovate, and grow together.
+                </p>
+              </div>
+            )}
+            {activeTab === "values" && (
+              <div className="ab-tab-content ab-fade">
+                <div className="ab-tab-icon ab-tab-icon--blue"><HiCheckCircle size={26} /></div>
+                <h3 className="ab-tab-title">Principles That Guide Us</h3>
+                <div className="ab-values-grid">
+                  {values.map((v, i) => (
+                    <div className="ab-value-box" key={i}>
+                      <span className="ab-value-icon">{v.icon}</span>
+                      <h4 className="ab-value-title">{v.title}</h4>
+                      <p className="ab-value-text">{v.text}</p>
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              {activeTab === 'vision' && (
-                <div className="fade-in" style={styles.tabPane}>
-                  <div style={styles.tabPaneIcon}>
-                    <HiSparkles size={48} />
-                  </div>
-                  <h3 style={styles.tabPaneTitle}>Building Tomorrow's Leaders</h3>
-                  <p style={styles.tabPaneText}>
-                    We envision a world where continuous learning is the norm, and every individual has the tools and 
-                    resources to transform their career and life. SrinutechGuru aims to be the global leader in online 
-                    education, recognized for our innovative teaching methods and exceptional learning outcomes.
-                  </p>
-                  <p style={styles.tabPaneText}>
-                    Our vision extends beyond just courses – we're creating a thriving ecosystem of learners, educators, 
-                    and industry professionals who collaborate, innovate, and grow together.
-                  </p>
-                </div>
-              )}
-
-              {activeTab === 'values' && (
-                <div className="fade-in" style={styles.tabPane}>
-                  <div style={styles.tabPaneIcon}>
-                    <HiCheckCircle size={48} />
-                  </div>
-                  <h3 style={styles.tabPaneTitle}>Principles That Guide Us</h3>
-                  <div style={styles.valuesGrid}>
-                    <div style={styles.valueBox}>
-                      <HiShieldCheck size={24} color="#667eea" />
-                      <h4 style={styles.valueBoxTitle}>Integrity</h4>
-                      <p style={styles.valueBoxText}>Honest, transparent, and ethical in all we do</p>
-                    </div>
-                    <div style={styles.valueBox}>
-                      <HiBeaker size={24} color="#667eea" />
-                      <h4 style={styles.valueBoxTitle}>Innovation</h4>
-                      <p style={styles.valueBoxText}>Constantly evolving and improving our platform</p>
-                    </div>
-                    <div style={styles.valueBox}>
-                      <HiHeart size={24} color="#667eea" />
-                      <h4 style={styles.valueBoxTitle}>Excellence</h4>
-                      <p style={styles.valueBoxText}>Delivering only the highest quality content</p>
-                    </div>
-                    <div style={styles.valueBox}>
-                      <HiGlobeAlt size={24} color="#667eea" />
-                      <h4 style={styles.valueBoxTitle}>Inclusivity</h4>
-                      <p style={styles.valueBoxText}>Making education accessible to everyone</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Features Section with Premium Design */}
-      <section style={styles.featuresSection}>
-        <div style={styles.contentWrapper}>
-          <div style={styles.sectionHeader}>
-            <div style={styles.sectionBadge}>
-              <HiLightningBolt size={20} />
-              <span>Why Choose Us</span>
-            </div>
-            <h2 style={styles.sectionTitle}>The SrinutechGuru Advantage</h2>
-            <p style={styles.sectionSubtitle}>
-              Experience learning that's designed for real-world success
-            </p>
+      {/* ══════════════════════════════════════
+          FEATURES
+      ══════════════════════════════════════ */}
+      <section className="ab-section ab-section--white">
+        <div className="ab-container">
+          <div className="ab-section-header">
+            <p className="ab-section-eyebrow">Why Choose Us</p>
+            <h2 className="ab-section-title">The Srinu tech Guru Advantage</h2>
+            <p className="ab-section-sub">Learning designed for real-world success</p>
           </div>
 
-          <div style={styles.featuresGrid}>
-            <div className="feature-card-hover" style={styles.featureCard}>
-              <div style={styles.featureNumber}>01</div>
-              <div style={styles.featureIcon}>
-                <HiCode size={32} />
+          <div className="ab-features-grid">
+            {features.map((f, i) => (
+              <div className="ab-feature-card" key={i}>
+                <span className="ab-feature-num">{f.n}</span>
+                <div className="ab-feature-icon">{f.icon}</div>
+                <h3 className="ab-feature-title">{f.title}</h3>
+                <p className="ab-feature-text">{f.text}</p>
+                <div className="ab-feature-tag" style={{ color: f.tagColor }}>
+                  {f.tagIcon}
+                  <span>{f.tag}</span>
+                </div>
               </div>
-              <h3 style={styles.featureTitle}>Industry-Relevant Curriculum</h3>
-              <p style={styles.featureText}>
-                Learn cutting-edge technologies and frameworks used by Fortune 500 companies. Our curriculum is 
-                continuously updated to reflect the latest industry trends and best practices.
-              </p>
-              <div style={styles.featureFooter}>
-                <HiCheckCircle size={16} color="#10B981" />
-                <span>Updated monthly</span>
-              </div>
-            </div>
-
-            <div className="feature-card-hover" style={styles.featureCard}>
-              <div style={styles.featureNumber}>02</div>
-              <div style={styles.featureIcon}>
-                <HiAcademicCap size={32} />
-              </div>
-              <h3 style={styles.featureTitle}>World-Class Instructors</h3>
-              <p style={styles.featureText}>
-                Learn directly from industry veterans with decades of combined experience. Our instructors are 
-                not just teachers – they're practitioners who bring real-world insights to every lesson.
-              </p>
-              <div style={styles.featureFooter}>
-                <HiStar size={16} color="#F59E0B" />
-                <span>Expert mentors</span>
-              </div>
-            </div>
-
-            <div className="feature-card-hover" style={styles.featureCard}>
-              <div style={styles.featureNumber}>03</div>
-              <div style={styles.featureIcon}>
-                <HiBeaker size={32} />
-              </div>
-              <h3 style={styles.featureTitle}>Hands-On Projects</h3>
-              <p style={styles.featureText}>
-                Build a portfolio of real-world projects that showcase your abilities. Every course includes 
-                practical assignments designed to simulate actual workplace scenarios and challenges.
-              </p>
-              <div style={styles.featureFooter}>
-                <HiLightningBolt size={16} color="#EC4899" />
-                <span>100+ projects</span>
-              </div>
-            </div>
-
-            <div className="feature-card-hover" style={styles.featureCard}>
-              <div style={styles.featureNumber}>04</div>
-              <div style={styles.featureIcon}>
-                <HiUserGroup size={32} />
-              </div>
-              <h3 style={styles.featureTitle}>Thriving Community</h3>
-              <p style={styles.featureText}>
-                Join a global network of ambitious learners and professionals. Collaborate on projects, share 
-                knowledge, get help when stuck, and build meaningful connections that last beyond the courses.
-              </p>
-              <div style={styles.featureFooter}>
-                <HiUserGroup size={16} color="#3B82F6" />
-                <span>Active community</span>
-              </div>
-            </div>
-
-            <div className="feature-card-hover" style={styles.featureCard}>
-              <div style={styles.featureNumber}>05</div>
-              <div style={styles.featureIcon}>
-                <HiClock size={32} />
-              </div>
-              <h3 style={styles.featureTitle}>Flexible Learning</h3>
-              <p style={styles.featureText}>
-                Learn at your own pace with lifetime access to course materials. Whether you're a full-time 
-                professional or a student, our flexible format fits seamlessly into your schedule.
-              </p>
-              <div style={styles.featureFooter}>
-                <HiClock size={16} color="#8B5CF6" />
-                <span>Learn anytime</span>
-              </div>
-            </div>
-
-            <div className="feature-card-hover" style={styles.featureCard}>
-              <div style={styles.featureNumber}>06</div>
-              <div style={styles.featureIcon}>
-                <HiShieldCheck size={32} />
-              </div>
-              <h3 style={styles.featureTitle}>Certificates & Recognition</h3>
-              <p style={styles.featureText}>
-                Earn industry-recognized certificates upon course completion. Showcase your achievements on 
-                LinkedIn and your resume to stand out to potential employers and clients.
-              </p>
-              <div style={styles.featureFooter}>
-                <HiShieldCheck size={16} color="#10B981" />
-                <span>Verified certificates</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section style={styles.testimonialsSection}>
-        <div style={styles.contentWrapper}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Trusted by Thousands</h2>
-            <p style={styles.sectionSubtitle}>
-              See what our learners have to say about their experience
-            </p>
+      {/* ══════════════════════════════════════
+          TESTIMONIALS
+      ══════════════════════════════════════ */}
+      <section className="ab-section ab-section--light">
+        <div className="ab-container">
+          <div className="ab-section-header">
+            <p className="ab-section-eyebrow">Student Stories</p>
+            <h2 className="ab-section-title">Trusted by Thousands</h2>
+            <p className="ab-section-sub">Hear directly from our community</p>
           </div>
 
-          <div style={styles.testimonialsGrid}>
-            <div className="testimonial-card" style={styles.testimonialCard}>
-              <div style={styles.quoteIcon}>"</div>
-              <p style={styles.testimonialText}>
-                SrinutechGuru transformed my career. The courses are incredibly well-structured and the 
-                instructors genuinely care about student success. Within 6 months, I landed my dream job!
-              </p>
-              <div style={styles.testimonialAuthor}>
-                <div style={styles.authorAvatar}>RK</div>
-                <div>
-                  <div style={styles.authorName}>Rajesh Kumar</div>
-                  <div style={styles.authorTitle}>Full Stack Developer</div>
+          <div className="ab-testimonials-grid">
+            {testimonials.map((t, i) => (
+              <div className="ab-testi-card" key={i}>
+                <div className="ab-testi-quote">&ldquo;</div>
+                <p className="ab-testi-text">{t.text}</p>
+                <div className="ab-testi-footer">
+                  <div className="ab-testi-author">
+                    <span className="ab-testi-avatar">{t.initials}</span>
+                    <div>
+                      <p className="ab-testi-name">{t.name}</p>
+                      <p className="ab-testi-role">{t.title}</p>
+                    </div>
+                  </div>
+                  <div className="ab-stars">
+                    {[...Array(5)].map((_, j) => <HiStar key={j} size={14} />)}
+                  </div>
                 </div>
               </div>
-              <div style={styles.ratingStars}>
-                {[...Array(5)].map((_, i) => (
-                  <HiStar key={i} size={16} color="#F59E0B" />
-                ))}
-              </div>
-            </div>
-
-            <div className="testimonial-card" style={{...styles.testimonialCard, animationDelay: '0.1s'}}>
-              <div style={styles.quoteIcon}>"</div>
-              <p style={styles.testimonialText}>
-                The hands-on projects and real-world scenarios make all the difference. I feel confident 
-                applying what I've learned immediately in my work. Best investment in my career!
-              </p>
-              <div style={styles.testimonialAuthor}>
-                <div style={styles.authorAvatar}>PS</div>
-                <div>
-                  <div style={styles.authorName}>Priya Sharma</div>
-                  <div style={styles.authorTitle}>Data Analyst</div>
-                </div>
-              </div>
-              <div style={styles.ratingStars}>
-                {[...Array(5)].map((_, i) => (
-                  <HiStar key={i} size={16} color="#F59E0B" />
-                ))}
-              </div>
-            </div>
-
-            <div className="testimonial-card" style={{...styles.testimonialCard, animationDelay: '0.2s'}}>
-              <div style={styles.quoteIcon}>"</div>
-              <p style={styles.testimonialText}>
-                Outstanding platform with exceptional content quality. The community support is incredible, 
-                and the flexible learning format allowed me to upskill while working full-time.
-              </p>
-              <div style={styles.testimonialAuthor}>
-                <div style={styles.authorAvatar}>AP</div>
-                <div>
-                  <div style={styles.authorName}>Arun Patel</div>
-                  <div style={styles.authorTitle}>Product Manager</div>
-                </div>
-              </div>
-              <div style={styles.ratingStars}>
-                {[...Array(5)].map((_, i) => (
-                  <HiStar key={i} size={16} color="#F59E0B" />
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section with Premium Design */}
-      <section style={styles.ctaSection}>
-        <div style={styles.ctaCard}>
-          <div style={styles.ctaContent}>
-            <div style={styles.ctaBadge}>
-              <HiSparkles size={16} />
-              <span>Start Your Journey Today</span>
-            </div>
-            <h2 style={styles.ctaTitle}>Ready to Transform Your Career?</h2>
-            <p style={styles.ctaText}>
-              Join over {about.stats.activeLearners.toLocaleString()}+ learners who are already upgrading their 
-              skills and achieving their professional goals with SrinutechGuru
-            </p>
-            <div style={styles.ctaButtons}>
-              <button 
-                className="cta-primary-hover"
-                style={styles.ctaPrimary}
-                onClick={() => navigate("/")}
-              >
-                <span>Explore Courses</span>
-                <HiArrowRight size={20} />
-              </button>
-              <button 
-                className="cta-secondary-hover"
-                style={styles.ctaSecondary}
-                onClick={() => navigate("/signup")}
-              >
-                Get Started Free
-              </button>
-            </div>
-            <div style={styles.ctaFeatures}>
-              <div style={styles.ctaFeature}>
-                <HiCheckCircle size={18} color="#10B981" />
-                <span>Free trial courses</span>
-              </div>
-              <div style={styles.ctaFeature}>
-                <HiCheckCircle size={18} color="#10B981" />
-                <span>No credit card required</span>
-              </div>
-              <div style={styles.ctaFeature}>
-                <HiCheckCircle size={18} color="#10B981" />
-                <span>Cancel anytime</span>
-              </div>
-            </div>
+      {/* ══════════════════════════════════════
+          CTA
+      ══════════════════════════════════════ */}
+      <section className="ab-cta-section">
+        <div className="ab-cta-grid" />
+        <div className="ab-cta-inner">
+          <p className="ab-cta-eyebrow"><HiSparkles size={13} /> Start Your Journey Today</p>
+          <h2 className="ab-cta-title">Ready to Transform Your Career?</h2>
+          <p className="ab-cta-sub">
+            Join over {about.stats.activeLearners.toLocaleString()}+ learners already upgrading their
+            skills and achieving professional goals with Srinu tech Guru.
+          </p>
+          <div className="ab-cta-actions">
+            <button className="ab-cta-primary" onClick={() => navigate("/")}>
+              Explore Courses <HiArrowRight size={16} />
+            </button>
+            <button className="ab-cta-secondary" onClick={() => navigate("/signup")}>
+              Get Started Free
+            </button>
+          </div>
+          <div className="ab-cta-checks">
+            {["Free trial courses", "No credit card required", "Cancel anytime"].map((c) => (
+              <span key={c} className="ab-cta-check">
+                <HiCheckCircle size={14} /> {c}
+              </span>
+            ))}
           </div>
         </div>
+
+        {/* Decorative */}
+        <div className="ab-cta-ring ab-cta-ring-1" />
+        <div className="ab-cta-ring ab-cta-ring-2" />
       </section>
 
       <Footer />
+      <AboutStyles />
     </>
   );
 };
 
-/* ================= STYLES ================= */
+/* ─────────────────────────────────────────────
+   STYLES  (injected once as a component)
+───────────────────────────────────────────── */
+const AboutStyles: React.FC = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
-const styles: Record<string, React.CSSProperties> = {
-  loadingContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  spinnerContainer: {
-    position: 'relative',
-    width: '80px',
-    height: '80px',
-  },
-  spinner: {
-    width: '80px',
-    height: '80px',
-    border: '4px solid rgba(102, 126, 234, 0.2)',
-    borderTop: '4px solid #667eea',
-    borderRadius: '50%',
-    animation: 'spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite',
-  },
-  spinnerGlow: {
-    position: 'absolute',
-    inset: '-10px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(102, 126, 234, 0.4), transparent)',
-    filter: 'blur(20px)',
-    animation: 'pulse 2s ease-in-out infinite',
-  },
-  loadingText: {
-    marginTop: '32px',
-    fontSize: '24px',
-    color: 'white',
-    fontWeight: 700,
-    letterSpacing: '-0.01em',
-  },
-  loadingSubtext: {
-    marginTop: '8px',
-    fontSize: '16px',
-    color: '#94A3B8',
-    fontWeight: 500,
-  },
-
-  // Hero Section
-  hero: {
-    position: 'relative',
-    minHeight: '700px',
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #312e81 60%, #4c1d95 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    padding: '100px 20px 120px 20px',
-  },
-  heroContent: {
-    position: 'relative',
-    zIndex: 2,
-    textAlign: 'center',
-    maxWidth: '1000px',
-  },
-  bgShape1: {
-    position: 'absolute',
-    top: '-20%',
-    right: '-10%',
-    width: '600px',
-    height: '600px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(102, 126, 234, 0.3), transparent 70%)',
-    filter: 'blur(80px)',
-    animation: 'float-slow 20s ease-in-out infinite',
-  },
-  bgShape2: {
-    position: 'absolute',
-    bottom: '-25%',
-    left: '-15%',
-    width: '700px',
-    height: '700px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(236, 72, 153, 0.25), transparent 70%)',
-    filter: 'blur(90px)',
-    animation: 'float-slow 25s ease-in-out infinite reverse',
-  },
-  bgShape3: {
-    position: 'absolute',
-    top: '40%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '800px',
-    height: '800px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%)',
-    filter: 'blur(100px)',
-    animation: 'float-slow 30s ease-in-out infinite',
-  },
-  gridPattern: {
-    position: 'absolute',
-    inset: 0,
-    backgroundImage: `
-      linear-gradient(rgba(102, 126, 234, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(102, 126, 234, 0.03) 1px, transparent 1px)
-    `,
-    backgroundSize: '60px 60px',
-    opacity: 0.5,
-  },
-  logoContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginBottom: '40px',
-  },
-  logoIconContainer: {
-    width: '140px',
-    height: '140px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '32px',
-    background: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(30px)',
-    boxShadow: '0 25px 80px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(255, 255, 255, 0.05)',
-    position: 'relative',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-  },
-  logoGlow: {
-    position: 'absolute',
-    inset: '-20px',
-    background: 'radial-gradient(circle, rgba(102, 126, 234, 0.4), transparent 70%)',
-    filter: 'blur(30px)',
-    zIndex: -1,
-    animation: 'pulse-glow 3s ease-in-out infinite',
-  },
-  logoSvg: {
-    width: '90px',
-    height: '90px',
-    filter: 'drop-shadow(0 4px 20px rgba(102, 126, 234, 0.5))',
-  },
-  brandName: {
-    fontSize: 'clamp(48px, 8vw, 80px)',
-    fontWeight: 900,
-    lineHeight: 1.1,
-    margin: '0 0 16px 0',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '2px',
-    letterSpacing: '-0.03em',
-  },
-  logoSrinu: {
-    color: 'white',
-    textShadow: '0 0 40px rgba(102, 126, 234, 0.8), 0 4px 20px rgba(0, 0, 0, 0.5)',
-    background: 'linear-gradient(135deg, #ffffff, #e0e7ff)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  logoTech: {
-    color: 'white',
-    textShadow: '0 0 40px rgba(139, 92, 246, 0.8), 0 4px 20px rgba(0, 0, 0, 0.5)',
-    background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  logoGuru: {
-    color: 'white',
-    textShadow: '0 0 40px rgba(236, 72, 153, 0.8), 0 4px 20px rgba(0, 0, 0, 0.5)',
-    background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  subtitle: {
-    fontSize: '20px',
-    color: '#CBD5E1',
-    fontWeight: 600,
-    marginBottom: '16px',
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-  },
-  tagline: {
-    fontSize: 'clamp(18px, 3vw, 26px)',
-    lineHeight: '1.7',
-    color: 'rgba(255, 255, 255, 0.9)',
-    margin: '0 0 48px 0',
-    fontWeight: 500,
-    maxWidth: '700px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-  },
-  badges: {
-    display: 'flex',
-    gap: '16px',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginBottom: '48px',
-  },
-  badge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '14px 28px',
-    background: 'rgba(255, 255, 255, 0.15)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '40px',
-    color: 'white',
-    fontSize: '15px',
-    fontWeight: 700,
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  },
-  trustBadges: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '20px',
-    flexWrap: 'wrap',
-    paddingTop: '32px',
-    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-  },
-  trustItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: '#E0E7FF',
-    fontSize: '14px',
-    fontWeight: 600,
-  },
-  trustDivider: {
-    color: 'rgba(255, 255, 255, 0.3)',
-    fontSize: '20px',
-  },
-
-  // Stats Section
-  statsSection: {
-    padding: '0 20px',
-    marginTop: '-100px',
-    marginBottom: '100px',
-    position: 'relative',
-    zIndex: 10,
-  },
-  statsContainer: {
-    maxWidth: '1300px',
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '32px',
-  },
-  statCard: {
-    background: 'white',
-    borderRadius: '28px',
-    padding: '0',
-    boxShadow: '0 25px 60px rgba(0, 0, 0, 0.12)',
-    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  statCardInner: {
-    padding: '40px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-  },
-  statIcon: {
-    width: '88px',
-    height: '88px',
-    borderRadius: '24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'white',
-    marginBottom: '28px',
-    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.15)',
-    position: 'relative',
-  },
-  statContent: {
-    width: '100%',
-    marginBottom: '20px',
-  },
-  statNumber: {
-    fontSize: '56px',
-    fontWeight: 900,
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    margin: '0 0 12px 0',
-    letterSpacing: '-0.02em',
-  },
-  statLabel: {
-    fontSize: '20px',
-    fontWeight: 800,
-    color: '#1f2937',
-    margin: '0 0 8px 0',
-    letterSpacing: '-0.01em',
-  },
-  statDesc: {
-    fontSize: '15px',
-    color: '#6b7280',
-    margin: 0,
-    lineHeight: 1.6,
-  },
-  statBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '8px 16px',
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    borderRadius: '20px',
-    fontSize: '13px',
-    fontWeight: 700,
-  },
-
-  // Tab Section
-  tabSection: {
-    padding: '100px 20px',
-    background: 'linear-gradient(180deg, #f9fafb 0%, #ffffff 100%)',
-  },
-  contentWrapper: {
-    maxWidth: '1300px',
-    margin: '0 auto',
-  },
-  sectionHeader: {
-    textAlign: 'center',
-    marginBottom: '64px',
-  },
-  sectionBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '12px 24px',
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    borderRadius: '30px',
-    fontSize: '15px',
-    fontWeight: 700,
-    marginBottom: '24px',
-    boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)',
-  },
-  sectionTitle: {
-    fontSize: 'clamp(36px, 5vw, 56px)',
-    fontWeight: 900,
-    color: '#0f172a',
-    margin: '0 0 20px 0',
-    letterSpacing: '-0.02em',
-  },
-  sectionSubtitle: {
-    fontSize: '20px',
-    color: '#64748b',
-    maxWidth: '800px',
-    margin: '0 auto',
-    lineHeight: '1.7',
-    fontWeight: 500,
-  },
-  tabContainer: {
-    maxWidth: '1000px',
-    margin: '0 auto',
-  },
-  tabButtons: {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'center',
-    marginBottom: '48px',
-    flexWrap: 'wrap',
-  },
-  tabButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '16px 32px',
-    background: 'white',
-    color: '#64748b',
-    border: '2px solid #e2e8f0',
-    borderRadius: '16px',
-    fontSize: '16px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  },
-  tabButtonActive: {
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    borderColor: 'transparent',
-    boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)',
-  },
-  tabContent: {
-    background: 'white',
-    borderRadius: '28px',
-    padding: '48px',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.08)',
-    minHeight: '400px',
-  },
-  tabPane: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-  },
-  tabPaneIcon: {
-    width: '96px',
-    height: '96px',
-    borderRadius: '24px',
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '32px',
-    boxShadow: '0 12px 32px rgba(102, 126, 234, 0.3)',
-  },
-  tabPaneTitle: {
-    fontSize: '32px',
-    fontWeight: 800,
-    color: '#0f172a',
-    margin: '0 0 24px 0',
-    letterSpacing: '-0.01em',
-  },
-  tabPaneText: {
-    fontSize: '18px',
-    lineHeight: '1.8',
-    color: '#475569',
-    margin: '0 0 20px 0',
-    maxWidth: '800px',
-  },
-  valuesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '24px',
-    marginTop: '32px',
-  },
-  valueBox: {
-    padding: '28px',
-    background: '#f8fafc',
-    borderRadius: '20px',
-    border: '2px solid #e2e8f0',
-    textAlign: 'center',
-    transition: 'all 0.3s ease',
-  },
-  valueBoxTitle: {
-    fontSize: '18px',
-    fontWeight: 700,
-    color: '#1e293b',
-    margin: '12px 0 8px 0',
-  },
-  valueBoxText: {
-    fontSize: '14px',
-    color: '#64748b',
-    margin: 0,
-    lineHeight: 1.6,
-  },
-
-  // Features Section
-  featuresSection: {
-    padding: '100px 20px',
-    background: 'white',
-  },
-  featuresGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '32px',
-  },
-  featureCard: {
-    background: '#f9fafb',
-    borderRadius: '24px',
-    padding: '40px',
-    border: '2px solid #e5e7eb',
-    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  featureNumber: {
-    position: 'absolute',
-    top: '24px',
-    right: '24px',
-    fontSize: '72px',
-    fontWeight: 900,
-    color: '#f1f5f9',
-    lineHeight: 1,
-  },
-  featureIcon: {
-    width: '72px',
-    height: '72px',
-    borderRadius: '18px',
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '24px',
-    boxShadow: '0 10px 28px rgba(102, 126, 234, 0.25)',
-    position: 'relative',
-    zIndex: 1,
-  },
-  featureTitle: {
-    fontSize: '24px',
-    fontWeight: 800,
-    color: '#0f172a',
-    margin: '0 0 16px 0',
-    letterSpacing: '-0.01em',
-  },
-  featureText: {
-    fontSize: '16px',
-    lineHeight: '1.7',
-    color: '#475569',
-    margin: '0 0 24px 0',
-  },
-  featureFooter: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#64748b',
-  },
-
-  // Testimonials Section
-  testimonialsSection: {
-    padding: '100px 20px',
-    background: 'linear-gradient(180deg, #f9fafb 0%, #ffffff 100%)',
-  },
-  testimonialsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '32px',
-  },
-  testimonialCard: {
-    background: 'white',
-    borderRadius: '24px',
-    padding: '40px',
-    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.08)',
-    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-    position: 'relative',
-  },
-  quoteIcon: {
-    fontSize: '64px',
-    fontWeight: 900,
-    color: '#667eea',
-    lineHeight: 1,
-    marginBottom: '16px',
-    opacity: 0.2,
-  },
-  testimonialText: {
-    fontSize: '16px',
-    lineHeight: '1.8',
-    color: '#475569',
-    margin: '0 0 24px 0',
-    fontStyle: 'italic',
-  },
-  testimonialAuthor: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    marginBottom: '16px',
-  },
-  authorAvatar: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '16px',
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '18px',
-    fontWeight: 700,
-  },
-  authorName: {
-    fontSize: '18px',
-    fontWeight: 700,
-    color: '#0f172a',
-  },
-  authorTitle: {
-    fontSize: '14px',
-    color: '#64748b',
-    marginTop: '4px',
-  },
-  ratingStars: {
-    display: 'flex',
-    gap: '4px',
-  },
-
-  // CTA Section
-  ctaSection: {
-    padding: '100px 20px',
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #312e81 60%, #4c1d95 100%)',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  ctaCard: {
-    maxWidth: '900px',
-    margin: '0 auto',
-    position: 'relative',
-    zIndex: 2,
-  },
-  ctaContent: {
-    textAlign: 'center',
-  },
-  ctaBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 24px',
-    background: 'rgba(255, 255, 255, 0.15)',
-    backdropFilter: 'blur(20px)',
-    color: 'white',
-    borderRadius: '30px',
-    fontSize: '14px',
-    fontWeight: 700,
-    marginBottom: '24px',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-  },
-  ctaTitle: {
-    fontSize: 'clamp(32px, 5vw, 52px)',
-    fontWeight: 900,
-    color: 'white',
-    margin: '0 0 20px 0',
-    letterSpacing: '-0.02em',
-  },
-  ctaText: {
-    fontSize: '20px',
-    color: 'rgba(255, 255, 255, 0.9)',
-    margin: '0 0 48px 0',
-    lineHeight: '1.7',
-    maxWidth: '700px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-  },
-  ctaButtons: {
-    display: 'flex',
-    gap: '16px',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginBottom: '32px',
-  },
-  ctaPrimary: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '18px 40px',
-    background: 'white',
-    color: '#667eea',
-    border: 'none',
-    borderRadius: '16px',
-    fontSize: '18px',
-    fontWeight: 800,
-    cursor: 'pointer',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    boxShadow: '0 12px 32px rgba(255, 255, 255, 0.2)',
-  },
-  ctaSecondary: {
-    padding: '18px 40px',
-    background: 'rgba(255, 255, 255, 0.15)',
-    color: 'white',
-    border: '2px solid rgba(255, 255, 255, 0.3)',
-    borderRadius: '16px',
-    fontSize: '18px',
-    fontWeight: 800,
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    backdropFilter: 'blur(20px)',
-  },
-  ctaFeatures: {
-    display: 'flex',
-    gap: '24px',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    paddingTop: '24px',
-    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-  },
-  ctaFeature: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: 'white',
-    fontSize: '15px',
-    fontWeight: 600,
-  },
-};
-
-// Enhanced animations
-const styleSheet = document.createElement("style");
-styleSheet.textContent = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-  
-  @keyframes float-slow {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-30px) rotate(5deg); }
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% { opacity: 0.5; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.1); }
-  }
-
-  .logo-wrapper {
-    animation: float 4s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
-  }
-
-  .badge-animated {
-    animation: badge-float 3s ease-in-out infinite;
-  }
-
-  @keyframes badge-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-  }
-
-  .badge-animated:hover {
-    transform: translateY(-2px) scale(1.05) !important;
-    background: rgba(255, 255, 255, 0.25) !important;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3) !important;
-  }
-
-  .stat-card-hover {
-    animation: fade-in-up 0.6s ease-out forwards;
-    opacity: 0;
-  }
-
-  @keyframes fade-in-up {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
+    /* ── TOKENS ── */
+    :root {
+      --ab-ink:        #0e0f13;
+      --ab-ink-soft:   #3d4154;
+      --ab-ink-muted:  #8b90a8;
+      --ab-surface:    #ffffff;
+      --ab-surface-2:  #f6f6fb;
+      --ab-surface-3:  #eeeef4;
+      --ab-border:     #e3e3ed;
+      --ab-accent:     #1a56db;
+      --ab-accent-s:   #eef2fd;
+      --ab-green:      #16a34a;
+      --ab-green-s:    #f0fdf4;
+      --ab-amber:      #b45309;
+      --ab-amber-s:    #fffbeb;
+      --ab-rose:       #be185d;
+      --ab-rose-s:     #fdf2f8;
+      --ab-blue:       #1d4ed8;
+      --ab-blue-s:     #eff6ff;
+      --ab-violet:     #7c3aed;
+      --ab-gold:       #c9a84c;
+      --ab-font-d:     'Playfair Display', Georgia, serif;
+      --ab-font-b:     'DM Sans', 'Helvetica Neue', sans-serif;
+      --ab-r-md:       10px;
+      --ab-r-lg:       16px;
+      --ab-r-xl:       24px;
+      --ab-shadow:     0 1px 4px rgba(14,15,19,.06), 0 6px 20px rgba(14,15,19,.07);
+      --ab-shadow-lg:  0 12px 40px rgba(14,15,19,.12), 0 3px 10px rgba(14,15,19,.06);
+      --ab-t:          .22s cubic-bezier(.4,0,.2,1);
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+
+    /* ── BASE ── */
+    .ab-loading {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--ab-ink);
+      gap: 14px;
+      font-family: var(--ab-font-b);
     }
-  }
-
-  .stat-card-hover:hover {
-    transform: translateY(-12px) !important;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.18) !important;
-  }
-
-  .feature-card-hover {
-    animation: fade-in-up 0.6s ease-out forwards;
-    opacity: 0;
-  }
-
-  .feature-card-hover:hover {
-    transform: translateY(-8px) !important;
-    border-color: #667eea !important;
-   box-shadow: 0 20px 60px rgba(102, 126, 234, 0.15) !important;
-  }
-
-  .testimonial-card {
-    animation: fade-in-up 0.6s ease-out forwards;
-    opacity: 0;
-  }
-
-  .testimonial-card:hover {
-    transform: translateY(-8px) !important;
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.12) !important;
-  }
-
-  .fade-in {
-    animation: fade-in 0.5s ease-out;
-  }
-
-  @keyframes fade-in {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .cta-primary-hover:hover {
-    transform: translateY(-3px) scale(1.05) !important;
-    box-shadow: 0 16px 40px rgba(255, 255, 255, 0.3) !important;
-  }
-
-  .cta-secondary-hover:hover {
-    background: rgba(255, 255, 255, 0.25) !important;
-    border-color: white !important;
-    transform: translateY(-3px) !important;
-  }
-
-  @media (max-width: 768px) {
-    [style*="statNumber"] {
-      font-size: 40px !important;
+    .ab-loader {
+      display: block;
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,.15);
+      border-top-color: var(--ab-gold);
+      border-radius: 50%;
+      animation: ab-spin .7s linear infinite;
     }
-    
-    [style*="featureNumber"] {
-      font-size: 48px !important;
+    .ab-loading-title { font-family: var(--ab-font-d); font-size: 22px; color: #fff; font-weight: 700; margin: 0; }
+    .ab-loading-sub   { font-size: 13px; color: rgba(255,255,255,.45); margin: 0; }
+    @keyframes ab-spin { to { transform: rotate(360deg); } }
+
+    /* ══════════════════════════════════
+       HERO
+    ══════════════════════════════════ */
+    .ab-hero {
+      position: relative;
+      background: var(--ab-ink);
+      padding: 110px 24px 160px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--ab-font-b);
     }
-  }
-`;
-document.head.appendChild(styleSheet);
+
+    .ab-hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 56px 56px;
+      pointer-events: none;
+    }
+
+    /* decorative rings */
+    .ab-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(201,168,76,.12);
+      pointer-events: none;
+    }
+    .ab-ring-1 { width: 600px; height: 600px; bottom: -260px; right: -160px; animation: ab-spin 80s linear infinite; }
+    .ab-ring-2 { width: 340px; height: 340px; top: 40px; left: -100px; animation: ab-spin 60s linear infinite reverse; }
+
+    .ab-hero-inner {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 860px;
+      animation: ab-fade-up .6s ease both;
+    }
+
+    @keyframes ab-fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ab-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ab-gold);
+      margin: 0 0 24px;
+    }
+
+    .ab-wordmark {
+      font-family: var(--ab-font-d);
+      font-size: clamp(52px, 8vw, 88px);
+      font-weight: 800;
+      line-height: 1.06;
+      margin: 0 0 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .ab-w-white { color: #fff; }
+    .ab-w-gold  { color: var(--ab-gold); font-style: italic; }
+
+    .ab-hero-sub {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.4);
+      margin: 0 0 20px;
+    }
+
+    .ab-tagline {
+      font-size: clamp(16px, 2.5vw, 20px);
+      line-height: 1.75;
+      color: rgba(255,255,255,.72);
+      font-weight: 300;
+      max-width: 640px;
+      margin: 0 auto 44px;
+    }
+
+    /* Pills */
+    .ab-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    .ab-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 99px;
+      color: rgba(255,255,255,.88);
+      font-size: 13px;
+      font-weight: 600;
+      backdrop-filter: blur(8px);
+      transition: background var(--ab-t), border-color var(--ab-t);
+    }
+    .ab-pill:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2); }
+
+    /* Trust strip */
+    .ab-trust-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .ab-trust-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: rgba(255,255,255,.5);
+      font-size: 12.5px;
+      font-weight: 500;
+    }
+
+    .ab-trust-dot {
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+    }
+
+    /* ══════════════════════════════════
+       STATS
+    ══════════════════════════════════ */
+    .ab-stats-wrap {
+      padding: 0 24px;
+      margin-top: -80px;
+      margin-bottom: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .ab-stats-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .ab-stat-card {
+      background: var(--ab-surface);
+      border: 1px solid var(--ab-border);
+      border-radius: var(--ab-r-xl);
+      box-shadow: var(--ab-shadow-lg);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+      font-family: var(--ab-font-b);
+      transition: transform var(--ab-t), box-shadow var(--ab-t);
+    }
+    .ab-stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 56px rgba(14,15,19,.14);
+    }
+
+    .ab-stat-icon {
+      width: 52px; height: 52px;
+      border-radius: var(--ab-r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .ab-stat-body { flex: 1; }
+
+    .ab-stat-num {
+      font-family: var(--ab-font-d);
+      font-size: 44px;
+      font-weight: 800;
+      color: var(--ab-ink);
+      margin: 0 0 4px;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .ab-stat-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ab-ink);
+      margin: 0 0 4px;
+      letter-spacing: -0.01em;
+    }
+
+    .ab-stat-desc {
+      font-size: 13px;
+      color: var(--ab-ink-muted);
+      margin: 0;
+      font-weight: 400;
+    }
+
+    .ab-stat-badge {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ab-ink-muted);
+      background: var(--ab-surface-2);
+      border: 1px solid var(--ab-border);
+      padding: 4px 10px;
+      border-radius: 99px;
+      align-self: flex-start;
+    }
+
+    /* ══════════════════════════════════
+       SHARED SECTION LAYOUT
+    ══════════════════════════════════ */
+    .ab-section {
+      padding: 100px 24px;
+      font-family: var(--ab-font-b);
+    }
+    .ab-section--light { background: var(--ab-surface-2); }
+    .ab-section--white { background: var(--ab-surface); }
+
+    .ab-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .ab-section-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .ab-section-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ab-accent);
+      margin: 0 0 14px;
+    }
+
+    .ab-section-title {
+      font-family: var(--ab-font-d);
+      font-size: clamp(30px, 4vw, 48px);
+      font-weight: 800;
+      color: var(--ab-ink);
+      margin: 0 0 14px;
+      letter-spacing: -0.02em;
+    }
+
+    .ab-section-sub {
+      font-size: 16px;
+      color: var(--ab-ink-muted);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.7;
+      font-weight: 400;
+    }
+
+    /* ══════════════════════════════════
+       TABS
+    ══════════════════════════════════ */
+    .ab-tab-bar {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 32px;
+      background: var(--ab-surface);
+      border: 1px solid var(--ab-border);
+      border-radius: var(--ab-r-lg);
+      padding: 6px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 40px;
+    }
+
+    .ab-tab {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      font-family: var(--ab-font-b);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ab-ink-muted);
+      border-radius: var(--ab-r-md);
+      cursor: pointer;
+      transition: all var(--ab-t);
+      white-space: nowrap;
+    }
+    .ab-tab--active {
+      background: var(--ab-ink);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(14,15,19,.2);
+    }
+    .ab-tab:hover:not(.ab-tab--active) { color: var(--ab-ink); background: var(--ab-surface-3); }
+
+    .ab-tab-panel {
+      background: var(--ab-surface);
+      border: 1px solid var(--ab-border);
+      border-radius: var(--ab-r-xl);
+      box-shadow: var(--ab-shadow);
+      padding: 52px;
+      min-height: 340px;
+    }
+
+    .ab-tab-content {
+      max-width: 780px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .ab-fade {
+      animation: ab-fade-up .35s ease both;
+    }
+
+    .ab-tab-icon {
+      width: 56px; height: 56px;
+      border-radius: var(--ab-r-md);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      margin-bottom: 24px;
+    }
+    .ab-tab-icon--rose   { background: var(--ab-rose); }
+    .ab-tab-icon--amber  { background: var(--ab-amber); }
+    .ab-tab-icon--blue   { background: var(--ab-blue); }
+
+    .ab-tab-title {
+      font-family: var(--ab-font-d);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--ab-ink);
+      margin: 0 0 20px;
+    }
+
+    .ab-tab-text {
+      font-size: 15.5px;
+      line-height: 1.8;
+      color: var(--ab-ink-soft);
+      margin: 0 0 16px;
+      font-weight: 400;
+    }
+
+    /* Values grid */
+    .ab-values-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 28px;
+      text-align: left;
+    }
+
+    .ab-value-box {
+      background: var(--ab-surface-2);
+      border: 1px solid var(--ab-border);
+      border-radius: var(--ab-r-md);
+      padding: 20px 22px;
+      transition: border-color var(--ab-t);
+    }
+    .ab-value-box:hover { border-color: var(--ab-accent); }
+
+    .ab-value-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      background: var(--ab-accent-s);
+      color: var(--ab-accent);
+      border-radius: var(--ab-r-md);
+      margin-bottom: 10px;
+    }
+
+    .ab-value-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ab-ink);
+      margin: 0 0 5px;
+    }
+
+    .ab-value-text {
+      font-size: 13px;
+      color: var(--ab-ink-muted);
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    /* ══════════════════════════════════
+       FEATURES
+    ══════════════════════════════════ */
+    .ab-features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .ab-feature-card {
+      background: var(--ab-surface-2);
+      border: 1px solid var(--ab-border);
+      border-radius: var(--ab-r-xl);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: transform var(--ab-t), box-shadow var(--ab-t), border-color var(--ab-t);
+    }
+    .ab-feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--ab-shadow-lg);
+      border-color: rgba(26,86,219,.15);
+    }
+
+    .ab-feature-num {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-family: var(--ab-font-d);
+      font-size: 56px;
+      font-weight: 800;
+      color: var(--ab-surface-3);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .ab-feature-icon {
+      width: 48px; height: 48px;
+      border-radius: var(--ab-r-md);
+      background: var(--ab-ink);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .ab-feature-title {
+      font-family: var(--ab-font-d);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ab-ink);
+      margin: 0 0 12px;
+      line-height: 1.3;
+    }
+
+    .ab-feature-text {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--ab-ink-soft);
+      margin: 0 0 20px;
+      font-weight: 400;
+    }
+
+    .ab-feature-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ══════════════════════════════════
+       TESTIMONIALS
+    ══════════════════════════════════ */
+    .ab-testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .ab-testi-card {
+      background: var(--ab-surface);
+      border: 1px solid var(--ab-border);
+      border-radius: var(--ab-r-xl);
+      padding: 36px;
+      box-shadow: var(--ab-shadow);
+      display: flex;
+      flex-direction: column;
+      transition: transform var(--ab-t), box-shadow var(--ab-t);
+    }
+    .ab-testi-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--ab-shadow-lg);
+    }
+
+    .ab-testi-quote {
+      font-family: var(--ab-font-d);
+      font-size: 72px;
+      line-height: .8;
+      color: var(--ab-border);
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+
+    .ab-testi-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--ab-ink-soft);
+      font-style: italic;
+      flex: 1;
+      margin: 0 0 24px;
+    }
+
+    .ab-testi-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .ab-testi-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ab-testi-avatar {
+      width: 40px; height: 40px;
+      border-radius: var(--ab-r-md);
+      background: var(--ab-ink);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .ab-testi-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ab-ink);
+      margin: 0 0 2px;
+    }
+
+    .ab-testi-role {
+      font-size: 12px;
+      color: var(--ab-ink-muted);
+      margin: 0;
+    }
+
+    .ab-stars {
+      display: flex;
+      gap: 2px;
+      color: #f59e0b;
+    }
+
+    /* ══════════════════════════════════
+       CTA
+    ══════════════════════════════════ */
+    .ab-cta-section {
+      position: relative;
+      background: var(--ab-ink);
+      padding: 100px 24px;
+      overflow: hidden;
+      font-family: var(--ab-font-b);
+    }
+
+    .ab-cta-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+      background-size: 56px 56px;
+      pointer-events: none;
+    }
+
+    .ab-cta-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(201,168,76,.1);
+      pointer-events: none;
+    }
+    .ab-cta-ring-1 { width: 500px; height: 500px; bottom: -200px; right: -120px; }
+    .ab-cta-ring-2 { width: 280px; height: 280px; top: -80px;  left:  -60px; }
+
+    .ab-cta-inner {
+      position: relative;
+      z-index: 2;
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .ab-cta-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ab-gold);
+      margin: 0 0 20px;
+    }
+
+    .ab-cta-title {
+      font-family: var(--ab-font-d);
+      font-size: clamp(30px, 5vw, 52px);
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .ab-cta-sub {
+      font-size: 16px;
+      line-height: 1.75;
+      color: rgba(255,255,255,.6);
+      margin: 0 0 44px;
+      font-weight: 300;
+    }
+
+    .ab-cta-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .ab-cta-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 14px 32px;
+      background: #fff;
+      color: var(--ab-ink);
+      border: none;
+      border-radius: var(--ab-r-lg);
+      font-family: var(--ab-font-b);
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform var(--ab-t), box-shadow var(--ab-t);
+      box-shadow: 0 4px 16px rgba(255,255,255,.15);
+    }
+    .ab-cta-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(255,255,255,.2); }
+
+    .ab-cta-secondary {
+      padding: 14px 32px;
+      background: transparent;
+      color: rgba(255,255,255,.8);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: var(--ab-r-lg);
+      font-family: var(--ab-font-b);
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--ab-t), border-color var(--ab-t), color var(--ab-t);
+    }
+    .ab-cta-secondary:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.4); color: #fff; }
+
+    .ab-cta-checks {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .ab-cta-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,.5);
+    }
+    .ab-cta-check svg { color: #16a34a; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .ab-features-grid,
+      .ab-testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      .ab-stats-grid { grid-template-columns: 1fr; }
+      .ab-features-grid,
+      .ab-testimonials-grid { grid-template-columns: 1fr; }
+      .ab-tab-panel { padding: 28px 20px; }
+      .ab-values-grid { grid-template-columns: 1fr; }
+      .ab-hero { padding: 80px 20px 130px; }
+    }
+
+    @media (max-width: 540px) {
+      .ab-tab-bar { max-width: 100%; }
+      .ab-cta-actions { flex-direction: column; }
+      .ab-cta-primary, .ab-cta-secondary { width: 100%; justify-content: center; }
+    }
+  `}</style>
+);
 
 export default AboutPage;

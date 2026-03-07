@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "SXFnOQfo9G8=",
+  "dgSpecHash": "qVT6y6CxSu4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsAPi\\LmsApi.csproj",
+  "projectFilePath": "C:\\Users\\Neumeric\\Documents\\GitHub\\LMS\\LmsApi\\LmsApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Neumeric\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Neumeric\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",
