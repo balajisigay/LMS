@@ -40,6 +40,13 @@ builder.Services.Configure<FormOptions>(options =>
 
 var app = builder.Build();
 
+// Apply EF Core migrations automatically at startup (useful for fresh cloud DBs)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<LmsDbContext>();
+    db.Database.Migrate();
+}
+
 app.UseCors("AllowReactApps");
 
 if (app.Environment.IsDevelopment())
