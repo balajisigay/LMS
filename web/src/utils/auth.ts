@@ -82,7 +82,7 @@ export const requireAuth = (navigate: (path: string) => void): User => {
   const user = getCurrentUser();
   
   if (!user || !user.userId) {
-    navigate("/auth");
+    navigate("/");
     throw new Error("Authentication required");
   }
   
