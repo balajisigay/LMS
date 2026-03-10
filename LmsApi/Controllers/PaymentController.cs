@@ -13,16 +13,20 @@ namespace LmsApi.Controllers
     [Route("api/[controller]")]
     public class PaymentController : ControllerBase
     {
-        private readonly string key = "rzp_test_RJNdnca6en5y2b";
-        private readonly string secret = "6C76BZ9g77hrdNf6JwYG4oCN";
+        private readonly string _key;
+        private readonly string _secret;
 
         private readonly LmsDbContext _context;
         private readonly HttpClient _http;
 
-        public PaymentController(LmsDbContext context)
+        public PaymentController(LmsDbContext context, IConfiguration configuration)
         {
             _context = context;
             _http = new HttpClient();
+            _key = configuration["Razorpay:Key"]
+                ?? throw new InvalidOperationException("Missing Razorpay:Key configuration.");
+            _secret = configuration["Razorpay:Secret"]
+                ?? throw new InvalidOperationException("Missing Razorpay:Secret configuration.");
         }
 
         // ---------------- CREATE ORDER ----------------
@@ -33,7 +37,7 @@ namespace LmsApi.Controllers
                 return BadRequest("Invalid amount");
 
             var auth = Convert.ToBase64String(
-                Encoding.UTF8.GetBytes($"{key}:{secret}")
+                Encoding.UTF8.GetBytes($"{_key}:{_secret}")
             );
 
             _http.DefaultRequestHeaders.Authorization =
@@ -68,7 +72,7 @@ namespace LmsApi.Controllers
             _context.Payments.Add(payment);
             await _context.SaveChangesAsync();
 
-            return Ok(new { orderId, key });
+            return Ok(new { orderId, key = _key });
         }
 
         // ---------------- VERIFY PAYMENT ----------------
@@ -77,7 +81,7 @@ namespace LmsApi.Controllers
             [FromBody] PaymentVerifyRequest req)
         {
             var payload = $"{req.RazorpayOrderId}|{req.RazorpayPaymentId}";
-            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_secret));
 
             var generated = BitConverter
                 .ToString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload)))

@@ -1,4 +1,9 @@
-const DEFAULT_API_ORIGIN = "http://localhost:5000";
+const isGithubPages =
+  typeof window !== "undefined" && window.location.hostname.endsWith("github.io");
+
+const DEFAULT_API_ORIGIN = isGithubPages
+  ? "https://lms-2-t5gc.onrender.com"
+  : "http://localhost:5000";
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, "");
 const ensureLeadingSlash = (value: string): string => (value.startsWith("/") ? value : `/${value}`);
